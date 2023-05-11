@@ -4,9 +4,16 @@ use libafl::prelude::{
     UsesObservers, ObserversTuple, HasObservers,
     Executor, AsMutSlice,
     ShMemProvider, ShMem,
+    Forkserver,
     ExitKind, Error,
 };
 use std::marker::PhantomData;
+use nix::sys::{
+    signal::Signal,
+    time::{TimeSpec, TimeValLike},
+};
+use std::time::Duration;
+use std::ffi::{OsStr, OsString};
 
 use crate::input::{
     HasPacketVector,
@@ -27,6 +34,9 @@ where
 {
     observers: OT,
     packet_channel: SP::ShMem,
+    timeout: TimeSpec,
+    signal: Signal,
+    forkserver: Forkserver,
     phantom: PhantomData<S>,
 }
 
@@ -37,16 +47,16 @@ where
     SP: ShMemProvider,
     I: Input + HasPacketVector<Packet = P>,
     P: SerializeIntoShMem,
-{
-    pub fn new(observers: OT, shmem_provider: &mut SP) -> Result<Self, Error> {
-        let packet_channel = shmem_provider.new_shmem(PACKET_CHANNEL_SIZE)?;
-        packet_channel.write_to_env(PACKETS_SHM_ID)?;
-        
-        Ok(Self {
+{   
+    fn new(observers: OT, packet_channel: SP::ShMem, timeout: TimeSpec, signal: Signal, forkserver: Forkserver) -> Self {
+        Self {
             observers,
             packet_channel,
+            timeout,
+            signal,
+            forkserver,
             phantom: PhantomData,
-        })
+        }
     }
 }
 
@@ -105,5 +115,159 @@ where
         }
         
         Ok(ExitKind::Ok)
+    }
+}
+
+pub struct DragonflyExecutorBuilder<'a, OT, S, SP, I, P>
+where
+    OT: ObserversTuple<S>,
+    S: UsesInput<Input = I>,
+    SP: ShMemProvider,
+    I: Input + HasPacketVector<Packet = P>,
+    P: SerializeIntoShMem,
+{
+    shmem_provider: Option<&'a mut SP>,
+    observers: Option<OT>,
+    signal: Signal,
+    timeout: Option<Duration>,
+    program: Option<OsString>,
+    arguments: Vec<OsString>,
+    envs: Vec<(OsString, OsString)>,
+    is_deferred: bool,
+    debug_child: bool,
+    phantom: PhantomData<(S, I, P)>,
+}
+
+impl<'a, OT, S, SP, I, P> DragonflyExecutorBuilder<'a, OT, S, SP, I, P>
+where
+    OT: ObserversTuple<S>,
+    S: UsesInput<Input = I>,
+    SP: ShMemProvider,
+    I: Input + HasPacketVector<Packet = P>,
+    P: SerializeIntoShMem,
+{
+    pub fn new() -> Self {
+        Self {
+            shmem_provider: None,
+            observers: None,
+            signal: Signal::SIGKILL,
+            timeout: None,
+            program: None,
+            arguments: Vec::new(),
+            envs: Vec::new(),
+            is_deferred: false,
+            debug_child: false,
+            phantom: PhantomData,
+        }
+    }
+    
+    pub fn shmem_provider(mut self, provider: &'a mut SP) -> Self {
+        self.shmem_provider = Some(provider);
+        self
+    }
+    
+    pub fn observers(mut self, observers: OT) -> Self {
+        self.observers = Some(observers);
+        self
+    }
+    
+    pub fn signal(mut self, signal: Signal) -> Self {
+        self.signal = signal;
+        self
+    }
+    
+    pub fn timeout(mut self, timeout: Duration) -> Self {
+        self.timeout = Some(timeout);
+        self
+    }
+    
+    pub fn program<O: AsRef<OsStr>>(mut self, program: O) -> Self {
+        self.program = Some(program.as_ref().to_owned());
+        self
+    }
+    
+    pub fn arg<O: AsRef<OsStr>>(mut self, arg: O) -> Self {
+        self.arguments.push(arg.as_ref().to_owned());
+        self
+    }
+    
+    pub fn args<IT, O>(mut self, args: IT) -> Self
+    where
+        IT: IntoIterator<Item = O>,
+        O: AsRef<OsStr>,
+    {
+        for arg in args {
+            self.arguments.push(arg.as_ref().to_owned());
+        }
+        self
+    }
+    
+    pub fn env<K, V>(mut self, key: K, val: V) -> Self
+    where
+        K: AsRef<OsStr>,
+        V: AsRef<OsStr>,
+    {
+        self.envs.push((key.as_ref().to_owned(), val.as_ref().to_owned()));
+        self
+    }
+    
+    pub fn envs<IT, K, V>(mut self, vars: IT) -> Self
+    where
+        IT: IntoIterator<Item = (K, V)>,
+        K: AsRef<OsStr>,
+        V: AsRef<OsStr>,
+    {
+        for (key, val) in vars {
+            self.envs.push((key.as_ref().to_owned(), val.as_ref().to_owned()));
+        }
+        self
+    }
+    
+    pub fn is_deferred_forkserver(mut self, is_deferred: bool) -> Self {
+        self.is_deferred = is_deferred;
+        self
+    }
+    
+    pub fn debug_child(mut self, debug_child: bool) -> Self {
+        self.debug_child = debug_child;
+        self
+    }
+    
+    pub fn build(self) -> Result<DragonflyExecutor<OT, S, SP, I, P>, Error> {
+        macro_rules! get_value {
+            ($name:ident) => {
+                self.$name.ok_or(Error::illegal_argument(format!("DragonflyExecutorBuilder: {} was not set", stringify!($name))))?
+            };
+        }
+        
+        let shmem_provider = get_value!(shmem_provider);
+        let observers = get_value!(observers);
+        let timeout = get_value!(timeout);
+        let program = get_value!(program);
+        
+        let packet_channel = shmem_provider.new_shmem(PACKET_CHANNEL_SIZE)?;
+        packet_channel.write_to_env(PACKETS_SHM_ID)?;
+        
+        let timeout = TimeSpec::milliseconds(timeout.as_millis() as i64);
+        
+        let forkserver = Forkserver::new(
+            program,
+            self.arguments,
+            self.envs,
+            -1,
+            false,
+            0,
+            false,
+            self.is_deferred,
+            self.debug_child
+        )?;
+        
+        Ok(DragonflyExecutor::new(
+            observers,
+            packet_channel,
+            timeout,
+            self.signal,
+            forkserver,
+        ))
     }
 }

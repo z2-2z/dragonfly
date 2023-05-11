@@ -16,7 +16,7 @@ use libafl::{
         AsMutSlice,
         HasLen,
     },
-    corpus::{Corpus, InMemoryOnDiskCorpus, OnDiskCorpus},
+    corpus::{InMemoryOnDiskCorpus, OnDiskCorpus},
     events::SimpleEventManager,
     feedback_or,
     feedbacks::{CrashFeedback, MaxMapFeedback, TimeFeedback},
@@ -24,7 +24,6 @@ use libafl::{
     inputs::{BytesInput, Input},
     monitors::SimpleMonitor,
     mutators::{
-        scheduled::havoc_mutations,
         StdMOptMutator,
     },
     observers::{HitcountsMapObserver, StdMapObserver, TimeObserver},
@@ -34,14 +33,14 @@ use libafl::{
     stages::{
         calibrate::CalibrationStage, power::StdPowerMutationalStage,
     },
-    state::{HasCorpus, StdState},
+    state::{StdState},
     Error,
 };
 use nix::sys::signal::Signal;
 use serde::{Serialize, Deserialize};
 
 use crate::{
-    executor::DragonflyExecutor,
+    executor::DragonflyExecutorBuilder,
     input::HasPacketVector,
     mutators::reorder::PacketReorderMutator,
 };
@@ -341,10 +340,15 @@ fn fuzz(
         .expect("Failed to create the executor.");
     */
     
-    let mut executor = DragonflyExecutor::new(
-        tuple_list!(edges_observer, time_observer),
-        &mut shmem_provider,
-    )?;
+    let mut executor = DragonflyExecutorBuilder::new()
+        .observers(tuple_list!(edges_observer, time_observer))
+        .shmem_provider(&mut shmem_provider)
+        .timeout(timeout)
+        .signal(signal)
+        .debug_child(debug_child)
+        .program(executable)
+        .args(arguments)
+        .build()?;
 
     state
         .load_initial_inputs(&mut fuzzer, &mut executor, &mut mgr, &[seed_dir.clone()])
