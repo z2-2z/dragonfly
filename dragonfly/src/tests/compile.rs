@@ -14,13 +14,14 @@ use libafl::{
         shmem::{ShMem, ShMemProvider, UnixShMemProvider},
         tuples::tuple_list,
         AsMutSlice,
+        HasLen,
     },
     corpus::{Corpus, InMemoryOnDiskCorpus, OnDiskCorpus},
     events::SimpleEventManager,
     feedback_or,
     feedbacks::{CrashFeedback, MaxMapFeedback, TimeFeedback},
     fuzzer::{Fuzzer, StdFuzzer},
-    inputs::BytesInput,
+    inputs::{BytesInput, Input},
     monitors::SimpleMonitor,
     mutators::{
         scheduled::havoc_mutations,
@@ -37,8 +38,49 @@ use libafl::{
     Error,
 };
 use nix::sys::signal::Signal;
+use serde::{Serialize, Deserialize};
 
-use crate::executor::DragonflyExecutor;
+use crate::{
+    executor::DragonflyExecutor,
+    input::HasPacketVector,
+    mutators::reorder::PacketReorderMutator,
+};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct ExampleInput {
+    packets: Vec<BytesInput>,
+}
+
+impl HasPacketVector for ExampleInput {
+    type Packet = BytesInput;
+
+    fn packets(&self) -> &[BytesInput] {
+        &self.packets
+    }
+
+    fn packets_mut(&mut self) -> &mut Vec<BytesInput> {
+        &mut self.packets
+    }
+}
+
+impl Input for ExampleInput {
+    fn generate_name(&self, idx: usize) -> String {
+        format!("{}", idx)
+    }
+}
+
+impl HasLen for ExampleInput {
+    fn len(&self) -> usize {
+        // needed for LenTimeMulTestcaseScore so lets return the sum of all packet lengths
+        let mut sum = 0;
+        
+        for packet in self.packets() {
+            sum += packet.len();
+        }
+        
+        sum
+    }
+}
 
 #[test]
 fn main() {
@@ -250,7 +292,7 @@ fn fuzz(
         // RNG
         StdRand::with_seed(current_nanos()),
         // Corpus that will be evolved, we keep it in memory for performance
-        InMemoryOnDiskCorpus::<BytesInput>::new(corpus_dir).unwrap(),
+        InMemoryOnDiskCorpus::<ExampleInput>::new(corpus_dir).unwrap(),
         // Corpus in which we store solutions (crashes in this example),
         // on disk so the user can get them after stopping the fuzzer
         OnDiskCorpus::new(objective_dir).unwrap(),
@@ -265,7 +307,9 @@ fn fuzz(
     // Setup a MOPT mutator
     let mutator = StdMOptMutator::new(
         &mut state,
-        havoc_mutations(),
+        tuple_list!(
+            PacketReorderMutator::new()
+        ),
         7,
         5,
     )?;
@@ -296,6 +340,7 @@ fn fuzz(
     let mut executor = TimeoutForkserverExecutor::with_signal(forkserver, timeout, signal)
         .expect("Failed to create the executor.");
     */
+    
     let mut executor = DragonflyExecutor::new(
         tuple_list!(edges_observer, time_observer),
         &mut shmem_provider,
@@ -307,7 +352,6 @@ fn fuzz(
             println!("Failed to load initial corpus at {:?}", &seed_dir);
             process::exit(0);
         });
-    println!("We imported {} inputs from disk.", state.corpus().count());
 
     // The order of the stages matter!
     let mut stages = tuple_list!(calibration, power);

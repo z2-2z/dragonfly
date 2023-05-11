@@ -2,6 +2,7 @@
     - packet-based vs. monolithic inputs
     - state-graph ?
     - which additional algorithms come into play? state selector, ...
+        - in how far can we adapt state of the art algos (MOpt, cmplog, etc.) into stateful fuzzing
     - maximize throughput
     - better input generation / mutation operators
 
