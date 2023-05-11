@@ -1,0 +1,8 @@
+- What does it take to effectively fuzz network applications?
+    - packet-based vs. monolithic inputs
+    - state-graph ?
+    - which additional algorithms come into play? state selector, ...
+    - maximize throughput
+    - better input generation / mutation operators
+
+StateGraph in NamedMetadata of state
