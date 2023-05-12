@@ -80,6 +80,8 @@ impl HasLen for ExampleInput {
 
 #[test]
 fn packet_channel() {
+    affinity::set_thread_affinity([0]).unwrap();
+    
     println!(
         "Workdir: {:?}",
         std::env::current_dir().unwrap().to_string_lossy().to_string()
@@ -134,7 +136,7 @@ fn fuzz(
     // a large initial map size that should be enough
     // to house all potential coverage maps for our targets
     // (we will eventually reduce the used size according to the actual map)
-    const MAP_SIZE: usize = 2_621_440;
+    const MAP_SIZE: usize = 65536;
 
     let log = RefCell::new(OpenOptions::new().append(true).create(true).open(logfile)?);
 
@@ -246,8 +248,8 @@ fn fuzz(
     };
     fuzzer.evaluate_input(&mut state, &mut executor, &mut mgr, input)?;
 
-    fuzzer.fuzz_loop_for(&mut stages, &mut executor, &mut state, &mut mgr, 1)?;
+    //fuzzer.fuzz_loop_for(&mut stages, &mut executor, &mut state, &mut mgr, 1)?;
+    fuzzer.fuzz_loop(&mut stages, &mut executor, &mut state, &mut mgr)?;
 
-    // Never reached
     Ok(())
 }

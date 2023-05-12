@@ -3,6 +3,12 @@ name = "dragonfly"
 version = "0.1.0"
 edition = "2021"
 
+[profile.release]
+lto = true
+panic = "abort"
+debug = true
+codegen-units = 1
+
 [dependencies]
 libafl = "0.10.0"
 nix = "0.26"
@@ -11,3 +17,4 @@ libc = "0.2"
 [dev-dependencies]
 clap = "4.2.7"
 serde = "1.0"
+affinity = "0.1.2"

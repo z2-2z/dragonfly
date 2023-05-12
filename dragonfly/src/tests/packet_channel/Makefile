@@ -6,7 +6,7 @@ test: test.c ./build/libdragonfly.so $(AFL)/afl-clang-lto
 
 ./build/libdragonfly.so: $(LIBDRAGONFLY)
 	meson setup ./build $(LIBDRAGONFLY)
-	meson configure ./build -Ddebug_desock=true
+#	meson configure ./build -Ddebug_desock=true
 	cd ./build && meson compile
 	
 $(AFL)/afl-clang-lto: $(AFL)
