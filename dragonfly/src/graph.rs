@@ -41,6 +41,10 @@ impl StateGraph {
     pub fn add_edge(&mut self, from: NodeId, to: NodeId) -> bool {
         self.edges.insert((from, to))
     }
+    
+    pub fn edges(&self) -> &HashSet<(NodeId, NodeId), RandomState> {
+        &self.edges
+    }
 }
 
 impl_serdeany!(StateGraph);
