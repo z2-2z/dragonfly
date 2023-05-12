@@ -10,6 +10,7 @@ use crate::input::HasPacketVector;
 pub struct PacketReorderMutator;
 
 impl PacketReorderMutator {
+    #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         Self {}
     }

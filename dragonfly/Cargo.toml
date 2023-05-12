@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 libafl = "0.10.0"
 nix = "0.26"
+libc = "0.2"
 
 [dev-dependencies]
 clap = "4.2.7"

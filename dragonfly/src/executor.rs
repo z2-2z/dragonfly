@@ -8,9 +8,12 @@ use libafl::prelude::{
     ExitKind, Error,
 };
 use std::marker::PhantomData;
-use nix::sys::{
-    signal::Signal,
-    time::{TimeSpec, TimeValLike},
+use nix::{
+    sys::{
+        signal::{Signal, kill},
+        time::{TimeSpec, TimeValLike},
+    },
+    unistd::Pid,
 };
 use std::time::Duration;
 use std::ffi::{OsStr, OsString};
@@ -22,6 +25,16 @@ use crate::input::{
 
 const PACKET_CHANNEL_SIZE: usize = 8 * 1024 * 1024;
 const PACKETS_SHM_ID: &str = "__DRAGONFLY_PACKETS_SHM_ID";
+
+fn align4(x: usize) -> usize {
+    let rem = x % 4;
+    
+    if rem == 0 {
+        x
+    } else {
+        x + 4 - rem
+    }
+}
 
 #[derive(Debug)]
 pub struct DragonflyExecutor<OT, S, SP, I, P>
@@ -110,11 +123,76 @@ where
     Z: UsesState<State = S>,
 {
     fn run_target(&mut self, _fuzzer: &mut Z, _state: &mut S, _mgr: &mut EM, input: &I) -> Result<ExitKind, Error> {
+        let mut exit_kind = ExitKind::Ok;
+        let last_run_timed_out = self.forkserver.last_run_timed_out();
+        
+        /* Serialize input into packet channel */
+        let shmem = self.packet_channel.as_mut_slice();
+        let mut cursor = 0;
+        
         for packet in input.packets() {
-            packet.serialize_into_shm(self.packet_channel.as_mut_slice());
+            if cursor + 4 >= PACKET_CHANNEL_SIZE - 4 {
+                break;
+            }
+            
+            let packet_buf = &mut shmem[cursor + 4..PACKET_CHANNEL_SIZE - 4];
+            
+            if let Some(written) = packet.serialize_into_shm(packet_buf) {
+                assert!(written <= packet_buf.len());
+                
+                let packet_size = written as u32;
+                shmem[cursor..cursor + 4].copy_from_slice(&packet_size.to_ne_bytes());
+                cursor = cursor + 4 + align4(written);
+            }
         }
         
-        Ok(ExitKind::Ok)
+        assert!(cursor + 4 <= PACKET_CHANNEL_SIZE);
+        shmem[cursor..cursor + 4].copy_from_slice(&0_u32.to_ne_bytes());
+        
+        /* Launch the client */
+        let send_len = self.forkserver.write_ctl(last_run_timed_out)?;
+        self.forkserver.set_last_run_timed_out(0);
+        
+        if send_len != 4 {
+            return Err(Error::unknown(
+                "Unable to request new process from fork server (OOM?)",
+            ));
+        }
+        
+        let (recv_pid_len, pid) = self.forkserver.read_st()?;
+        
+        if recv_pid_len != 4 {
+            return Err(Error::unknown(
+                "Unable to request new process from fork server (OOM?)",
+            ));
+        }
+        if pid <= 0 {
+            return Err(Error::unknown(
+                "Fork server is misbehaving (OOM?)",
+            ));
+        }
+        
+        self.forkserver.set_child_pid(Pid::from_raw(pid));
+        
+        if let Some(status) = self.forkserver.read_st_timed(&self.timeout)? {
+            self.forkserver.set_status(status);
+            
+            if libc::WIFSIGNALED(self.forkserver.status()) {
+                exit_kind = ExitKind::Crash;
+            }
+        } else {
+            self.forkserver.set_last_run_timed_out(1);
+            let _ = kill(self.forkserver.child_pid(), self.signal);
+            let (recv_status_len, _) = self.forkserver.read_st()?;
+            if recv_status_len != 4 {
+                return Err(Error::unknown("Could not kill timed-out child"));
+            }
+            exit_kind = ExitKind::Timeout;
+        }
+        
+        self.forkserver.set_child_pid(Pid::from_raw(0));
+        
+        Ok(exit_kind)
     }
 }
 
@@ -146,6 +224,7 @@ where
     I: Input + HasPacketVector<Packet = P>,
     P: SerializeIntoShMem,
 {
+    #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         Self {
             shmem_provider: None,
@@ -250,7 +329,7 @@ where
         
         let timeout = TimeSpec::milliseconds(timeout.as_millis() as i64);
         
-        let forkserver = Forkserver::new(
+        let mut forkserver = Forkserver::new(
             program,
             self.arguments,
             self.envs,
@@ -261,6 +340,13 @@ where
             self.is_deferred,
             self.debug_child
         )?;
+        
+        // Initial forkserver handshake
+        let (rlen, _) = forkserver.read_st()?; 
+        
+        if rlen != 4 {
+            return Err(Error::unknown("Failed to start a forkserver"));
+        }
         
         Ok(DragonflyExecutor::new(
             observers,
