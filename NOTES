@@ -5,5 +5,6 @@
         - in how far can we adapt state of the art algos (MOpt, cmplog, etc.) into stateful fuzzing
     - maximize throughput
     - better input generation / mutation operators
+    - applicability: can it fuzz clients like curl as well as servers ?
 
 StateGraph in NamedMetadata of state

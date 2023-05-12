@@ -13,8 +13,9 @@ codegen-units = 1
 libafl = "0.10.0"
 nix = "0.26"
 libc = "0.2"
+serde = "1.0"
+ahash = { version = "0.8.3", features = ["compile-time-rng"] }
 
 [dev-dependencies]
 clap = "4.2.7"
-serde = "1.0"
 affinity = "0.1.2"

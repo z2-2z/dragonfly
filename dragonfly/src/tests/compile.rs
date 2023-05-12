@@ -43,6 +43,8 @@ use crate::{
     executor::DragonflyExecutorBuilder,
     input::HasPacketVector,
     mutators::reorder::PacketReorderMutator,
+    observer::StateObserver,
+    graph::HasStateGraph,
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -264,6 +266,11 @@ fn fuzz(
     // To let know the AFL++ binary that we have a big map
     std::env::set_var("AFL_MAP_SIZE", format!("{}", MAP_SIZE));
 
+    let state_observer = StateObserver::new(
+        &mut shmem_provider,
+        "StateObserver",
+    )?;
+
     // Create an observation channel using the hitcounts map of AFL++
     let edges_observer =
         HitcountsMapObserver::new(unsafe { StdMapObserver::new("shared_mem", shmem_buf) }) ;
@@ -303,6 +310,7 @@ fn fuzz(
         &mut objective,
     )
     .unwrap();
+    state.init_stategraph();
 
     // Setup a MOPT mutator
     let mutator = StdMOptMutator::new(
@@ -342,7 +350,7 @@ fn fuzz(
     */
     
     let mut executor = DragonflyExecutorBuilder::new()
-        .observers(tuple_list!(edges_observer, time_observer))
+        .observers(tuple_list!(state_observer, edges_observer, time_observer))
         .shmem_provider(&mut shmem_provider)
         .timeout(timeout)
         .signal(signal)
