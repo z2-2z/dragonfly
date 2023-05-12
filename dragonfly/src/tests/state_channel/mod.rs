@@ -256,8 +256,8 @@ fn fuzz(
     };
     fuzzer.evaluate_input(&mut state, &mut executor, &mut mgr, input)?;
 
-    //fuzzer.fuzz_loop_for(&mut stages, &mut executor, &mut state, &mut mgr, 1)?;
-    fuzzer.fuzz_loop(&mut stages, &mut executor, &mut state, &mut mgr)?;
+    fuzzer.fuzz_loop_for(&mut stages, &mut executor, &mut state, &mut mgr, 1)?;
+    //fuzzer.fuzz_loop(&mut stages, &mut executor, &mut state, &mut mgr)?;
 
     println!("{:?}", state.get_stategraph()?.edges());
 
