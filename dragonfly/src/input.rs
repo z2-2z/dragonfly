@@ -22,5 +22,3 @@ pub trait HasPacketVector {
     fn packets(&self) -> &[Self::Packet];
     fn packets_mut(&mut self) -> &mut Vec<Self::Packet>;
 }
-
-//TODO: impl SerializeIntoShMem for Inputs from libafl

@@ -6,6 +6,8 @@
     - maximize throughput
     - better input generation / mutation operators
     - applicability: can it fuzz clients like curl as well as servers ?
+    - how to track state: responses vs. variables
+    - what about state that is preserved across executions like fs?
 
 Testcase scheduling:
 - Pick an underutilized state
