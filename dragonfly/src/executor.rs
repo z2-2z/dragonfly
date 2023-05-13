@@ -1,22 +1,39 @@
 use libafl::prelude::{
-    UsesInput, Input,
-    UsesState,
-    UsesObservers, ObserversTuple, HasObservers,
-    Executor, AsMutSlice,
-    ShMemProvider, ShMem,
+    AsMutSlice,
+    Error,
+    Executor,
+    ExitKind,
     Forkserver,
-    ExitKind, Error,
+    HasObservers,
+    Input,
+    ObserversTuple,
+    ShMem,
+    ShMemProvider,
+    UsesInput,
+    UsesObservers,
+    UsesState,
 };
-use std::marker::PhantomData;
 use nix::{
     sys::{
-        signal::{Signal, kill},
-        time::{TimeSpec, TimeValLike},
+        signal::{
+            kill,
+            Signal,
+        },
+        time::{
+            TimeSpec,
+            TimeValLike,
+        },
     },
     unistd::Pid,
 };
-use std::time::Duration;
-use std::ffi::{OsStr, OsString};
+use std::{
+    ffi::{
+        OsStr,
+        OsString,
+    },
+    marker::PhantomData,
+    time::Duration,
+};
 
 use crate::input::{
     HasPacketVector,
@@ -28,7 +45,7 @@ const PACKETS_SHM_ID: &str = "__DRAGONFLY_PACKETS_SHM_ID";
 
 fn align4(x: usize) -> usize {
     let rem = x % 4;
-    
+
     if rem == 0 {
         x
     } else {
@@ -60,7 +77,7 @@ where
     SP: ShMemProvider,
     I: Input + HasPacketVector<Packet = P>,
     P: SerializeIntoShMem,
-{   
+{
     fn new(observers: OT, packet_channel: SP::ShMem, timeout: TimeSpec, signal: Signal, forkserver: Forkserver) -> Self {
         Self {
             observers,
@@ -125,58 +142,52 @@ where
     fn run_target(&mut self, _fuzzer: &mut Z, _state: &mut S, _mgr: &mut EM, input: &I) -> Result<ExitKind, Error> {
         let mut exit_kind = ExitKind::Ok;
         let last_run_timed_out = self.forkserver.last_run_timed_out();
-        
+
         /* Serialize input into packet channel */
         let shmem = self.packet_channel.as_mut_slice();
         let mut cursor = 0;
-        
+
         for packet in input.packets() {
             if cursor + 4 >= PACKET_CHANNEL_SIZE - 4 {
                 break;
             }
-            
+
             let packet_buf = &mut shmem[cursor + 4..PACKET_CHANNEL_SIZE - 4];
-            
+
             if let Some(written) = packet.serialize_into_shm(packet_buf) {
                 assert!(written <= packet_buf.len());
-                
+
                 let packet_size = written as u32;
                 shmem[cursor..cursor + 4].copy_from_slice(&packet_size.to_ne_bytes());
                 cursor = cursor + 4 + align4(written);
             }
         }
-        
+
         assert!(cursor + 4 <= PACKET_CHANNEL_SIZE);
         shmem[cursor..cursor + 4].copy_from_slice(&0_u32.to_ne_bytes());
-        
+
         /* Launch the client */
         let send_len = self.forkserver.write_ctl(last_run_timed_out)?;
         self.forkserver.set_last_run_timed_out(0);
-        
+
         if send_len != 4 {
-            return Err(Error::unknown(
-                "Unable to request new process from fork server (OOM?)",
-            ));
+            return Err(Error::unknown("Unable to request new process from fork server (OOM?)"));
         }
-        
+
         let (recv_pid_len, pid) = self.forkserver.read_st()?;
-        
+
         if recv_pid_len != 4 {
-            return Err(Error::unknown(
-                "Unable to request new process from fork server (OOM?)",
-            ));
+            return Err(Error::unknown("Unable to request new process from fork server (OOM?)"));
         }
         if pid <= 0 {
-            return Err(Error::unknown(
-                "Fork server is misbehaving (OOM?)",
-            ));
+            return Err(Error::unknown("Fork server is misbehaving (OOM?)"));
         }
-        
+
         self.forkserver.set_child_pid(Pid::from_raw(pid));
-        
+
         if let Some(status) = self.forkserver.read_st_timed(&self.timeout)? {
             self.forkserver.set_status(status);
-            
+
             if libc::WIFSIGNALED(self.forkserver.status()) {
                 exit_kind = ExitKind::Crash;
             }
@@ -189,9 +200,9 @@ where
             }
             exit_kind = ExitKind::Timeout;
         }
-        
+
         self.forkserver.set_child_pid(Pid::from_raw(0));
-        
+
         Ok(exit_kind)
     }
 }
@@ -239,37 +250,37 @@ where
             phantom: PhantomData,
         }
     }
-    
+
     pub fn shmem_provider(mut self, provider: &'a mut SP) -> Self {
         self.shmem_provider = Some(provider);
         self
     }
-    
+
     pub fn observers(mut self, observers: OT) -> Self {
         self.observers = Some(observers);
         self
     }
-    
+
     pub fn signal(mut self, signal: Signal) -> Self {
         self.signal = signal;
         self
     }
-    
+
     pub fn timeout(mut self, timeout: Duration) -> Self {
         self.timeout = Some(timeout);
         self
     }
-    
+
     pub fn program<O: AsRef<OsStr>>(mut self, program: O) -> Self {
         self.program = Some(program.as_ref().to_owned());
         self
     }
-    
+
     pub fn arg<O: AsRef<OsStr>>(mut self, arg: O) -> Self {
         self.arguments.push(arg.as_ref().to_owned());
         self
     }
-    
+
     pub fn args<IT, O>(mut self, args: IT) -> Self
     where
         IT: IntoIterator<Item = O>,
@@ -280,7 +291,7 @@ where
         }
         self
     }
-    
+
     pub fn env<K, V>(mut self, key: K, val: V) -> Self
     where
         K: AsRef<OsStr>,
@@ -289,7 +300,7 @@ where
         self.envs.push((key.as_ref().to_owned(), val.as_ref().to_owned()));
         self
     }
-    
+
     pub fn envs<IT, K, V>(mut self, vars: IT) -> Self
     where
         IT: IntoIterator<Item = (K, V)>,
@@ -301,59 +312,43 @@ where
         }
         self
     }
-    
+
     pub fn is_deferred_forkserver(mut self, is_deferred: bool) -> Self {
         self.is_deferred = is_deferred;
         self
     }
-    
+
     pub fn debug_child(mut self, debug_child: bool) -> Self {
         self.debug_child = debug_child;
         self
     }
-    
+
     pub fn build(self) -> Result<DragonflyExecutor<OT, S, SP, I, P>, Error> {
         macro_rules! get_value {
             ($name:ident) => {
                 self.$name.ok_or(Error::illegal_argument(format!("DragonflyExecutorBuilder: {} was not set", stringify!($name))))?
             };
         }
-        
+
         let shmem_provider = get_value!(shmem_provider);
         let observers = get_value!(observers);
         let timeout = get_value!(timeout);
         let program = get_value!(program);
-        
+
         let packet_channel = shmem_provider.new_shmem(PACKET_CHANNEL_SIZE)?;
         packet_channel.write_to_env(PACKETS_SHM_ID)?;
-        
+
         let timeout = TimeSpec::milliseconds(timeout.as_millis() as i64);
-        
-        let mut forkserver = Forkserver::new(
-            program,
-            self.arguments,
-            self.envs,
-            -1,
-            false,
-            0,
-            false,
-            self.is_deferred,
-            self.debug_child
-        )?;
-        
+
+        let mut forkserver = Forkserver::new(program, self.arguments, self.envs, -1, false, 0, false, self.is_deferred, self.debug_child)?;
+
         // Initial forkserver handshake
-        let (rlen, _) = forkserver.read_st()?; 
-        
+        let (rlen, _) = forkserver.read_st()?;
+
         if rlen != 4 {
             return Err(Error::unknown("Failed to start a forkserver"));
         }
-        
-        Ok(DragonflyExecutor::new(
-            observers,
-            packet_channel,
-            timeout,
-            self.signal,
-            forkserver,
-        ))
+
+        Ok(DragonflyExecutor::new(observers, packet_channel, timeout, self.signal, forkserver))
     }
 }

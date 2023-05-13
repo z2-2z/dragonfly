@@ -1,12 +1,21 @@
+use ahash::{
+    AHasher,
+    RandomState,
+};
 use libafl::prelude::{
-    StdState, HasMetadata,
     impl_serdeany,
     Error,
+    HasMetadata,
+    StdState,
 };
-use serde::{Serialize, Deserialize};
-use ahash::{AHasher, RandomState};
-use std::hash::Hasher;
-use std::collections::HashSet;
+use serde::{
+    Deserialize,
+    Serialize,
+};
+use std::{
+    collections::HashSet,
+    hash::Hasher,
+};
 
 use crate::observer::State;
 
@@ -19,29 +28,29 @@ pub struct StateGraph {
 
 impl StateGraph {
     pub const ENTRYPOINT: NodeId = 0;
-        
+
     fn new() -> Self {
         Self {
             edges: HashSet::default(),
         }
     }
-    
+
     pub fn add_node(&mut self, state: &State) -> NodeId {
         let mut hasher = AHasher::default();
         hasher.write(state);
         let id = hasher.finish();
-        
+
         if id == Self::ENTRYPOINT {
             !Self::ENTRYPOINT
         } else {
             id
         }
     }
-    
+
     pub fn add_edge(&mut self, from: NodeId, to: NodeId) -> bool {
         self.edges.insert((from, to))
     }
-    
+
     pub fn edges(&self) -> &HashSet<(NodeId, NodeId), RandomState> {
         &self.edges
     }

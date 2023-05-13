@@ -1,7 +1,9 @@
 use libafl::prelude::{
     Error,
-    Mutator, MutationResult,
-    Input, Named,
+    Input,
+    MutationResult,
+    Mutator,
+    Named,
 };
 
 pub struct NopMutator;

@@ -1,13 +1,20 @@
 use libafl::prelude::{
-    Named, Feedback, UsesInput, HasClientPerfMonitor,
-    ExitKind, Error, EventFirer, ObserversTuple,
-    Event, UserStats,
+    Error,
+    Event,
+    EventFirer,
+    ExitKind,
+    Feedback,
+    HasClientPerfMonitor,
+    Named,
+    ObserversTuple,
+    UserStats,
+    UsesInput,
 };
 use std::marker::PhantomData;
 
 use crate::{
-    observer::StateObserver,
     graph::HasStateGraph,
+    observer::StateObserver,
     stats,
 };
 
@@ -41,15 +48,15 @@ where
     fn is_interesting<EM, OT>(&mut self, state: &mut S, manager: &mut EM, _input: &<S as UsesInput>::Input, observers: &OT, _exit_kind: &ExitKind) -> Result<bool, Error>
     where
         EM: EventFirer<State = S>,
-        OT: ObserversTuple<S> 
+        OT: ObserversTuple<S>,
     {
         let state_observer = observers.match_name::<StateObserver>(&self.observer_name).ok_or_else(|| Error::empty_optional("StateFeedback could not find any StateObserver"))?;
         let interesting = state_observer.had_new_transitions();
-        
+
         if interesting {
             let state_graph = state.get_stategraph()?;
             let graph_size = state_graph.edges().len();
-            
+
             manager.fire(
                 state,
                 Event::UpdateUserStats {
@@ -59,7 +66,7 @@ where
                 },
             )?;
         }
-        
+
         Ok(interesting)
     }
 }

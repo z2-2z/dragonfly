@@ -1,56 +1,92 @@
-use core::{cell::RefCell, time::Duration};
-use std::{
-    env,
-    fs::{self, OpenOptions},
-    io::Write,
-    path::PathBuf,
-    process,
+use clap::{
+    Arg,
+    ArgAction,
+    Command,
 };
-use clap::{Arg, ArgAction, Command};
+use core::{
+    cell::RefCell,
+    time::Duration,
+};
 use libafl::{
     bolts::{
-        current_nanos, current_time,
+        current_nanos,
+        current_time,
         rands::StdRand,
-        shmem::{ShMem, ShMemProvider, UnixShMemProvider},
+        shmem::{
+            ShMem,
+            ShMemProvider,
+            UnixShMemProvider,
+        },
         tuples::tuple_list,
         AsMutSlice,
         HasLen,
     },
-    corpus::{InMemoryOnDiskCorpus, OnDiskCorpus},
+    corpus::{
+        InMemoryOnDiskCorpus,
+        OnDiskCorpus,
+    },
     events::SimpleEventManager,
     feedback_or,
-    feedbacks::{CrashFeedback, MaxMapFeedback, TimeFeedback},
-    fuzzer::{Fuzzer, StdFuzzer},
-    inputs::{BytesInput, Input},
-    monitors::SimpleMonitor,
-    mutators::{
-        StdMOptMutator,
+    feedbacks::{
+        CrashFeedback,
+        MaxMapFeedback,
+        TimeFeedback,
     },
-    observers::{HitcountsMapObserver, StdMapObserver, TimeObserver},
+    fuzzer::{
+        Fuzzer,
+        StdFuzzer,
+    },
+    inputs::{
+        BytesInput,
+        Input,
+    },
+    monitors::SimpleMonitor,
+    mutators::StdMOptMutator,
+    observers::{
+        HitcountsMapObserver,
+        StdMapObserver,
+        TimeObserver,
+    },
     schedulers::{
-        powersched::PowerSchedule, IndexesLenTimeMinimizerScheduler, StdWeightedScheduler,
+        powersched::PowerSchedule,
+        IndexesLenTimeMinimizerScheduler,
+        StdWeightedScheduler,
     },
     stages::{
-        calibrate::CalibrationStage, power::StdPowerMutationalStage,
+        calibrate::CalibrationStage,
+        power::StdPowerMutationalStage,
     },
-    state::{StdState},
+    state::StdState,
     Error,
 };
 use nix::sys::signal::Signal;
-use serde::{Serialize, Deserialize};
+use serde::{
+    Deserialize,
+    Serialize,
+};
+use std::{
+    env,
+    fs::{
+        self,
+        OpenOptions,
+    },
+    io::Write,
+    path::PathBuf,
+    process,
+};
 
 use crate::{
     executor::DragonflyExecutorBuilder,
+    feedback::StateFeedback,
+    graph::HasStateGraph,
     input::HasPacketVector,
     mutators::{
-        reorder::PacketReorderMutator,
-        nop::NopMutator,
-        delete::PacketDeleteMutator,
-        duplicate::PacketDuplicateMutator,
+        NopMutator,
+        PacketDeleteMutator,
+        PacketDuplicateMutator,
+        PacketReorderMutator,
     },
     observer::StateObserver,
-    graph::HasStateGraph,
-    feedback::StateFeedback,
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -80,11 +116,11 @@ impl HasLen for ExampleInput {
     fn len(&self) -> usize {
         // needed for LenTimeMulTestcaseScore so lets return the sum of all packet lengths
         let mut sum = 0;
-        
+
         for packet in self.packets() {
             sum += packet.len();
         }
-        
+
         sum
     }
 }
@@ -95,78 +131,27 @@ fn main() {
         .version(env!("CARGO_PKG_VERSION"))
         .author("AFLplusplus team")
         .about("LibAFL-based fuzzer for Fuzzbench")
-        .arg(
-            Arg::new("out")
-                .short('o')
-                .long("output")
-                .help("The directory to place finds in ('corpus')"),
-        )
-        .arg(
-            Arg::new("in")
-                .short('i')
-                .long("input")
-                .help("The directory to read initial inputs from ('seeds')"),
-        )
-        .arg(
-            Arg::new("logfile")
-                .short('l')
-                .long("logfile")
-                .help("Duplicates all output to this file")
-                .default_value("libafl.log"),
-        )
-        .arg(
-            Arg::new("timeout")
-                .short('t')
-                .long("timeout")
-                .help("Timeout for each individual execution, in milliseconds")
-                .default_value("1200"),
-        )
-        .arg(
-            Arg::new("exec")
-                .help("The instrumented binary we want to fuzz")
-                .required(true),
-        )
-        .arg(
-            Arg::new("debug-child")
-                .short('d')
-                .long("debug-child")
-                .help("If not set, the child's stdout and stderror will be redirected to /dev/null")
-                .action(ArgAction::SetTrue),
-        )
-        .arg(
-            Arg::new("signal")
-                .short('s')
-                .long("signal")
-                .help("Signal used to stop child")
-                .default_value("SIGKILL"),
-        )
+        .arg(Arg::new("out").short('o').long("output").help("The directory to place finds in ('corpus')"))
+        .arg(Arg::new("in").short('i').long("input").help("The directory to read initial inputs from ('seeds')"))
+        .arg(Arg::new("logfile").short('l').long("logfile").help("Duplicates all output to this file").default_value("libafl.log"))
+        .arg(Arg::new("timeout").short('t').long("timeout").help("Timeout for each individual execution, in milliseconds").default_value("1200"))
+        .arg(Arg::new("exec").help("The instrumented binary we want to fuzz").required(true))
+        .arg(Arg::new("debug-child").short('d').long("debug-child").help("If not set, the child's stdout and stderror will be redirected to /dev/null").action(ArgAction::SetTrue))
+        .arg(Arg::new("signal").short('s').long("signal").help("Signal used to stop child").default_value("SIGKILL"))
         .arg(Arg::new("arguments"))
         .try_get_matches()
     {
         Ok(res) => res,
         Err(err) => {
-            println!(
-                "Syntax: {}, [-x dictionary] -o corpus_dir -i seed_dir\n{:?}",
-                env::current_exe()
-                    .unwrap_or_else(|_| "fuzzer".into())
-                    .to_string_lossy(),
-                err,
-            );
+            println!("Syntax: {}, [-x dictionary] -o corpus_dir -i seed_dir\n{:?}", env::current_exe().unwrap_or_else(|_| "fuzzer".into()).to_string_lossy(), err,);
             return;
-        }
+        },
     };
 
-    println!(
-        "Workdir: {:?}",
-        env::current_dir().unwrap().to_string_lossy().to_string()
-    );
+    println!("Workdir: {:?}", env::current_dir().unwrap().to_string_lossy().to_string());
 
     // For fuzzbench, crashes and finds are inside the same `corpus` directory, in the "queue" and "crashes" subdir.
-    let mut out_dir = PathBuf::from(
-        res.get_one::<String>("out")
-            .expect("The --output parameter is missing")
-            .to_string(),
-    );
+    let mut out_dir = PathBuf::from(res.get_one::<String>("out").expect("The --output parameter is missing").to_string());
     if fs::create_dir(&out_dir).is_err() {
         println!("Out dir at {:?} already exists.", &out_dir);
         if !out_dir.is_dir() {
@@ -178,11 +163,7 @@ fn main() {
     crashes.push("crashes");
     out_dir.push("queue");
 
-    let in_dir = PathBuf::from(
-        res.get_one::<String>("in")
-            .expect("The --input parameter is missing")
-            .to_string(),
-    );
+    let in_dir = PathBuf::from(res.get_one::<String>("in").expect("The --input parameter is missing").to_string());
     if !in_dir.is_dir() {
         println!("In dir at {:?} is not a valid directory!", &in_dir);
         return;
@@ -190,45 +171,17 @@ fn main() {
 
     let logfile = PathBuf::from(res.get_one::<String>("logfile").unwrap().to_string());
 
-    let timeout = Duration::from_millis(
-        res.get_one::<String>("timeout")
-            .unwrap()
-            .to_string()
-            .parse()
-            .expect("Could not parse timeout in milliseconds"),
-    );
+    let timeout = Duration::from_millis(res.get_one::<String>("timeout").unwrap().to_string().parse().expect("Could not parse timeout in milliseconds"));
 
-    let executable = res
-        .get_one::<String>("exec")
-        .expect("The executable is missing")
-        .to_string();
+    let executable = res.get_one::<String>("exec").expect("The executable is missing").to_string();
 
     let debug_child = res.get_flag("debug-child");
 
-    let signal = str::parse::<Signal>(
-        &res.get_one::<String>("signal")
-            .expect("The --signal parameter is missing")
-            .to_string(),
-    )
-    .unwrap();
+    let signal = str::parse::<Signal>(&res.get_one::<String>("signal").expect("The --signal parameter is missing").to_string()).unwrap();
 
-    let arguments = res
-        .get_many::<String>("arguments")
-        .map(|v| v.map(std::string::ToString::to_string).collect::<Vec<_>>())
-        .unwrap_or_default();
+    let arguments = res.get_many::<String>("arguments").map(|v| v.map(std::string::ToString::to_string).collect::<Vec<_>>()).unwrap_or_default();
 
-    fuzz(
-        out_dir,
-        crashes,
-        &in_dir,
-        &logfile,
-        timeout,
-        executable,
-        debug_child,
-        signal,
-        &arguments,
-    )
-    .expect("An error occurred while fuzzing");
+    fuzz(out_dir, crashes, &in_dir, &logfile, timeout, executable, debug_child, signal, &arguments).expect("An error occurred while fuzzing");
 }
 
 /// The actual fuzzer
@@ -272,14 +225,10 @@ fn fuzz(
     // To let know the AFL++ binary that we have a big map
     std::env::set_var("AFL_MAP_SIZE", format!("{}", MAP_SIZE));
 
-    let state_observer = StateObserver::new(
-        &mut shmem_provider,
-        "StateObserver",
-    )?;
+    let state_observer = StateObserver::new(&mut shmem_provider, "StateObserver")?;
 
     // Create an observation channel using the hitcounts map of AFL++
-    let edges_observer =
-        HitcountsMapObserver::new(unsafe { StdMapObserver::new("shared_mem", shmem_buf) }) ;
+    let edges_observer = HitcountsMapObserver::new(unsafe { StdMapObserver::new("shared_mem", shmem_buf) });
 
     // Create an observation channel to keep track of the execution time
     let time_observer = TimeObserver::new("time");
@@ -322,26 +271,13 @@ fn fuzz(
     state.init_stategraph();
 
     // Setup a MOPT mutator
-    let mutator = StdMOptMutator::new(
-        &mut state,
-        tuple_list!(
-            PacketReorderMutator::new(),
-            PacketDeleteMutator::new(0),
-            NopMutator::new(),
-            PacketDuplicateMutator::new(100)
-        ),
-        7,
-        5,
-    )?;
+    let mutator =
+        StdMOptMutator::new(&mut state, tuple_list!(PacketReorderMutator::new(), PacketDeleteMutator::new(0), NopMutator::new(), PacketDuplicateMutator::new(100)), 7, 5)?;
 
     let power = StdPowerMutationalStage::new(mutator);
 
     // A minimization+queue policy to get testcasess from the corpus
-    let scheduler = IndexesLenTimeMinimizerScheduler::new(StdWeightedScheduler::with_schedule(
-        &mut state,
-        &edges_observer,
-        Some(PowerSchedule::EXPLORE),
-    ));
+    let scheduler = IndexesLenTimeMinimizerScheduler::new(StdWeightedScheduler::with_schedule(&mut state, &edges_observer, Some(PowerSchedule::EXPLORE)));
 
     // A fuzzer with feedbacks and a corpus scheduler
     let mut fuzzer = StdFuzzer::new(scheduler, feedback, objective);
@@ -360,7 +296,7 @@ fn fuzz(
     let mut executor = TimeoutForkserverExecutor::with_signal(forkserver, timeout, signal)
         .expect("Failed to create the executor.");
     */
-    
+
     let mut executor = DragonflyExecutorBuilder::new()
         .observers(tuple_list!(state_observer, edges_observer, time_observer))
         .shmem_provider(&mut shmem_provider)
@@ -371,12 +307,10 @@ fn fuzz(
         .args(arguments)
         .build()?;
 
-    state
-        .load_initial_inputs(&mut fuzzer, &mut executor, &mut mgr, &[seed_dir.clone()])
-        .unwrap_or_else(|_| {
-            println!("Failed to load initial corpus at {:?}", &seed_dir);
-            process::exit(0);
-        });
+    state.load_initial_inputs(&mut fuzzer, &mut executor, &mut mgr, &[seed_dir.clone()]).unwrap_or_else(|_| {
+        println!("Failed to load initial corpus at {:?}", &seed_dir);
+        process::exit(0);
+    });
 
     // The order of the stages matter!
     let mut stages = tuple_list!(calibration, power);

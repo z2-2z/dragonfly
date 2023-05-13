@@ -1,45 +1,78 @@
-use core::{cell::RefCell, time::Duration};
-use std::{
-    fs::{self, OpenOptions},
-    io::Write,
-    path::PathBuf,
+use core::{
+    cell::RefCell,
+    time::Duration,
 };
 use libafl::{
     bolts::{
-        current_nanos, current_time,
+        current_nanos,
+        current_time,
         rands::StdRand,
-        shmem::{ShMem, ShMemProvider, UnixShMemProvider},
+        shmem::{
+            ShMem,
+            ShMemProvider,
+            UnixShMemProvider,
+        },
         tuples::tuple_list,
         AsMutSlice,
         HasLen,
     },
-    corpus::{InMemoryCorpus, OnDiskCorpus},
+    corpus::{
+        InMemoryCorpus,
+        OnDiskCorpus,
+    },
     events::SimpleEventManager,
     feedback_or,
-    feedbacks::{CrashFeedback, MaxMapFeedback, TimeFeedback},
-    fuzzer::{Fuzzer, StdFuzzer},
-    inputs::{BytesInput, Input},
-    monitors::SimpleMonitor,
-    mutators::{
-        StdMOptMutator,
+    feedbacks::{
+        CrashFeedback,
+        MaxMapFeedback,
+        TimeFeedback,
     },
-    observers::{HitcountsMapObserver, StdMapObserver, TimeObserver},
+    fuzzer::{
+        Fuzzer,
+        StdFuzzer,
+    },
+    inputs::{
+        BytesInput,
+        Input,
+    },
+    monitors::SimpleMonitor,
+    mutators::StdMOptMutator,
+    observers::{
+        HitcountsMapObserver,
+        StdMapObserver,
+        TimeObserver,
+    },
     schedulers::{
-        powersched::PowerSchedule, IndexesLenTimeMinimizerScheduler, StdWeightedScheduler,
+        powersched::PowerSchedule,
+        IndexesLenTimeMinimizerScheduler,
+        StdWeightedScheduler,
     },
     stages::{
-        calibrate::CalibrationStage, power::StdPowerMutationalStage,
+        calibrate::CalibrationStage,
+        power::StdPowerMutationalStage,
     },
-    state::{StdState},
-    Error, Evaluator,
+    state::StdState,
+    Error,
+    Evaluator,
 };
 use nix::sys::signal::Signal;
-use serde::{Serialize, Deserialize};
+use serde::{
+    Deserialize,
+    Serialize,
+};
+use std::{
+    fs::{
+        self,
+        OpenOptions,
+    },
+    io::Write,
+    path::PathBuf,
+};
 
 use crate::{
     executor::DragonflyExecutorBuilder,
     input::HasPacketVector,
-    mutators::nop::NopMutator,
+    mutators::NopMutator,
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -69,11 +102,11 @@ impl HasLen for ExampleInput {
     fn len(&self) -> usize {
         // needed for LenTimeMulTestcaseScore so lets return the sum of all packet lengths
         let mut sum = 0;
-        
+
         for packet in self.packets() {
             sum += packet.len();
         }
-        
+
         sum
     }
 }
@@ -81,12 +114,9 @@ impl HasLen for ExampleInput {
 #[test]
 fn packet_channel() {
     affinity::set_thread_affinity([0]).unwrap();
-    
-    println!(
-        "Workdir: {:?}",
-        std::env::current_dir().unwrap().to_string_lossy().to_string()
-    );
-    
+
+    println!("Workdir: {:?}", std::env::current_dir().unwrap().to_string_lossy().to_string());
+
     // For fuzzbench, crashes and finds are inside the same `corpus` directory, in the "queue" and "crashes" subdir.
     let out_dir = PathBuf::from("src/tests/packet_channel/output");
     let _ = fs::create_dir(&out_dir);
@@ -94,7 +124,7 @@ fn packet_channel() {
         println!("Out dir at {:?} is not a valid directory!", &out_dir);
         return;
     }
-    
+
     let mut crashes = out_dir;
     crashes.push("crashes");
 
@@ -110,29 +140,12 @@ fn packet_channel() {
 
     let arguments = Vec::new();
 
-    fuzz(
-        crashes,
-        &logfile,
-        timeout,
-        executable,
-        debug_child,
-        signal,
-        &arguments,
-    )
-    .expect("An error occurred while fuzzing");
+    fuzz(crashes, &logfile, timeout, executable, debug_child, signal, &arguments).expect("An error occurred while fuzzing");
 }
 
 /// The actual fuzzer
 #[allow(clippy::too_many_arguments)]
-fn fuzz(
-    objective_dir: PathBuf,
-    logfile: &PathBuf,
-    timeout: Duration,
-    executable: &str,
-    debug_child: bool,
-    signal: Signal,
-    arguments: &[String],
-) -> Result<(), Error> {
+fn fuzz(objective_dir: PathBuf, logfile: &PathBuf, timeout: Duration, executable: &str, debug_child: bool, signal: Signal, arguments: &[String]) -> Result<(), Error> {
     // a large initial map size that should be enough
     // to house all potential coverage maps for our targets
     // (we will eventually reduce the used size according to the actual map)
@@ -162,8 +175,7 @@ fn fuzz(
     std::env::set_var("AFL_MAP_SIZE", format!("{}", MAP_SIZE));
 
     // Create an observation channel using the hitcounts map of AFL++
-    let edges_observer =
-        HitcountsMapObserver::new(unsafe { StdMapObserver::new("shared_mem", shmem_buf) }) ;
+    let edges_observer = HitcountsMapObserver::new(unsafe { StdMapObserver::new("shared_mem", shmem_buf) });
 
     // Create an observation channel to keep track of the execution time
     let time_observer = TimeObserver::new("time");
@@ -202,27 +214,16 @@ fn fuzz(
     .unwrap();
 
     // Setup a MOPT mutator
-    let mutator = StdMOptMutator::new(
-        &mut state,
-        tuple_list!(
-            NopMutator::new()
-        ),
-        7,
-        5,
-    )?;
+    let mutator = StdMOptMutator::new(&mut state, tuple_list!(NopMutator::new()), 7, 5)?;
 
     let power = StdPowerMutationalStage::new(mutator);
 
     // A minimization+queue policy to get testcasess from the corpus
-    let scheduler = IndexesLenTimeMinimizerScheduler::new(StdWeightedScheduler::with_schedule(
-        &mut state,
-        &edges_observer,
-        Some(PowerSchedule::EXPLORE),
-    ));
+    let scheduler = IndexesLenTimeMinimizerScheduler::new(StdWeightedScheduler::with_schedule(&mut state, &edges_observer, Some(PowerSchedule::EXPLORE)));
 
     // A fuzzer with feedbacks and a corpus scheduler
     let mut fuzzer = StdFuzzer::new(scheduler, feedback, objective);
-    
+
     let mut executor = DragonflyExecutorBuilder::new()
         .observers(tuple_list!(edges_observer, time_observer))
         .shmem_provider(&mut shmem_provider)
@@ -237,14 +238,10 @@ fn fuzz(
 
     // The order of the stages matter!
     let mut stages = tuple_list!(calibration, power);
-    
+
     // evaluate input
     let input = ExampleInput {
-        packets: vec![
-            BytesInput::new(b"Hello".to_vec()),
-            BytesInput::new(b"x".to_vec()),
-            BytesInput::new(b"World".to_vec()),
-        ],
+        packets: vec![BytesInput::new(b"Hello".to_vec()), BytesInput::new(b"x".to_vec()), BytesInput::new(b"World".to_vec())],
     };
     fuzzer.evaluate_input(&mut state, &mut executor, &mut mgr, input)?;
 

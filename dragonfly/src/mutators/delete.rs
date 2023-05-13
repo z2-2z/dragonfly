@@ -1,8 +1,11 @@
 use libafl::prelude::{
     Error,
-    Mutator, MutationResult,
-    Input, HasRand, Rand,
+    HasRand,
+    Input,
+    MutationResult,
+    Mutator,
     Named,
+    Rand,
 };
 
 use crate::input::HasPacketVector;
@@ -27,7 +30,7 @@ where
 {
     fn mutate(&mut self, state: &mut S, input: &mut I, _stage_idx: i32) -> Result<MutationResult, Error> {
         let len = input.packets().len();
-        
+
         if len <= self.min_length {
             Ok(MutationResult::Skipped)
         } else {
