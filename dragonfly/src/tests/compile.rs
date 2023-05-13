@@ -45,6 +45,7 @@ use crate::{
     mutators::reorder::PacketReorderMutator,
     observer::StateObserver,
     graph::HasStateGraph,
+    feedback::StateFeedback,
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -278,6 +279,8 @@ fn fuzz(
     // Create an observation channel to keep track of the execution time
     let time_observer = TimeObserver::new("time");
 
+    let state_feedback = StateFeedback::new(&state_observer);
+
     let map_feedback = MaxMapFeedback::tracking(&edges_observer, true, false);
 
     let calibration = CalibrationStage::new(&map_feedback);
@@ -285,6 +288,7 @@ fn fuzz(
     // Feedback to rate the interestingness of an input
     // This one is composed by two Feedbacks in OR
     let mut feedback = feedback_or!(
+        state_feedback,
         // New maximization map feedback linked to the edges observer and the feedback state
         map_feedback,
         // Time feedback, this one does not need a feedback state

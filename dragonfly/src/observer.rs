@@ -3,6 +3,7 @@ use libafl::prelude::{
     ShMemProvider, ShMem,
     Observer, UsesInput,
     Named, Error, ExitKind,
+    HasCorpus, Corpus,
 };
 use serde::{Serialize, Deserialize};
 use std::mem::size_of;
@@ -68,7 +69,7 @@ impl<'a> Named for StateObserver<'a> {
 
 impl<'a, S> Observer<S> for StateObserver<'a>
 where
-    S: UsesInput + HasStateGraph,
+    S: UsesInput + HasStateGraph + HasCorpus,
 {
     fn pre_exec(&mut self, _state: &mut S, _input: &S::Input) -> Result<(), Error> {
         self.set_total_states(0);
@@ -77,6 +78,8 @@ where
     }
     
     fn post_exec(&mut self, state: &mut S, _input: &S::Input, _exit_kind: &ExitKind) -> Result<(), Error> {
+        //let current_testcase = state.corpus().current();
+        
         let state_graph = state.get_stategraph_mut()?;
         let total_states = self.get_total_states() as usize;
         
