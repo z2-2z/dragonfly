@@ -42,7 +42,12 @@ use serde::{Serialize, Deserialize};
 use crate::{
     executor::DragonflyExecutorBuilder,
     input::HasPacketVector,
-    mutators::reorder::PacketReorderMutator,
+    mutators::{
+        reorder::PacketReorderMutator,
+        nop::NopMutator,
+        delete::PacketDeleteMutator,
+        duplicate::PacketDuplicateMutator,
+    },
     observer::StateObserver,
     graph::HasStateGraph,
     feedback::StateFeedback,
@@ -320,7 +325,10 @@ fn fuzz(
     let mutator = StdMOptMutator::new(
         &mut state,
         tuple_list!(
-            PacketReorderMutator::new()
+            PacketReorderMutator::new(),
+            PacketDeleteMutator::new(0),
+            NopMutator::new(),
+            PacketDuplicateMutator::new(100)
         ),
         7,
         5,

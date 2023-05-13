@@ -13,7 +13,7 @@ impl SerializeIntoShMem for BytesInput {
 }
 
 pub trait HasPacketVector {
-    type Packet: SerializeIntoShMem;
+    type Packet: SerializeIntoShMem + Clone;
     
     fn packets(&self) -> &[Self::Packet];
     fn packets_mut(&mut self) -> &mut Vec<Self::Packet>;
