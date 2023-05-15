@@ -14,10 +14,15 @@ Testcase scheduling:
 - Call other schedulers on the subset of the testcases reaching the selected state
 - MinimizerScheduler ?
 
-Tokens:
-- 
-
-- Reprodue: CVE-2020-9273 in ProFTPD
+Reprodue: CVE-2020-9273 in ProFTPD
   - patch: https://github.com/Sashan/proftpd/commit/e845abc1bd86eebec7a0342fded908a1b0f1996b
   - vulnerable commit: 9fb4ee81c65026c7c0a6b19b8b3540f30b9bb5fd
   - part of oss-fuzz but they only fuzz some custom JSON parser there ???
+
+FTP:
+  - PASV: open(1)
+  - STOR(data): send(0), send(1), close(1)
+  - RETR: send(0)
+  
+Next: Add connection stack to libdragonfly and specify in dragonfly which packet shall be sent over which connection on stack.
+      If required connection is not open then skip packet.
