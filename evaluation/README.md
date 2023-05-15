@@ -7,7 +7,7 @@ cd ./proftpd
 #TODO: patch
 ./configure --disable-shadow --disable-auth-pam --disable-cap
 make
-sudo setcap cap_sys_chroot+ep /usr/sbin/chroot
+sudo setcap cap_sys_chroot+ep ./proftpd
 cd ..
 ./gen-config.sh > fuzz.conf
 ```
