@@ -13,3 +13,11 @@ Testcase scheduling:
 - Pick an underutilized state
 - Call other schedulers on the subset of the testcases reaching the selected state
 - MinimizerScheduler ?
+
+Tokens:
+- 
+
+- Reprodue: CVE-2020-9273 in ProFTPD
+  - patch: https://github.com/Sashan/proftpd/commit/e845abc1bd86eebec7a0342fded908a1b0f1996b
+  - vulnerable commit: 9fb4ee81c65026c7c0a6b19b8b3540f30b9bb5fd
+  - part of oss-fuzz but they only fuzz some custom JSON parser there ???

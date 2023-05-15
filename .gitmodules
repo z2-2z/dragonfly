@@ -6,3 +6,7 @@
 	path = AFLplusplus
 	url = https://github.com/AFLplusplus/AFLplusplus
     ignore = dirty
+[submodule "evaluation/proftpd"]
+	path = evaluation/proftpd
+	url = https://github.com/proftpd/proftpd
+    ignore = dirty
