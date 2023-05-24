@@ -51,6 +51,7 @@ impl<'a> StateObserver<'a> {
             OwnedMutSlice::from_raw_parts_mut(slice.as_mut_ptr(), slice.len())
         };
 
+        // Dropping the variable would deallocate it so we need to forget it
         std::mem::forget(state_channel);
 
         Ok(Self {
@@ -66,6 +67,12 @@ impl<'a> StateObserver<'a> {
 
     fn set_total_states(&mut self, total_states: u64) {
         self.state_channel.as_mut_slice()[0..8].copy_from_slice(&total_states.to_ne_bytes());
+    }
+    
+    fn get_state(&self, idx: usize) -> &State {
+        let offset = 8 + idx * size_of::<State>();
+        let state = &self.state_channel.as_slice()[offset..offset + size_of::<State>()];
+        state.try_into().unwrap()
     }
 
     pub fn had_new_transitions(&self) -> bool {
@@ -94,18 +101,15 @@ where
 
         let state_graph = state.get_stategraph_mut()?;
         let total_states = self.get_total_states() as usize;
+        let mut old_node = StateGraph::ENTRYPOINT;
 
         assert!(total_states <= NUM_STATES);
 
-        let mut cursor = 8;
-        let mut old_node = StateGraph::ENTRYPOINT;
-
-        for _ in 0..total_states {
-            let state = &self.state_channel.as_slice()[cursor..cursor + size_of::<State>()];
-            let new_node = state_graph.add_node(state.try_into().unwrap());
+        for i in 0..total_states {
+            let state = self.get_state(i);
+            let new_node = state_graph.add_node(state);
             self.new_transitions |= state_graph.add_edge(old_node, new_node);
             old_node = new_node;
-            cursor += size_of::<State>();
         }
 
         Ok(())

@@ -37,7 +37,7 @@ use std::{
 
 use crate::input::{
     HasPacketVector,
-    SerializeIntoShMem,
+    SerializeIntoBuffer,
 };
 
 const PACKET_CHANNEL_SIZE: usize = 8 * 1024 * 1024;
@@ -60,7 +60,7 @@ where
     S: UsesInput<Input = I>,
     SP: ShMemProvider,
     I: Input + HasPacketVector<Packet = P>,
-    P: SerializeIntoShMem,
+    P: SerializeIntoBuffer,
 {
     observers: OT,
     packet_channel: SP::ShMem,
@@ -76,7 +76,7 @@ where
     S: UsesInput<Input = I>,
     SP: ShMemProvider,
     I: Input + HasPacketVector<Packet = P>,
-    P: SerializeIntoShMem,
+    P: SerializeIntoBuffer,
 {
     fn new(observers: OT, packet_channel: SP::ShMem, timeout: TimeSpec, signal: Signal, forkserver: Forkserver) -> Self {
         Self {
@@ -96,7 +96,7 @@ where
     S: UsesInput<Input = I>,
     SP: ShMemProvider,
     I: Input + HasPacketVector<Packet = P>,
-    P: SerializeIntoShMem,
+    P: SerializeIntoBuffer,
 {
     type State = S;
 }
@@ -107,7 +107,7 @@ where
     S: UsesInput<Input = I>,
     SP: ShMemProvider,
     I: Input + HasPacketVector<Packet = P>,
-    P: SerializeIntoShMem,
+    P: SerializeIntoBuffer,
 {
     type Observers = OT;
 }
@@ -118,7 +118,7 @@ where
     S: UsesInput<Input = I>,
     SP: ShMemProvider,
     I: Input + HasPacketVector<Packet = P>,
-    P: SerializeIntoShMem,
+    P: SerializeIntoBuffer,
 {
     fn observers(&self) -> &OT {
         &self.observers
@@ -135,7 +135,7 @@ where
     S: UsesInput<Input = I> + std::fmt::Debug,
     SP: ShMemProvider,
     I: Input + HasPacketVector<Packet = P>,
-    P: SerializeIntoShMem + std::fmt::Debug,
+    P: SerializeIntoBuffer + std::fmt::Debug,
     EM: UsesState<State = S>,
     Z: UsesState<State = S>,
 {
@@ -154,7 +154,7 @@ where
 
             let packet_buf = &mut shmem[cursor + 4..PACKET_CHANNEL_SIZE - 4];
 
-            if let Some(written) = packet.serialize_into_shm(packet_buf) {
+            if let Some(written) = packet.serialize_into_buffer(packet_buf) {
                 assert!(written <= packet_buf.len());
 
                 let packet_size = written as u32;
@@ -213,7 +213,7 @@ where
     S: UsesInput<Input = I>,
     SP: ShMemProvider,
     I: Input + HasPacketVector<Packet = P>,
-    P: SerializeIntoShMem,
+    P: SerializeIntoBuffer,
 {
     shmem_provider: Option<&'a mut SP>,
     observers: Option<OT>,
@@ -233,7 +233,7 @@ where
     S: UsesInput<Input = I>,
     SP: ShMemProvider,
     I: Input + HasPacketVector<Packet = P>,
-    P: SerializeIntoShMem,
+    P: SerializeIntoBuffer,
 {
     #[allow(clippy::new_without_default)]
     pub fn new() -> Self {

@@ -4,20 +4,25 @@ use libafl::prelude::{
     HasLen,
 };
 
-pub trait SerializeIntoShMem {
-    fn serialize_into_shm(&self, shmem: &mut [u8]) -> Option<usize>;
+pub trait SerializeIntoBuffer {
+    fn serialize_into_buffer(&self, buffer: &mut [u8]) -> Option<usize>;
+    fn get_connection(&self) -> usize;
 }
 
-impl SerializeIntoShMem for BytesInput {
-    fn serialize_into_shm(&self, shmem: &mut [u8]) -> Option<usize> {
-        let len = std::cmp::min(shmem.len(), self.len());
-        shmem[..len].copy_from_slice(&self.bytes()[..len]);
+impl SerializeIntoBuffer for BytesInput {
+    fn serialize_into_buffer(&self, buffer: &mut [u8]) -> Option<usize> {
+        let len = std::cmp::min(buffer.len(), self.len());
+        buffer[..len].copy_from_slice(&self.bytes()[..len]);
         Some(len)
+    }
+    
+    fn get_connection(&self) -> usize {
+        0
     }
 }
 
 pub trait HasPacketVector {
-    type Packet: SerializeIntoShMem + Clone;
+    type Packet: SerializeIntoBuffer + Clone;
 
     fn packets(&self) -> &[Self::Packet];
     fn packets_mut(&mut self) -> &mut Vec<Self::Packet>;
