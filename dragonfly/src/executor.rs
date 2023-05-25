@@ -48,7 +48,7 @@ enum PacketType {
 const PACKET_HEADER_SIZE: usize = 4 + 4 + 8;
 
 fn write_packet_header(buf: &mut [u8], typ: PacketType, conn: usize, size: usize) {
-    debug_assert!(buf.len() == PACKET_HEADER_SIZE);
+    assert!(buf.len() == PACKET_HEADER_SIZE);
     
     let typ: u32 = match typ {
         PacketType::Data => 1,
