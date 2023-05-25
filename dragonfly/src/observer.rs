@@ -108,7 +108,11 @@ where
         for i in 0..total_states {
             let state = self.get_state(i);
             let new_node = state_graph.add_node(state);
-            self.new_transitions |= state_graph.add_edge(old_node, new_node);
+            
+            if new_node != old_node {
+                self.new_transitions |= state_graph.add_edge(old_node, new_node);
+            }
+            
             old_node = new_node;
         }
 
