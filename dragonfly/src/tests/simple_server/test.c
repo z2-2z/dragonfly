@@ -50,4 +50,6 @@ int main (void) {
     
     close(conn);
     close(server);
+    
+    _Exit(0);
 }

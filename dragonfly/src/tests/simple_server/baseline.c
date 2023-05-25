@@ -17,4 +17,6 @@ int main (void) {
     // do no work and exit immediately
     
     close(server);
+    
+    _Exit(0);
 }

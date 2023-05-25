@@ -70,6 +70,9 @@ use crate::{
         PacketDuplicateMutator,
         PacketReorderMutator,
     },
+    observer::StateObserver,
+    feedback::StateFeedback,
+    graph::HasStateGraph,
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -139,6 +142,8 @@ impl HasLen for ExampleInput {
 
 #[test]
 fn simple_server() {
+    let args: Vec<String> = std::env::args().collect();
+    println!("args: {:?}", args);
     println!("Workdir: {:?}", std::env::current_dir().unwrap().to_string_lossy().to_string());
 
     // For fuzzbench, crashes and finds are inside the same `corpus` directory, in the "queue" and "crashes" subdir.
@@ -156,8 +161,7 @@ fn simple_server() {
 
     let timeout = Duration::from_millis(5000);
 
-    let executable = "src/tests/simple_server/test";
-    //let executable = "src/tests/simple_server/baseline";
+    let executable = format!("src/tests/simple_server/{}", args[args.len() - 1]);
 
     let debug_child = true;
 
@@ -165,7 +169,7 @@ fn simple_server() {
 
     let arguments = Vec::new();
 
-    fuzz(crashes, &logfile, timeout, executable, debug_child, signal, &arguments).expect("An error occurred while fuzzing");
+    fuzz(crashes, &logfile, timeout, &executable, debug_child, signal, &arguments).expect("An error occurred while fuzzing");
 }
 
 /// The actual fuzzer
@@ -184,11 +188,15 @@ fn fuzz(_objective_dir: PathBuf, logfile: &PathBuf, timeout: Duration, executabl
         // To let know the AFL++ binary that we have a big map
         std::env::set_var("AFL_MAP_SIZE", format!("{}", MAP_SIZE));
 
+        let state_observer = StateObserver::new(&mut shmem_provider, "StateObserver")?;
+
         // Create an observation channel using the hitcounts map of AFL++
         let edges_observer = HitcountsMapObserver::new(unsafe { StdMapObserver::new("shared_mem", shmem_buf) });
 
         // Create an observation channel to keep track of the execution time
         let time_observer = TimeObserver::new("time");
+        
+        let state_feedback = StateFeedback::new(&state_observer);
 
         let map_feedback = MaxMapFeedback::tracking(&edges_observer, true, false);
 
@@ -197,6 +205,7 @@ fn fuzz(_objective_dir: PathBuf, logfile: &PathBuf, timeout: Duration, executabl
         // Feedback to rate the interestingness of an input
         // This one is composed by two Feedbacks in OR
         let mut feedback = feedback_or!(
+            state_feedback,
             // New maximization map feedback linked to the edges observer and the feedback state
             map_feedback,
             // Time feedback, this one does not need a feedback state
@@ -221,17 +230,18 @@ fn fuzz(_objective_dir: PathBuf, logfile: &PathBuf, timeout: Duration, executabl
             // Same for objective feedbacks
             &mut objective,
         ).unwrap());
+        state.init_stategraph();
 
         let mutator = StdScheduledMutator::new(tuple_list!(PacketDeleteMutator::new(1), PacketDuplicateMutator::new(16), PacketReorderMutator::new()));
 
-        let power = StdMutationalStage::new(mutator);
+        let mutational = StdMutationalStage::new(mutator);
 
         let scheduler = RandScheduler::new();
 
         let mut fuzzer = StdFuzzer::new(scheduler, feedback, objective);
 
         let mut executor = DragonflyExecutorBuilder::new()
-            .observers(tuple_list!(edges_observer, time_observer))
+            .observers(tuple_list!(state_observer, edges_observer, time_observer))
             .shmem_provider(&mut shmem_provider)
             .timeout(timeout)
             .signal(signal)
@@ -243,7 +253,10 @@ fn fuzz(_objective_dir: PathBuf, logfile: &PathBuf, timeout: Duration, executabl
             .build()?;
 
         // The order of the stages matter!
-        let mut stages = tuple_list!(calibration, power);
+        let mut stages = tuple_list!(
+            calibration, 
+            mutational
+        );
 
         // evaluate input
         let input = ExampleInput {
@@ -257,7 +270,7 @@ fn fuzz(_objective_dir: PathBuf, logfile: &PathBuf, timeout: Duration, executabl
         Ok(())
     };
 
-    let cores = Cores::all()?;
+    let cores = Cores::from_cmdline("0")?;
     let monitor = OnDiskTOMLMonitor::new(logfile, SimplePrintingMonitor::new());
 
     let mut launcher = Launcher::builder()
