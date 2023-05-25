@@ -68,7 +68,7 @@ impl<'a> StateObserver<'a> {
     fn set_total_states(&mut self, total_states: u64) {
         self.state_channel.as_mut_slice()[0..8].copy_from_slice(&total_states.to_ne_bytes());
     }
-    
+
     fn get_state(&self, idx: usize) -> &State {
         let offset = 8 + idx * size_of::<State>();
         let state = &self.state_channel.as_slice()[offset..offset + size_of::<State>()];
@@ -108,11 +108,11 @@ where
         for i in 0..total_states {
             let state = self.get_state(i);
             let new_node = state_graph.add_node(state);
-            
+
             if new_node != old_node {
                 self.new_transitions |= state_graph.add_edge(old_node, new_node);
             }
-            
+
             old_node = new_node;
         }
 

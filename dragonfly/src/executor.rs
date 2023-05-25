@@ -49,7 +49,7 @@ const PACKET_HEADER_SIZE: usize = 4 + 4 + 8;
 
 fn write_packet_header(buf: &mut [u8], typ: PacketType, conn: usize, size: usize) {
     assert!(buf.len() == PACKET_HEADER_SIZE);
-    
+
     let typ: u32 = match typ {
         PacketType::Data => 1,
         PacketType::Sep => 2,
@@ -57,7 +57,7 @@ fn write_packet_header(buf: &mut [u8], typ: PacketType, conn: usize, size: usize
     };
     let conn = conn as u32;
     let size = size as u64;
-    
+
     buf[0..4].copy_from_slice(&typ.to_ne_bytes());
     buf[4..8].copy_from_slice(&conn.to_ne_bytes());
     buf[8..16].copy_from_slice(&size.to_ne_bytes());
@@ -168,14 +168,9 @@ where
 
         /* Serialize input into packet channel */
         let shmem = self.packet_channel.as_mut_slice();
-        
-        write_packet_header(
-            &mut shmem[0..PACKET_HEADER_SIZE],
-            PacketType::Sep,
-            0,
-            0,
-        );
-        
+
+        write_packet_header(&mut shmem[0..PACKET_HEADER_SIZE], PacketType::Sep, 0, 0);
+
         let mut last_was_sep = true;
         let mut cursor = PACKET_HEADER_SIZE;
 
@@ -188,38 +183,23 @@ where
 
             if let Some(written) = packet.serialize_into_buffer(packet_buf) {
                 assert!(written <= packet_buf.len());
-                
-                write_packet_header(
-                    &mut shmem[cursor..cursor + PACKET_HEADER_SIZE],
-                    PacketType::Data,
-                    packet.get_connection(),
-                    written
-                );
+
+                write_packet_header(&mut shmem[cursor..cursor + PACKET_HEADER_SIZE], PacketType::Data, packet.get_connection(), written);
                 last_was_sep = false;
-                
+
                 cursor += PACKET_HEADER_SIZE + align8(written);
             }
-            
+
             if packet.terminates_group() && cursor + PACKET_HEADER_SIZE < PACKET_CHANNEL_SIZE - PACKET_HEADER_SIZE && !last_was_sep {
-                write_packet_header(
-                    &mut shmem[cursor..cursor + PACKET_HEADER_SIZE],
-                    PacketType::Sep,
-                    0,
-                    0,
-                );
+                write_packet_header(&mut shmem[cursor..cursor + PACKET_HEADER_SIZE], PacketType::Sep, 0, 0);
                 last_was_sep = true;
-                
+
                 cursor += PACKET_HEADER_SIZE;
             }
         }
 
         assert!(cursor + PACKET_HEADER_SIZE <= PACKET_CHANNEL_SIZE);
-        write_packet_header(
-            &mut shmem[cursor..cursor + PACKET_HEADER_SIZE],
-            PacketType::Eof,
-            0,
-            0,
-        );
+        write_packet_header(&mut shmem[cursor..cursor + PACKET_HEADER_SIZE], PacketType::Eof, 0, 0);
 
         /* Launch the client */
         let send_len = self.forkserver.write_ctl(last_run_timed_out)?;
@@ -392,13 +372,8 @@ where
 
         let mut packet_channel = shmem_provider.new_shmem(PACKET_CHANNEL_SIZE)?;
         packet_channel.write_to_env(PACKETS_SHM_ID)?;
-        
-        write_packet_header(
-            &mut packet_channel.as_mut_slice()[0..PACKET_HEADER_SIZE],
-            PacketType::Sep,
-            0,
-            0,
-        );
+
+        write_packet_header(&mut packet_channel.as_mut_slice()[0..PACKET_HEADER_SIZE], PacketType::Sep, 0, 0);
 
         let timeout = TimeSpec::milliseconds(timeout.as_millis() as i64);
 

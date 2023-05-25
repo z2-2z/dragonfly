@@ -7,7 +7,7 @@ use libafl::prelude::{
 pub trait SerializeIntoBuffer {
     fn serialize_into_buffer(&self, buffer: &mut [u8]) -> Option<usize>;
     fn get_connection(&self) -> usize;
-    
+
     fn terminates_group(&self) -> bool {
         true
     }
@@ -19,7 +19,7 @@ impl SerializeIntoBuffer for BytesInput {
         buffer[..len].copy_from_slice(&self.bytes()[..len]);
         Some(len)
     }
-    
+
     fn get_connection(&self) -> usize {
         0
     }

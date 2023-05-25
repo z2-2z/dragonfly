@@ -1,6 +1,4 @@
-use core::{
-    time::Duration,
-};
+use core::time::Duration;
 use libafl::{
     bolts::{
         current_nanos,
@@ -29,9 +27,7 @@ use libafl::{
         Fuzzer,
         StdFuzzer,
     },
-    inputs::{
-        Input,
-    },
+    inputs::Input,
     monitors::{
         OnDiskTOMLMonitor,
         SimplePrintingMonitor,
@@ -42,7 +38,7 @@ use libafl::{
         StdMapObserver,
         TimeObserver,
     },
-    schedulers::{RandScheduler},
+    schedulers::RandScheduler,
     stages::{
         calibrate::CalibrationStage,
         mutational::StdMutationalStage,
@@ -57,16 +53,21 @@ use serde::{
     Serialize,
 };
 use std::{
-    fs::{
-        self,
-    },
+    fs::{self,},
     path::PathBuf,
 };
 
 use crate::{
     executor::DragonflyExecutorBuilder,
-    input::{HasPacketVector, SerializeIntoBuffer},
-    mutators::{PacketDeleteMutator, PacketDuplicateMutator, PacketReorderMutator},
+    input::{
+        HasPacketVector,
+        SerializeIntoBuffer,
+    },
+    mutators::{
+        PacketDeleteMutator,
+        PacketDuplicateMutator,
+        PacketReorderMutator,
+    },
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -92,16 +93,14 @@ impl SerializeIntoBuffer for Packet {
                 buffer[0..4].copy_from_slice(b"negs");
                 Some(4)
             },
-            Packet::Sep => {
-                None
-            }
+            Packet::Sep => None,
         }
     }
 
     fn get_connection(&self) -> usize {
         0
     }
-    
+
     fn terminates_group(&self) -> bool {
         matches!(self, Packet::Sep)
     }
@@ -178,10 +177,7 @@ fn fuzz(objective_dir: PathBuf, logfile: &PathBuf, timeout: Duration, executable
     const MAP_SIZE: usize = 65536;
 
     // 'While the monitor are state, they are usually used in the broker - which is likely never restarted
-    let monitor = OnDiskTOMLMonitor::new(
-        logfile,
-        SimplePrintingMonitor::new(),
-    );
+    let monitor = OnDiskTOMLMonitor::new(logfile, SimplePrintingMonitor::new());
 
     // The event manager handle the various events generated during the fuzzing loop
     // such as the notification of the addition of a new item to the corpus
@@ -239,11 +235,7 @@ fn fuzz(objective_dir: PathBuf, logfile: &PathBuf, timeout: Duration, executable
 
     // Setup a MOPT mutator
     //let mutator = StdMOptMutator::new(&mut state, tuple_list!(NopMutator::new()), 7, 5)?;
-    let mutator = StdScheduledMutator::new(tuple_list!(
-        PacketDeleteMutator::new(1),
-        PacketDuplicateMutator::new(16),
-        PacketReorderMutator::new()
-    ));
+    let mutator = StdScheduledMutator::new(tuple_list!(PacketDeleteMutator::new(1), PacketDuplicateMutator::new(16), PacketReorderMutator::new()));
 
     let power = StdMutationalStage::new(mutator);
 
@@ -270,14 +262,7 @@ fn fuzz(objective_dir: PathBuf, logfile: &PathBuf, timeout: Duration, executable
 
     // evaluate input
     let input = ExampleInput {
-        packets: vec![
-            Packet::Add4,
-            Packet::Sep,
-            Packet::Sub1,
-            Packet::Sep,
-            Packet::NegS,
-            Packet::Sep,
-        ],
+        packets: vec![Packet::Add4, Packet::Sep, Packet::Sub1, Packet::Sep, Packet::NegS, Packet::Sep],
     };
     fuzzer.add_input(&mut state, &mut executor, &mut mgr, input)?;
 
