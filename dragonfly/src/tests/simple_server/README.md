@@ -7,5 +7,5 @@
 
 ## Simple Server
 ```
-[Stats #0] run time: 0h-2m-0s, clients: 1, corpus: 14, objectives: 0, executions: 723663, exec/sec: 6.028k
+[Stats #0] run time: 0h-2m-0s, clients: 1, corpus: 9, objectives: 0, executions: 722925, exec/sec: 6.019k
 ```

@@ -176,6 +176,7 @@ where
             0,
         );
         
+        let mut last_was_sep = true;
         let mut cursor = PACKET_HEADER_SIZE;
 
         for packet in input.packets() {
@@ -194,17 +195,19 @@ where
                     packet.get_connection(),
                     written
                 );
+                last_was_sep = false;
                 
                 cursor += PACKET_HEADER_SIZE + align8(written);
             }
             
-            if packet.terminates_group() && cursor + PACKET_HEADER_SIZE < PACKET_CHANNEL_SIZE - PACKET_HEADER_SIZE {
+            if packet.terminates_group() && cursor + PACKET_HEADER_SIZE < PACKET_CHANNEL_SIZE - PACKET_HEADER_SIZE && !last_was_sep {
                 write_packet_header(
                     &mut shmem[cursor..cursor + PACKET_HEADER_SIZE],
                     PacketType::Sep,
                     0,
                     0,
                 );
+                last_was_sep = true;
                 
                 cursor += PACKET_HEADER_SIZE;
             }
