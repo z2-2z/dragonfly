@@ -40,16 +40,39 @@ use crate::input::{
     SerializeIntoBuffer,
 };
 
+enum PacketType {
+    Data,
+    Sep,
+    Eof,
+}
+const PACKET_HEADER_SIZE: usize = 4 + 4 + 8;
+
+fn write_packet_header(buf: &mut [u8], typ: PacketType, conn: usize, size: usize) {
+    debug_assert!(buf.len() == PACKET_HEADER_SIZE);
+    
+    let typ: u32 = match typ {
+        PacketType::Data => 1,
+        PacketType::Sep => 2,
+        PacketType::Eof => 3,
+    };
+    let conn = conn as u32;
+    let size = size as u64;
+    
+    buf[0..4].copy_from_slice(&typ.to_ne_bytes());
+    buf[4..8].copy_from_slice(&conn.to_ne_bytes());
+    buf[8..16].copy_from_slice(&size.to_ne_bytes());
+}
+
 const PACKET_CHANNEL_SIZE: usize = 8 * 1024 * 1024;
 const PACKETS_SHM_ID: &str = "__DRAGONFLY_PACKETS_SHM_ID";
 
-fn align4(x: usize) -> usize {
-    let rem = x % 4;
+fn align8(x: usize) -> usize {
+    let rem = x % 8;
 
     if rem == 0 {
         x
     } else {
-        x + 4 - rem
+        x + 8 - rem
     }
 }
 
@@ -145,26 +168,55 @@ where
 
         /* Serialize input into packet channel */
         let shmem = self.packet_channel.as_mut_slice();
-        let mut cursor = 0;
+        
+        write_packet_header(
+            &mut shmem[0..PACKET_HEADER_SIZE],
+            PacketType::Sep,
+            0,
+            0,
+        );
+        
+        let mut cursor = PACKET_HEADER_SIZE;
 
         for packet in input.packets() {
-            if cursor + 4 >= PACKET_CHANNEL_SIZE - 4 {
+            if cursor + PACKET_HEADER_SIZE >= PACKET_CHANNEL_SIZE - PACKET_HEADER_SIZE {
                 break;
             }
 
-            let packet_buf = &mut shmem[cursor + 4..PACKET_CHANNEL_SIZE - 4];
+            let packet_buf = &mut shmem[cursor + PACKET_HEADER_SIZE..PACKET_CHANNEL_SIZE - PACKET_HEADER_SIZE];
 
             if let Some(written) = packet.serialize_into_buffer(packet_buf) {
                 assert!(written <= packet_buf.len());
-
-                let packet_size = written as u32;
-                shmem[cursor..cursor + 4].copy_from_slice(&packet_size.to_ne_bytes());
-                cursor = cursor + 4 + align4(written);
+                
+                write_packet_header(
+                    &mut shmem[cursor..cursor + PACKET_HEADER_SIZE],
+                    PacketType::Data,
+                    packet.get_connection(),
+                    written
+                );
+                
+                cursor += PACKET_HEADER_SIZE + align8(written);
+            }
+            
+            if packet.terminates_group() && cursor + PACKET_HEADER_SIZE < PACKET_CHANNEL_SIZE - PACKET_HEADER_SIZE {
+                write_packet_header(
+                    &mut shmem[cursor..cursor + PACKET_HEADER_SIZE],
+                    PacketType::Sep,
+                    0,
+                    0,
+                );
+                
+                cursor += PACKET_HEADER_SIZE;
             }
         }
 
-        assert!(cursor + 4 <= PACKET_CHANNEL_SIZE);
-        shmem[cursor..cursor + 4].copy_from_slice(&0_u32.to_ne_bytes());
+        assert!(cursor + PACKET_HEADER_SIZE <= PACKET_CHANNEL_SIZE);
+        write_packet_header(
+            &mut shmem[cursor..cursor + PACKET_HEADER_SIZE],
+            PacketType::Eof,
+            0,
+            0,
+        );
 
         /* Launch the client */
         let send_len = self.forkserver.write_ctl(last_run_timed_out)?;
@@ -335,8 +387,15 @@ where
         let timeout = get_value!(timeout);
         let program = get_value!(program);
 
-        let packet_channel = shmem_provider.new_shmem(PACKET_CHANNEL_SIZE)?;
+        let mut packet_channel = shmem_provider.new_shmem(PACKET_CHANNEL_SIZE)?;
         packet_channel.write_to_env(PACKETS_SHM_ID)?;
+        
+        write_packet_header(
+            &mut packet_channel.as_mut_slice()[0..PACKET_HEADER_SIZE],
+            PacketType::Sep,
+            0,
+            0,
+        );
 
         let timeout = TimeSpec::milliseconds(timeout.as_millis() as i64);
 
