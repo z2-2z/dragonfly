@@ -4,8 +4,6 @@
 #include <sys/socket.h>
 
 void connection (int fd) {
-    __AFL_INIT();
-    
     char buf[32];
     
     ssize_t n = read(fd, buf, sizeof(buf));
@@ -29,6 +27,9 @@ int main (void) {
     int fd = socket(AF_INET, SOCK_STREAM, 0);
     bind(fd, NULL, 0);
     listen(fd, 0);
+    
+    __AFL_INIT();
+    
     connection(
         accept(fd, NULL, NULL)
     );
