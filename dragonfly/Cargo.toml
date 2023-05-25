@@ -10,7 +10,7 @@ debug = true
 codegen-units = 1
 
 [dependencies]
-libafl = "0.10.0"
+libafl = "0.10.1"
 nix = "0.26"
 libc = "0.2"
 serde = "1.0"
