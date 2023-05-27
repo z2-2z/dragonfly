@@ -8,7 +8,8 @@ ScoreboardFile off
 PidFile /dev/null
 ScoreboardScrub off
 TransferLog none
-SystemLog none
+SystemLog /dev/null
+UseReverseDNS off
 WtmpLog off
 
 User				$USER
@@ -54,7 +55,7 @@ DefaultRoot /tmp/ftproot
       DenyAll
     </Limit>
 
-    <Limit STOR MKD RMD XMKD XRMD>
+    <Limit WRITE>
       AllowAll
     </Limit>
   </Directory>

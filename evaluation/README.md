@@ -25,8 +25,7 @@ echo content > /tmp/ftproot/file
 ```
 
 ## Notes
-- remove host reverse lookup
 - move certain files into memory ?
 - hook ftproot disk I/O with shared lib. discard writes => better than state reset
 - does select() on connections individually
-- desyscall: rand(), random(), sigprocmask(), getnameinfo(), gethostbyname(), getaddrinfo(), sleep(), usleep()
+- desyscall: gethostbyname(), sleep(), usleep()

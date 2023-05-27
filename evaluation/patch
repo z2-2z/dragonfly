@@ -50,9 +50,18 @@ index ac4e83b9e..860bbc700 100644
    long nfiles = 0;
    struct rlimit rlim;
 diff --git a/src/main.c b/src/main.c
-index d4ae3186b..41d45f0eb 100644
+index d4ae3186b..bc20f58e8 100644
 --- a/src/main.c
 +++ b/src/main.c
+@@ -1300,7 +1300,7 @@ static void fork_server(int fd, conn_t *l, unsigned char no_fork) {
+   pr_signals_block();
+   PRIVS_ROOT
+ 
+-  log_opensyslog(NULL);
++  //log_opensyslog(NULL);
+ 
+   PRIVS_RELINQUISH
+   pr_signals_unblock();
 @@ -1565,6 +1565,10 @@ static void daemon_loop(void) {
  
    pr_proctitle_set("(accepting connections)");
