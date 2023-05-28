@@ -48,3 +48,35 @@ echo content > /tmp/ftproot/file
 - does select() on connections individually
 - desyscall: gethostbyname(), sleep(), usleep()
 - track state
+
+## State
+- mod_auth.c
+    - logged_in
+    - auth_tries (bucketed)
+    - saw_first_user_cmd
+    - authenticated_without_pass
+    - auth_client_connected
+    - auth_pass_resp_code
+- mod_core.c
+    - core_cmd_count (bucketed)
+- mod_xfer.c
+    - retr_fh (is_null)
+    - stor_fh (is_null)
+    - displayfilexfer_fh (is_null)
+    - have_rfc2228_data
+    - have_type
+    - have_zmode
+    - xfer_logged_sendfile_decline_msg
+- mod_ls.c
+    - opt_* (boolean)
+    - lst_sort_by
+- main.c
+    - session
+        - sf_flags
+        - sp_flags
+        - c (is_null)
+        - d (is_null)
+        - anon_user (is_null)
+        - curr_phase ?
+        - prev_server (is_null)
+        - disconnect_reason
