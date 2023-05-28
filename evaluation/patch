@@ -37,6 +37,18 @@ index 6bb46f6b4..c4cff1867 100644
  
    /* Module version */
    MOD_DELAY_VERSION
+diff --git a/modules/mod_rlimit.c b/modules/mod_rlimit.c
+index b5729f52e..3045c2d30 100644
+--- a/modules/mod_rlimit.c
++++ b/modules/mod_rlimit.c
+@@ -710,6 +710,7 @@ static int rlimit_set_files(int scope) {
+ }
+ 
+ static int rlimit_set_memory(int scope) {
++  return 0;
+   config_rec *c;
+ 
+   /* Now check for the configurable resource limits */
 diff --git a/src/fsio.c b/src/fsio.c
 index ac4e83b9e..860bbc700 100644
 --- a/src/fsio.c
@@ -73,6 +85,18 @@ index d4ae3186b..bc20f58e8 100644
    time(&last_error);
  
    while (TRUE) {
+diff --git a/src/rlimit.c b/src/rlimit.c
+index a874f8019..afcaf0b53 100644
+--- a/src/rlimit.c
++++ b/src/rlimit.c
+@@ -151,6 +151,7 @@ int pr_rlimit_get_memory(rlim_t *current, rlim_t *max) {
+ }
+ 
+ int pr_rlimit_set_memory(rlim_t current, rlim_t max) {
++  return 0;
+ #if defined(RLIMIT_AS)
+   return set_rlimit(RLIMIT_AS, current, max);
+ 
 diff --git a/src/table.c b/src/table.c
 index 5f16f2952..cb26aa060 100644
 --- a/src/table.c
