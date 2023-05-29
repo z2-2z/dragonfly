@@ -42,6 +42,11 @@ echo content > /tmp/ftproot/file
 ./proftpd/proftpd -d 10 -X -c $PWD/fuzz.conf -n
 ```
 
+## Manual communication
+```
+./libdragonfly/packet_write '0:s:USER ftp\r\n' '0:s:PASS x\r\n' '0:s:CWD uploads\r\n' '0:s:EPSV\r\n' '0::STOR packetio.txt\r\n' '1::successful' '1:s:' '0:s:QUIT\r\n' "./proftpd/proftpd -d 10 -X -c $PWD/fuzz.conf -n"
+```
+
 ## Notes
 - move certain files into memory ?
 - hook ftproot disk I/O with shared lib. discard writes => better than state reset
