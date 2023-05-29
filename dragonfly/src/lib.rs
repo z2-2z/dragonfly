@@ -1,13 +1,13 @@
 #[cfg(test)]
 mod tests;
 
-pub mod executor;
-pub mod feedback;
+mod executor;
+mod feedback;
 mod graph;
-pub mod input;
-pub mod mutators;
-pub mod observer;
-pub mod stats;
+mod input;
+mod mutators;
+mod observer;
+mod stats;
 
 pub mod prelude {
     pub use super::{
@@ -16,5 +16,6 @@ pub mod prelude {
         input::*,
         mutators::*,
         observer::*,
+        graph::*,
     };
 }

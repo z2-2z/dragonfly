@@ -1,0 +1,18 @@
+[package]
+name = "fuzzer_advanced"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[profile.release]
+lto = true
+panic = "abort"
+debug = true
+codegen-units = 1
+
+[dependencies]
+libafl = "0.10.1"
+dragonfly = { path = "../../dragonfly" }
+nix = "0.26"
+serde = "1.0"
