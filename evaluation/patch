@@ -50,9 +50,27 @@ index b5729f52e..3045c2d30 100644
  
    /* Now check for the configurable resource limits */
 diff --git a/src/fsio.c b/src/fsio.c
-index ac4e83b9e..860bbc700 100644
+index ac4e83b9e..204844bc7 100644
 --- a/src/fsio.c
 +++ b/src/fsio.c
+@@ -4930,7 +4930,7 @@ int pr_fsio_unlink(const char *name) {
+ 
+   pr_trace_msg(trace_channel, 8, "using %s unlink() for path '%s'",
+     fs->fs_name, name);
+-  res = (fs->unlink)(fs, name);
++  res = 0; // (fs->unlink)(fs, name);
+   if (res == 0) {
+     pr_fs_clear_cache2(name);
+   }
+@@ -5304,7 +5304,7 @@ int pr_fsio_write(pr_fh_t *fh, const char *buf, size_t size) {
+ 
+   pr_trace_msg(trace_channel, 8, "using %s write() for path '%s' (%lu bytes)",
+     fs->fs_name, fh->fh_path, (unsigned long) size);
+-  res = (fs->write)(fh, fh->fh_fd, buf, size);
++  res = size; // (fs->write)(fh, fh->fh_fd, buf, size);
+ 
+   return res;
+ }
 @@ -6696,6 +6696,7 @@ char *pr_fsio_getline(char *buf, size_t buflen, pr_fh_t *fh,
  #define FSIO_MAX_FD_COUNT		1024
  
