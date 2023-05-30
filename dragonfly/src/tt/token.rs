@@ -1,3 +1,4 @@
+use serde::{Serialize, Deserialize};
 
 const WHITESPACE: [u8; 6] = [
     b' ',
@@ -12,7 +13,7 @@ fn is_ascii(b: u8) -> bool {
     b <= 127
 }
 
-#[derive(Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub enum TextToken {
     Constant(Vec<u8>),
     Number(Vec<u8>),
@@ -21,7 +22,7 @@ pub enum TextToken {
     Blob(Vec<u8>),
 }
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct TokenStream {
     tokens: Vec<TextToken>,
 }

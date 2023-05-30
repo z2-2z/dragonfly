@@ -41,23 +41,26 @@ use std::{
     fs,
     path::PathBuf,
 };
-use dragonfly::prelude::{
-    DragonflyExecutorBuilder,
-    HasPacketVector,
-    SerializeIntoBuffer,
-    PacketDeleteMutator,
-    PacketDuplicateMutator,
-    PacketReorderMutator,
-    NopMutator,
-    StateObserver,
-    StateFeedback,
-    HasStateGraph,
+use dragonfly::{
+    prelude::{
+        DragonflyExecutorBuilder,
+        HasPacketVector,
+        SerializeIntoBuffer,
+        PacketDeleteMutator,
+        PacketDuplicateMutator,
+        PacketReorderMutator,
+        NopMutator,
+        StateObserver,
+        StateFeedback,
+        HasStateGraph,
+    },
+    tt::TokenStream,
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 enum FTPPacket {
-    Ctrl(BytesInput),
-    Data(BytesInput),
+    Ctrl(TokenStream),
+    Data(TokenStream),
     Sep,
 }
 
@@ -66,9 +69,7 @@ impl SerializeIntoBuffer for FTPPacket {
         match self {
             FTPPacket::Data(data) |
             FTPPacket::Ctrl(data) => {
-                let len = data.len();
-                buffer[0..len].copy_from_slice(data.bytes());
-                Some(len)
+                Some(data.generate_text(buffer))
             },
             FTPPacket::Sep => None,
         }
@@ -222,19 +223,35 @@ fn main() -> Result<(), Error> {
 
         let input = FTPInput {
             packets: vec![
-                FTPPacket::Ctrl(BytesInput::new(b"USER ftp\r\n".to_vec())),
+                FTPPacket::Ctrl(
+                    TokenStream::builder().constant("USER").whitespace(" ").text("ftp").constant("\r\n").build()
+                ),
                 FTPPacket::Sep,
-                FTPPacket::Ctrl(BytesInput::new(b"PASS x\r\n".to_vec())),
+                FTPPacket::Ctrl(
+                    TokenStream::builder().constant("PASS").whitespace(" ").text("x").constant("\r\n").build()
+                ),
                 FTPPacket::Sep,
-                FTPPacket::Ctrl(BytesInput::new(b"CWD uploads\r\n".to_vec())),
+                FTPPacket::Ctrl(
+                    TokenStream::builder().constant("CWD").whitespace(" ").text("uploads").constant("\r\n").build()
+                ),
                 FTPPacket::Sep,
-                FTPPacket::Ctrl(BytesInput::new(b"EPSV\r\n".to_vec())),
+                FTPPacket::Ctrl(
+                    TokenStream::builder().constant("EPSV").constant("\r\n").build()
+                ),
                 FTPPacket::Sep,
-                FTPPacket::Ctrl(BytesInput::new(b"STOR fuzzertest.txt\r\n".to_vec())),
-                FTPPacket::Data(BytesInput::new(b"it werks!!!".to_vec())),
-                FTPPacket::Data(BytesInput::new(b"".to_vec())),
+                FTPPacket::Ctrl(
+                    TokenStream::builder().constant("STOR").whitespace(" ").text("fuzzertest.txt").constant("\r\n").build()
+                ),
+                FTPPacket::Data(
+                    TokenStream::builder().blob(b"it werks!!!").build()
+                ),
+                FTPPacket::Data(
+                    TokenStream::builder().build()
+                ),
                 FTPPacket::Sep,
-                FTPPacket::Ctrl(BytesInput::new(b"QUIT\r\n".to_vec())),
+                FTPPacket::Ctrl(
+                    TokenStream::builder().constant("QUIT").constant("\r\n").build()
+                ),
             ],
         };
         fuzzer.evaluate_input(&mut state, &mut executor, &mut mgr, input)?;
