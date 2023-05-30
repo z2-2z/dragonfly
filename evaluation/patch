@@ -1,3 +1,40 @@
+diff --git a/modules/mod_auth.c b/modules/mod_auth.c
+index 3e9298895..af85820d8 100644
+--- a/modules/mod_auth.c
++++ b/modules/mod_auth.c
+@@ -74,6 +74,16 @@ static int auth_sess_init(void);
+  */
+ static int auth_have_authenticated = FALSE;
+ 
++#include "dragonfly.h"
++void mod_auth_state (void) {
++    dragonfly_feed_state_boolean(logged_in);
++    dragonfly_feed_state_number(auth_tries);
++    dragonfly_feed_state_boolean(saw_first_user_cmd);
++    dragonfly_feed_state_boolean(authenticated_without_pass);
++    dragonfly_feed_state_boolean(auth_client_connected);
++    dragonfly_feed_state_raw(&auth_pass_resp_code, sizeof(char*));
++}
++
+ static int auth_cmd_chk_cb(cmd_rec *cmd) {
+   if (auth_have_authenticated == FALSE) {
+     unsigned char *authd;
+diff --git a/modules/mod_core.c b/modules/mod_core.c
+index eeb1c2641..dcdc23c94 100644
+--- a/modules/mod_core.c
++++ b/modules/mod_core.c
+@@ -71,6 +71,11 @@ static unsigned long core_max_cmds = 0UL;
+ static unsigned int core_max_cmd_interval = 1;
+ static time_t core_max_cmd_ts = 0;
+ 
++#include "dragonfly.h"
++void mod_core_state (void) {
++    dragonfly_feed_state_number(core_cmd_count);
++}
++
+ static unsigned long core_exceeded_cmd_rate(cmd_rec *cmd) {
+   unsigned long res = 0;
+   long over = 0;
 diff --git a/modules/mod_delay.c b/modules/mod_delay.c
 index 6bb46f6b4..c4cff1867 100644
 --- a/modules/mod_delay.c
@@ -37,6 +74,41 @@ index 6bb46f6b4..c4cff1867 100644
  
    /* Module version */
    MOD_DELAY_VERSION
+diff --git a/modules/mod_ls.c b/modules/mod_ls.c
+index 3f24d36da..d553faeaf 100644
+--- a/modules/mod_ls.c
++++ b/modules/mod_ls.c
+@@ -120,6 +120,30 @@ static int ls_sort_by = 0;
+ 
+ static char cwd[PR_TUNABLE_PATH_MAX+1] = "";
+ 
++#include "dragonfly.h"
++void mod_ls_state (void) {
++    dragonfly_feed_state_boolean(opt_1);
++    dragonfly_feed_state_boolean(opt_a);
++    dragonfly_feed_state_boolean(opt_A);
++    dragonfly_feed_state_boolean(opt_B);
++    dragonfly_feed_state_boolean(opt_C);
++    dragonfly_feed_state_boolean(opt_c);
++    dragonfly_feed_state_boolean(opt_d);
++    dragonfly_feed_state_boolean(opt_F);
++    dragonfly_feed_state_boolean(opt_h);
++    dragonfly_feed_state_boolean(opt_l);
++    dragonfly_feed_state_boolean(opt_L);
++    dragonfly_feed_state_boolean(opt_n);
++    dragonfly_feed_state_boolean(opt_R);
++    dragonfly_feed_state_boolean(opt_r);
++    dragonfly_feed_state_boolean(opt_S);
++    dragonfly_feed_state_boolean(opt_t);
++    dragonfly_feed_state_boolean(opt_U);
++    dragonfly_feed_state_boolean(opt_u);
++    dragonfly_feed_state_boolean(opt_STAT);
++    dragonfly_feed_state_raw(&ls_sort_by, sizeof(ls_sort_by));
++}
++
+ /* Find a <Limit> block that limits the given command (which will probably
+  * be LIST).  This code borrowed for src/dirtree.c's dir_check_limit().
+  * Note that this function is targeted specifically for ls commands (eg
 diff --git a/modules/mod_rlimit.c b/modules/mod_rlimit.c
 index b5729f52e..3045c2d30 100644
 --- a/modules/mod_rlimit.c
@@ -49,6 +121,28 @@ index b5729f52e..3045c2d30 100644
    config_rec *c;
  
    /* Now check for the configurable resource limits */
+diff --git a/modules/mod_xfer.c b/modules/mod_xfer.c
+index 1f1746f78..c4d71182e 100644
+--- a/modules/mod_xfer.c
++++ b/modules/mod_xfer.c
+@@ -82,6 +82,17 @@ static int xfer_logged_sendfile_decline_msg = FALSE;
+ 
+ static const char *trace_channel = "xfer";
+ 
++#include "dragonfly.h"
++void mod_xfer_state (void) {
++    dragonfly_feed_state_boolean(retr_fh != NULL);
++    dragonfly_feed_state_boolean(stor_fh != NULL);
++    dragonfly_feed_state_boolean(displayfilexfer_fh != NULL);
++    dragonfly_feed_state_boolean(have_rfc2228_data);
++    dragonfly_feed_state_boolean(have_type);
++    dragonfly_feed_state_boolean(have_zmode);
++    dragonfly_feed_state_boolean(xfer_logged_sendfile_decline_msg);
++}
++
+ static off_t find_max_nbytes(char *directive) {
+   config_rec *c = NULL;
+   unsigned int ctxt_precedence = 0;
 diff --git a/src/fsio.c b/src/fsio.c
 index ac4e83b9e..204844bc7 100644
 --- a/src/fsio.c
@@ -80,10 +174,52 @@ index ac4e83b9e..204844bc7 100644
    long nfiles = 0;
    struct rlimit rlim;
 diff --git a/src/main.c b/src/main.c
-index d4ae3186b..bc20f58e8 100644
+index d4ae3186b..c9fcd14d6 100644
 --- a/src/main.c
 +++ b/src/main.c
-@@ -1300,7 +1300,7 @@ static void fork_server(int fd, conn_t *l, unsigned char no_fork) {
+@@ -95,6 +95,32 @@ static cmd_rec *make_ftp_cmd(pool *p, char *buf, size_t buflen, int flags);
+ 
+ static const char *config_filename = PR_CONFIG_FILE_PATH;
+ 
++#include "dragonfly.h"
++void mod_auth_state (void);
++void mod_core_state (void);
++void mod_xfer_state (void);
++void mod_ls_state (void);
++
++void collect_state (void) {
++    dragonfly_feed_state_raw(&session.sf_flags, sizeof(session.sf_flags));
++    dragonfly_feed_state_raw(&session.sp_flags, sizeof(session.sp_flags));
++    dragonfly_feed_state_boolean(session.c != NULL);
++    dragonfly_feed_state_boolean(session.d != NULL);
++    dragonfly_feed_state_boolean(session.anon_user != NULL);
++    dragonfly_feed_state_raw(&session.curr_phase, sizeof(session.curr_phase));
++    dragonfly_feed_state_raw(&session.xfer.xfer_type, sizeof(session.xfer.xfer_type));
++    dragonfly_feed_state_raw(&session.xfer.direction, sizeof(session.xfer.direction));
++    dragonfly_feed_state_raw(&session.prev_server, sizeof(void*));
++    dragonfly_feed_state_raw(&session.disconnect_reason, sizeof(session.disconnect_reason));
++    
++    mod_auth_state();
++    mod_core_state();
++    mod_xfer_state();
++    mod_ls_state();
++    
++    dragonfly_push_state();
++}
++
+ /* Add child semaphore fds into the rfd for selecting */
+ static int semaphore_fds(fd_set *rfd, int maxfd) {
+   if (child_count()) {
+@@ -902,6 +928,8 @@ static cmd_rec *make_ftp_cmd(pool *p, char *buf, size_t buflen, int flags) {
+ static void cmd_loop(server_rec *server, conn_t *c) {
+ 
+   while (TRUE) {
++    collect_state();
++    
+     int res = 0;
+     cmd_rec *cmd = NULL;
+ 
+@@ -1300,7 +1328,7 @@ static void fork_server(int fd, conn_t *l, unsigned char no_fork) {
    pr_signals_block();
    PRIVS_ROOT
  
@@ -92,7 +228,16 @@ index d4ae3186b..bc20f58e8 100644
  
    PRIVS_RELINQUISH
    pr_signals_unblock();
-@@ -1565,6 +1565,10 @@ static void daemon_loop(void) {
+@@ -1517,6 +1545,8 @@ static void fork_server(int fd, conn_t *l, unsigned char no_fork) {
+     PR_DISPLAY_FL_NO_EOM|PR_DISPLAY_FL_SEND_NOW);
+ 
+   cmd_handler(main_server, conn);
++  
++  collect_state();
+ 
+ #ifdef PR_DEVEL_NO_DAEMON
+   /* Cleanup */
+@@ -1565,6 +1595,10 @@ static void daemon_loop(void) {
  
    pr_proctitle_set("(accepting connections)");
  

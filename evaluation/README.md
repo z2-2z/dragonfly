@@ -24,7 +24,7 @@ cd ./proftpd
 git apply ../patch
 export LD_LIBRARY_PATH="$(realpath ../libdragonfly)"
 export AFL_CC_COMPILER=LTO
-CC="$(realpath ../../AFLplusplus/afl-clang-lto)" CFLAGS="" LDFLAGS="-L$LD_LIBRARY_PATH -ldragonfly -Wl,-rpath=$LD_LIBRARY_PATH" ./configure --disable-shadow --disable-auth-pam --disable-cap
+CC="$(realpath ../../AFLplusplus/afl-clang-lto)" CFLAGS="-I$LD_LIBRARY_PATH/include" LDFLAGS="-L$LD_LIBRARY_PATH -ldragonfly -Wl,-rpath=$LD_LIBRARY_PATH" ./configure --disable-shadow --disable-auth-pam --disable-cap
 make
 sudo setcap cap_sys_chroot+ep ./proftpd
 cd ..
