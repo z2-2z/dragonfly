@@ -8,12 +8,16 @@ const WHITESPACE: [u8; 6] = [
     b'\r',
 ];
 
+fn is_ascii(b: u8) -> bool {
+    b <= 127
+}
+
 #[derive(Debug)]
 pub enum TextToken {
-    Constant(String),
-    Number(bool, u64),
+    Constant(Vec<u8>),
+    Number(Vec<u8>),
     Whitespace(Vec<u8>),
-    Text(String),
+    Text(Vec<u8>),
     Blob(Vec<u8>),
 }
 
@@ -29,8 +33,29 @@ impl TokenStream {
         }
     }
     
-    pub fn tokens(&self) -> &[TextToken] {
-        &self.tokens
+    pub fn generate_text(&self, buf: &mut [u8]) -> usize {
+        let mut written = 0;
+        
+        for token in &self.tokens {
+            if written >= buf.len() {
+                break;
+            }
+            
+            match token {
+                TextToken::Number(data) |
+                TextToken::Constant(data) |
+                TextToken::Whitespace(data) |
+                TextToken::Text(data) |
+                TextToken::Blob(data) => {
+                    let rem_buf = &mut buf[written..];
+                    let size = std::cmp::min(rem_buf.len(), data.len());
+                    rem_buf[..size].copy_from_slice(&data[..size]);
+                    written += size;
+                },
+            }
+        }
+        
+        written
     }
 }
 
@@ -39,25 +64,29 @@ pub struct TokenStreamBuilder {
 }
 
 impl TokenStreamBuilder {
-    pub fn constant<S: Into<String>>(mut self, c: S) -> Self {
-        self.tokens.push(TextToken::Constant(c.into()));
+    pub fn constant<S: AsRef<str>>(mut self, s: S) -> Self {
+        let s = s.as_ref().as_bytes();
+        
+        for byte in s {
+            if !is_ascii(*byte) {
+                panic!("Not a pure ASCII constant");
+            }
+        }
+        
+        self.tokens.push(TextToken::Constant(s.to_vec()));
         self
     }
     
     pub fn number<S: AsRef<str>>(mut self, s: S) -> Self {
         let mut s = s.as_ref();
-        let mut negative = false;
         
-        if s.starts_with('-') {
-            negative = true;
-            s = &s[1..];
-        } else if s.starts_with('+') {
+        if s.starts_with('-') || s.starts_with('+') {
             s = &s[1..];
         }
         
-        let digits = s.parse::<u64>().expect("Invalid decimal number");
+        let _ = s.parse::<u64>().expect("Invalid decimal number");
         
-        self.tokens.push(TextToken::Number(negative, digits));
+        self.tokens.push(TextToken::Number(s.as_bytes().to_vec()));
         self
     }
     
@@ -74,8 +103,16 @@ impl TokenStreamBuilder {
         self
     }
     
-    pub fn text<S: Into<String>>(mut self, s: S) -> Self {
-        self.tokens.push(TextToken::Text(s.into()));
+    pub fn text<S: AsRef<str>>(mut self, s: S) -> Self {
+        let s = s.as_ref().as_bytes();
+        
+        for byte in s {
+            if !is_ascii(*byte) {
+                panic!("Not a pure ASCII text");
+            }
+        }
+        
+        self.tokens.push(TextToken::Text(s.to_vec()));
         self
     }
     
@@ -106,5 +143,36 @@ mod tests {
             .build();
         
         println!("{:?}", stream);
+    }
+    
+    #[test]
+    #[should_panic]
+    fn api_test_non_ascii() {
+        TokenStream::builder().constant("ö");
+    }
+    
+    #[test]
+    fn generate_text() {
+        let stream = TokenStream::builder()
+            .text("hello")
+            .whitespace(" ")
+            .text("world")
+            .build();
+        
+        let mut buf = vec![0; 256];
+        
+        assert_eq!(
+            stream.generate_text(&mut buf),
+            11
+        );
+        assert_eq!(
+            std::str::from_utf8(&buf[..11]),
+            Ok("hello world")
+        );
+        
+        assert_eq!(
+            stream.generate_text(&mut buf[..6]),
+            6
+        );
     }
 }
