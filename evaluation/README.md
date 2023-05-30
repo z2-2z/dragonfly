@@ -49,10 +49,7 @@ echo content > /tmp/ftproot/file
 
 ## Notes
 - move certain files into memory ?
-- hook ftproot disk I/O with shared lib. discard writes => better than state reset
-- does select() on connections individually
 - desyscall: gethostbyname(), sleep(), usleep()
-- track state
 
 ## State
 - mod_auth.c
@@ -85,3 +82,25 @@ echo content > /tmp/ftproot/file
         - curr_phase ?
         - prev_server (is_null)
         - disconnect_reason
+
+## Input
+- sequence of TextTokens
+    - Constant: constant that shall not be internally mutated
+    - Number: A number in decimal string representation
+    - Whitespace: one or more of whitespaces
+    - Text: just a container for ascii bytes that can be mutated
+    - Blob: like Text but also binary content allowed
+- "USER ftp\r\n" => Constant("USER"), Whitespace(" "), Text("ftp"), Constant("\r\n")
+- "PORT 127,0,0,1,123,234\r\n" => Constant("PORT"), Whitespace(" "), Number("127"), Text(","), Number("0"), ...
+
+- mutators
+    - interior mutators
+    - split up
+    - text-havoc for text
+    - normal havoc for binary
+    - duplicate
+    - reorder
+    - delete
+    - dictionary insert
+    - random any insert with random content
+    - crossover (slice of tokens into current stream) ?
