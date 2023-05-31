@@ -82,6 +82,7 @@ use crate::{
     tt::{
         TokenStream,
         RandomTokenValueMutator,
+        TokenSplitMutator,
     },
 };
 
@@ -233,7 +234,8 @@ fn fuzz(
     let stateful = ScheduledPacketMutator::new(
         tuple_list!(
             NopPacketMutator::new(),
-            RandomTokenValueMutator::new()
+            RandomTokenValueMutator::new(),
+            TokenSplitMutator::new()
         )
     );
 

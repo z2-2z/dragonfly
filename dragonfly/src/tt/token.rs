@@ -1,6 +1,11 @@
 use serde::{Serialize, Deserialize};
 use crate::input::SerializeIntoBuffer;
 
+pub(crate) const MAX_NUMBER_LEN: usize = 32;
+pub(crate) const MAX_WHITESPACE_LEN: usize = 4;
+pub(crate) const MAX_TEXT_LEN: usize = 16;
+pub(crate) const MAX_BLOB_LEN: usize = 16;
+
 pub(crate) const WHITESPACE: [u8; 6] = [
     b' ',
     b'\t',
@@ -21,6 +26,22 @@ pub enum TextToken {
     Whitespace(Vec<u8>),
     Text(Vec<u8>),
     Blob(Vec<u8>),
+}
+
+impl TextToken {
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+    
+    pub fn len(&self) -> usize {
+        match self {
+            TextToken::Constant(data) |
+            TextToken::Number(data) |
+            TextToken::Whitespace(data) |
+            TextToken::Text(data) |
+            TextToken::Blob(data) => data.len(),
+        }
+    }
 }
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize, Hash)]

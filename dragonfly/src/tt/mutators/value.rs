@@ -1,14 +1,13 @@
 use std::marker::PhantomData;
 use crate::{
-    tt::token::{HasTokenStream, TextToken, WHITESPACE, is_ascii},
+    tt::token::{
+        HasTokenStream, TextToken, WHITESPACE, is_ascii,
+        MAX_NUMBER_LEN, MAX_WHITESPACE_LEN, MAX_TEXT_LEN,
+        MAX_BLOB_LEN,
+    },
     mutators::PacketMutator,
 };
 use libafl::prelude::{MutationResult, Error, HasRand, Rand};
-
-const MAX_NUMBER_LEN: usize = 32;
-const MAX_WHITESPACE_LEN: usize = 4;
-const MAX_TEXT_LEN: usize = 16;
-const MAX_BLOB_LEN: usize = 16;
 
 fn random_number_value<R: Rand>(rand: &mut R, output: &mut Vec<u8>) {
     let mut text = [0u8; MAX_NUMBER_LEN];
