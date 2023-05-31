@@ -127,6 +127,7 @@ pub struct TokenStreamInsertInterestingMutator<P, S>
 where
     P: HasTokenStream,
 {
+    max_len: usize,
     phantom: PhantomData<(P,S)>,
 }
 
@@ -135,8 +136,9 @@ where
     P: HasTokenStream,
 {
     #[allow(clippy::new_without_default)]
-    pub fn new() -> Self {
+    pub fn new(max_len: usize) -> Self {
         Self {
+            max_len,
             phantom: PhantomData,
         }
     }
@@ -149,10 +151,16 @@ where
 {
     fn mutate_packet(&mut self, state: &mut S, packet: &mut P, _stage_idx: i32) -> Result<MutationResult, Error> {
         if let Some(token_stream) = packet.get_tokenstream() {
+            let len = token_stream.tokens().len();
+            
+            if len >= self.max_len {
+                return Ok(MutationResult::Skipped);
+            }
+            
             let idx = state.rand_mut().below(INTERESTING.len() as u64) as usize;
             let new_token = TextToken::Number(INTERESTING[idx].to_vec());
             
-            let idx = state.rand_mut().below(token_stream.tokens().len() as u64 + 1) as usize;
+            let idx = state.rand_mut().below(len as u64 + 1) as usize;
             token_stream.tokens_mut().insert(idx, new_token);
             return Ok(MutationResult::Mutated);
         }

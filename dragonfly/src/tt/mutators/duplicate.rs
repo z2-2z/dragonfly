@@ -12,6 +12,7 @@ pub struct TokenStreamDuplicateMutator<P, S>
 where
     P: HasTokenStream,
 {
+    max_len: usize,
     phantom: PhantomData<(P,S)>,
 }
 
@@ -20,8 +21,9 @@ where
     P: HasTokenStream,
 {
     #[allow(clippy::new_without_default)]
-    pub fn new() -> Self {
+    pub fn new(max_len: usize) -> Self {
         Self {
+            max_len,
             phantom: PhantomData,
         }
     }
@@ -36,7 +38,7 @@ where
         if let Some(token_stream) = packet.get_tokenstream() {
             let len = token_stream.tokens().len();
             
-            if len == 0 {
+            if len == 0 || len >= self.max_len {
                 return Ok(MutationResult::Skipped);
             }
             

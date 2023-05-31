@@ -12,6 +12,7 @@ pub struct TokenStreamDeleteMutator<P, S>
 where
     P: HasTokenStream,
 {
+    min_length: usize,
     phantom: PhantomData<(P,S)>,
 }
 
@@ -20,8 +21,9 @@ where
     P: HasTokenStream,
 {
     #[allow(clippy::new_without_default)]
-    pub fn new() -> Self {
+    pub fn new(min_length: usize) -> Self {
         Self {
+            min_length,
             phantom: PhantomData,
         }
     }
@@ -36,7 +38,7 @@ where
         if let Some(token_stream) = packet.get_tokenstream() {
             let len = token_stream.tokens().len();
             
-            if len == 0 {
+            if len <= self.min_length {
                 return Ok(MutationResult::Skipped);
             }
             

@@ -244,20 +244,23 @@ fn fuzz(
     .unwrap();
     state.init_stategraph();
     
+    let max_tokens = 32;
+    let max_packets = 32;
+    
     let stateful = ScheduledPacketMutator::new(
         tuple_list!(
             NopPacketMutator::new(),
-            TokenStreamInsertRandomMutator::new(),
+            TokenStreamInsertRandomMutator::new(max_tokens),
             TokenReplaceRandomMutator::new(),
             TokenSplitMutator::new(),
-            TokenStreamInsertInterestingMutator::new(),
+            TokenStreamInsertInterestingMutator::new(max_tokens),
             TokenReplaceInterestingMutator::new(),
-            TokenStreamDuplicateMutator::new(),
+            TokenStreamDuplicateMutator::new(max_tokens),
             TokenValueDuplicateMutator::new(),
             TokenValueInsertRandomMutator::new(),
-            TokenStreamCopyMutator::new(),
+            TokenStreamCopyMutator::new(max_tokens),
             TokenStreamSwapMutator::new(),
-            TokenStreamDeleteMutator::new(),
+            TokenStreamDeleteMutator::new(1),
             TokenRepeatCharMutator::new(),
             TokenRotateCharMutator::new(),
             TokenValueDeleteMutator::new(1),
@@ -267,7 +270,7 @@ fn fuzz(
 
     // Setup a MOPT mutator
     let mutator =
-        StdMOptMutator::new(&mut state, tuple_list!(stateful, PacketReorderMutator::new(), PacketDeleteMutator::new(0), NopMutator::new(), PacketDuplicateMutator::new(100)), 7, 5)?;
+        StdMOptMutator::new(&mut state, tuple_list!(stateful, PacketReorderMutator::new(), PacketDeleteMutator::new(0), NopMutator::new(), PacketDuplicateMutator::new(max_packets)), 7, 5)?;
 
     let power = StdPowerMutationalStage::new(mutator);
 
