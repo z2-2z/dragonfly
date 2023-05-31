@@ -1,4 +1,5 @@
 use serde::{Serialize, Deserialize};
+use crate::input::SerializeIntoBuffer;
 
 pub(crate) const WHITESPACE: [u8; 6] = [
     b' ',
@@ -139,6 +140,22 @@ impl TokenStreamBuilder {
 
 pub trait HasTokenStream {
     fn get_tokenstream(&mut self) -> Option<&mut TokenStream>;
+}
+
+impl HasTokenStream for TokenStream {
+    fn get_tokenstream(&mut self) -> Option<&mut TokenStream> {
+        Some(self)
+    }
+}
+
+impl SerializeIntoBuffer for TokenStream {
+    fn serialize_into_buffer(&self, buffer: &mut [u8]) -> Option<usize> {
+        Some(self.generate_text(buffer))
+    }
+
+    fn get_connection(&self) -> usize {
+        0
+    }
 }
 
 #[cfg(test)]
