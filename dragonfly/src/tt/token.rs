@@ -13,7 +13,7 @@ fn is_ascii(b: u8) -> bool {
     b <= 127
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug, Hash)]
 pub enum TextToken {
     Constant(Vec<u8>),
     Number(Vec<u8>),
@@ -22,7 +22,7 @@ pub enum TextToken {
     Blob(Vec<u8>),
 }
 
-#[derive(Default, Debug, Clone, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Serialize, Deserialize, Hash)]
 pub struct TokenStream {
     tokens: Vec<TextToken>,
 }

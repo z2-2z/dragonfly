@@ -5,7 +5,6 @@ use libafl::prelude::{
     StdShMemProvider,
     tuple_list,
     AsMutSlice,
-    HasLen,
     Cores, CoreId,
     Launcher,
     CachedOnDiskCorpus,
@@ -15,7 +14,6 @@ use libafl::prelude::{
     MaxMapFeedback,
     TimeFeedback,
     Fuzzer, StdFuzzer,
-    Input,
     OnDiskTOMLMonitor,
     SimplePrintingMonitor,
     StdScheduledMutator,
@@ -29,8 +27,6 @@ use libafl::prelude::{
     Error,
     Evaluator,
     EventConfig,
-    BytesInput,
-    HasBytesVec,
 };
 use nix::sys::signal::Signal;
 use serde::{
@@ -44,7 +40,6 @@ use std::{
 use dragonfly::{
     prelude::{
         LibdragonflyExecutorBuilder,
-        HasPacketVector,
         SerializeIntoBuffer,
         PacketDeleteMutator,
         PacketDuplicateMutator,
@@ -53,11 +48,12 @@ use dragonfly::{
         StateObserver,
         StateFeedback,
         HasStateGraph,
+        DragonflyInput,
     },
     tt::TokenStream,
 };
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Hash)]
 enum FTPPacket {
     Ctrl(TokenStream),
     Data(TokenStream),
@@ -85,35 +81,6 @@ impl SerializeIntoBuffer for FTPPacket {
 
     fn terminates_group(&self) -> bool {
         matches!(self, FTPPacket::Sep)
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-struct FTPInput {
-    packets: Vec<FTPPacket>,
-}
-
-impl HasPacketVector for FTPInput {
-    type Packet = FTPPacket;
-
-    fn packets(&self) -> &[FTPPacket] {
-        &self.packets
-    }
-
-    fn packets_mut(&mut self) -> &mut Vec<FTPPacket> {
-        &mut self.packets
-    }
-}
-
-impl Input for FTPInput {
-    fn generate_name(&self, idx: usize) -> String {
-        format!("{}", idx)
-    }
-}
-
-impl HasLen for FTPInput {
-    fn len(&self) -> usize {
-        self.packets.len()
     }
 }
 
@@ -182,8 +149,8 @@ fn main() -> Result<(), Error> {
 
         let mut state = old_state.unwrap_or_else(|| StdState::new(
             StdRand::with_seed(seed),
-            CachedOnDiskCorpus::<FTPInput>::new(&queue, 128).expect("queue"),
-            OnDiskCorpus::<FTPInput>::new(&crashes).expect("crashes"),
+            CachedOnDiskCorpus::<DragonflyInput<FTPPacket>>::new(&queue, 128).expect("queue"),
+            OnDiskCorpus::<DragonflyInput<FTPPacket>>::new(&crashes).expect("crashes"),
             &mut feedback,
             &mut objective,
         ).unwrap());
@@ -221,8 +188,8 @@ fn main() -> Result<(), Error> {
             mutational
         );
 
-        let input = FTPInput {
-            packets: vec![
+        let input = DragonflyInput::new(
+            vec![
                 FTPPacket::Ctrl(
                     TokenStream::builder().constant("USER").whitespace(" ").text("ftp").constant("\r\n").build()
                 ),
@@ -252,8 +219,8 @@ fn main() -> Result<(), Error> {
                 FTPPacket::Ctrl(
                     TokenStream::builder().constant("QUIT").constant("\r\n").build()
                 ),
-            ],
-        };
+            ]
+        );
         fuzzer.evaluate_input(&mut state, &mut executor, &mut mgr, input)?;
 
         fuzzer.fuzz_loop_for(&mut stages, &mut executor, &mut state, &mut mgr, 1)?;

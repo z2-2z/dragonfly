@@ -19,7 +19,6 @@ use libafl::{
         },
         tuples::tuple_list,
         AsMutSlice,
-        HasLen,
     },
     corpus::{
         InMemoryOnDiskCorpus,
@@ -38,7 +37,6 @@ use libafl::{
     },
     inputs::{
         BytesInput,
-        Input,
     },
     monitors::SimpleMonitor,
     mutators::StdMOptMutator,
@@ -60,10 +58,6 @@ use libafl::{
     Error,
 };
 use nix::sys::signal::Signal;
-use serde::{
-    Deserialize,
-    Serialize,
-};
 use std::{
     env,
     fs::{
@@ -79,7 +73,7 @@ use crate::{
     executor::LibdragonflyExecutorBuilder,
     feedback::StateFeedback,
     graph::HasStateGraph,
-    input::HasPacketVector,
+    input::DragonflyInput,
     mutators::{
         NopMutator, NopPacketMutator,
         PacketDeleteMutator,
@@ -89,42 +83,6 @@ use crate::{
     },
     observer::StateObserver,
 };
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-struct ExampleInput {
-    packets: Vec<BytesInput>,
-}
-
-impl HasPacketVector for ExampleInput {
-    type Packet = BytesInput;
-
-    fn packets(&self) -> &[BytesInput] {
-        &self.packets
-    }
-
-    fn packets_mut(&mut self) -> &mut Vec<BytesInput> {
-        &mut self.packets
-    }
-}
-
-impl Input for ExampleInput {
-    fn generate_name(&self, idx: usize) -> String {
-        format!("{}", idx)
-    }
-}
-
-impl HasLen for ExampleInput {
-    fn len(&self) -> usize {
-        // needed for LenTimeMulTestcaseScore so lets return the sum of all packet lengths
-        let mut sum = 0;
-
-        for packet in self.packets() {
-            sum += packet.len();
-        }
-
-        sum
-    }
-}
 
 #[test]
 fn main() {
@@ -258,7 +216,7 @@ fn fuzz(
         // RNG
         StdRand::with_seed(current_nanos()),
         // Corpus that will be evolved, we keep it in memory for performance
-        InMemoryOnDiskCorpus::<ExampleInput>::new(corpus_dir).unwrap(),
+        InMemoryOnDiskCorpus::<DragonflyInput<BytesInput>>::new(corpus_dir).unwrap(),
         // Corpus in which we store solutions (crashes in this example),
         // on disk so the user can get them after stopping the fuzzer
         OnDiskCorpus::new(objective_dir).unwrap(),
