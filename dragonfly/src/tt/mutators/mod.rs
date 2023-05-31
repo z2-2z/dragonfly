@@ -24,6 +24,9 @@ pub use duplicate::{
 };
 pub use copy::TokenStreamCopyMutator;
 pub use swap::TokenStreamSwapMutator;
-pub use delete::TokenStreamDeleteMutator;
+pub use delete::{
+    TokenStreamDeleteMutator,
+    TokenValueDeleteMutator,
+};
 pub use repeat::TokenRepeatCharMutator;
 pub use rotate::TokenRotateCharMutator;
