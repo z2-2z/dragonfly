@@ -51,6 +51,10 @@ where
 }
 
 fn duplicate_subslice<R: Rand>(rand: &mut R, data: &mut Vec<u8>, data_start: usize, data_len: usize) -> Result<MutationResult, Error> {
+    if data_len == 0 {
+        return Ok(MutationResult::Skipped);
+    }
+    
     let start = data_start + rand.below(data_len as u64) as usize;
     let len = rand.below((data_len - start) as u64) as usize;
     

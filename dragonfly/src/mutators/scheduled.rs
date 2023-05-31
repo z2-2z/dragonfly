@@ -29,6 +29,16 @@ where
             phantom: PhantomData,
         }
     }
+    
+    pub fn with_max_stack_pow(mutators: M, max_stack_pow: u64) -> Self {
+        assert!(!mutators.is_empty());
+        
+        Self {
+            mutators,
+            max_stack_pow,
+            phantom: PhantomData,
+        }
+    }
 }
 
 impl<I, P, S, M> ScheduledPacketMutator<I, P, S, M>
