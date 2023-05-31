@@ -50,6 +50,7 @@ echo content > /tmp/ftproot/file
 ## Notes
 - move certain files into memory ?
 - desyscall: gethostbyname(), sleep(), usleep()
+- DragonflyInput / StatefulInput over generic packet type
 
 ## State
 - mod_auth.c
@@ -92,7 +93,6 @@ echo content > /tmp/ftproot/file
     - Blob: like Text but also binary content allowed
 - "USER ftp\r\n" => Constant("USER"), Whitespace(" "), Text("ftp"), Constant("\r\n")
 - "PORT 127,0,0,1,123,234\r\n" => Constant("PORT"), Whitespace(" "), Number("127"), Text(","), Number("0"), ...
-
 - mutators
     - interior mutators
     - split up
@@ -104,3 +104,12 @@ echo content > /tmp/ftproot/file
     - dictionary insert
     - random any insert with random content
     - crossover (slice of tokens into current stream) ?
+- utf-{8,16,32} generators
+
+## Mutators
+    - StatefulMutator
+        - packet selection strategy
+        - has tuple of packet mutators
+    - PacketMutatorTuple
+    - PacketMutator
+        - gets a single packet and mutates it

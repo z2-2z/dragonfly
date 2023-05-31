@@ -5,6 +5,7 @@ use libafl::prelude::{
     Mutator,
     Named,
 };
+use crate::mutators::packet::PacketMutator;
 
 pub struct NopMutator;
 
@@ -27,5 +28,20 @@ where
 impl Named for NopMutator {
     fn name(&self) -> &str {
         "NopMutator"
+    }
+}
+
+pub struct NopPacketMutator;
+
+impl NopPacketMutator {
+    #[allow(clippy::new_without_default)]
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+
+impl<P, S> PacketMutator<P, S> for NopPacketMutator {
+    fn mutate_packet(&mut self, _state: &mut S, _packet: &mut P, _stage_idx: i32) -> Result<MutationResult, Error> {
+        Ok(MutationResult::Mutated)
     }
 }

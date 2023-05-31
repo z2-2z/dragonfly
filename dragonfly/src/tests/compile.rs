@@ -81,10 +81,11 @@ use crate::{
     graph::HasStateGraph,
     input::HasPacketVector,
     mutators::{
-        NopMutator,
+        NopMutator, NopPacketMutator,
         PacketDeleteMutator,
         PacketDuplicateMutator,
         PacketReorderMutator,
+        ScheduledPacketMutator,
     },
     observer::StateObserver,
 };
@@ -269,10 +270,13 @@ fn fuzz(
     )
     .unwrap();
     state.init_stategraph();
+    
+    let packet_mutator = NopPacketMutator::new();
+    let stateful = ScheduledPacketMutator::new(packet_mutator);
 
     // Setup a MOPT mutator
     let mutator =
-        StdMOptMutator::new(&mut state, tuple_list!(PacketReorderMutator::new(), PacketDeleteMutator::new(0), NopMutator::new(), PacketDuplicateMutator::new(100)), 7, 5)?;
+        StdMOptMutator::new(&mut state, tuple_list!(stateful, PacketReorderMutator::new(), PacketDeleteMutator::new(0), NopMutator::new(), PacketDuplicateMutator::new(100)), 7, 5)?;
 
     let power = StdPowerMutationalStage::new(mutator);
 
