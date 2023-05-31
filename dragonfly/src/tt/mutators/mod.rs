@@ -3,6 +3,7 @@ mod split;
 mod interesting;
 mod duplicate;
 mod copy;
+mod swap;
 
 pub use random::{
     TokenReplaceRandomMutator,
@@ -19,3 +20,4 @@ pub use duplicate::{
     TokenValueDuplicateMutator,
 };
 pub use copy::TokenStreamCopyMutator;
+pub use swap::TokenStreamSwapMutator;
