@@ -229,8 +229,11 @@ fn fuzz(
     .unwrap();
     state.init_stategraph();
     
-    let packet_mutator = NopPacketMutator::new();
-    let stateful = ScheduledPacketMutator::new(packet_mutator);
+    let stateful = ScheduledPacketMutator::new(
+        tuple_list!(
+            NopPacketMutator::new()
+        )
+    );
 
     // Setup a MOPT mutator
     let mutator =

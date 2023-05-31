@@ -78,7 +78,7 @@ where
         }
         
         let digest = hasher.finish();
-        format!("{:016x}", digest)
+        format!("dragonfly-{:016x}", digest)
     }
 }
 
