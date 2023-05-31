@@ -43,7 +43,7 @@ use std::{
 };
 use dragonfly::{
     prelude::{
-        DragonflyExecutorBuilder,
+        LibdragonflyExecutorBuilder,
         HasPacketVector,
         SerializeIntoBuffer,
         PacketDeleteMutator,
@@ -205,7 +205,7 @@ fn main() -> Result<(), Error> {
 
         let mut fuzzer = StdFuzzer::new(scheduler, feedback, objective);
 
-        let mut executor = DragonflyExecutorBuilder::new()
+        let mut executor = LibdragonflyExecutorBuilder::new()
             .observers(tuple_list!(state_observer, edges_observer, time_observer))
             .shmem_provider(&mut shmem_provider)
             .timeout(timeout)

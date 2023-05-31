@@ -60,7 +60,7 @@ use std::{
 };
 
 use crate::{
-    executor::DragonflyExecutorBuilder,
+    executor::LibdragonflyExecutorBuilder,
     input::{
         HasPacketVector,
         SerializeIntoBuffer,
@@ -240,7 +240,7 @@ fn fuzz(_objective_dir: PathBuf, logfile: &PathBuf, timeout: Duration, executabl
 
         let mut fuzzer = StdFuzzer::new(scheduler, feedback, objective);
 
-        let mut executor = DragonflyExecutorBuilder::new()
+        let mut executor = LibdragonflyExecutorBuilder::new()
             .observers(tuple_list!(state_observer, edges_observer, time_observer))
             .shmem_provider(&mut shmem_provider)
             .timeout(timeout)
