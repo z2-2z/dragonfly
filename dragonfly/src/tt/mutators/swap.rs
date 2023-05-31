@@ -7,7 +7,7 @@ use crate::{
 };
 use libafl::prelude::{MutationResult, Error, HasRand, Rand};
 
-/// Copies a random token somewhere else into the tokenstream
+/// Swaps two random tokens in a tokenstream
 pub struct TokenStreamSwapMutator<P, S>
 where
     P: HasTokenStream,

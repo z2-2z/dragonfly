@@ -5,6 +5,7 @@ mod duplicate;
 mod copy;
 mod swap;
 mod delete;
+mod repeat;
 
 pub use random::{
     TokenReplaceRandomMutator,
@@ -23,3 +24,4 @@ pub use duplicate::{
 pub use copy::TokenStreamCopyMutator;
 pub use swap::TokenStreamSwapMutator;
 pub use delete::TokenStreamDeleteMutator;
+pub use repeat::TokenRepeatCharMutator;
