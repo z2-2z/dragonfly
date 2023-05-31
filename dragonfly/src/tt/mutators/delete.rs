@@ -100,16 +100,15 @@ where
             }
             
             match token {
-                TextToken::Constant(data) |
+                TextToken::Constant(_) => {},
                 TextToken::Number(data) |
                 TextToken::Whitespace(data) | 
                 TextToken::Text(data) |
                 TextToken::Blob(data) => {
                     data.drain(start..start + len);
+                    return Ok(MutationResult::Mutated);
                 },
             }
-            
-            return Ok(MutationResult::Mutated);
         }
         
         Ok(MutationResult::Skipped)
