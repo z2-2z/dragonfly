@@ -10,14 +10,14 @@ use crate::{
 use libafl::prelude::{MutationResult, Error, HasRand, Rand};
 
 /// Replaces the value of one random TextToken with a purely random new one
-pub struct RandomTokenReplaceMutator<P, S>
+pub struct TokenReplaceRandomMutator<P, S>
 where
     P: HasTokenStream,
 {
     phantom: PhantomData<(P,S)>,
 }
 
-impl<P, S> RandomTokenReplaceMutator<P, S>
+impl<P, S> TokenReplaceRandomMutator<P, S>
 where
     P: HasTokenStream,
 {
@@ -29,7 +29,7 @@ where
     }
 }
 
-impl<P, S> PacketMutator<P, S> for RandomTokenReplaceMutator<P, S>
+impl<P, S> PacketMutator<P, S> for TokenReplaceRandomMutator<P, S>
 where
     P: HasTokenStream,
     S: HasRand,
@@ -70,14 +70,14 @@ where
 }
 
 /// Inserts a new TextToken with random value
-pub struct RandomTokenInsertMutator<P, S>
+pub struct TokenStreamRandomInsertMutator<P, S>
 where
     P: HasTokenStream,
 {
     phantom: PhantomData<(P,S)>,
 }
 
-impl<P, S> RandomTokenInsertMutator<P, S>
+impl<P, S> TokenStreamRandomInsertMutator<P, S>
 where
     P: HasTokenStream,
 {
@@ -89,7 +89,7 @@ where
     }
 }
 
-impl<P, S> PacketMutator<P, S> for RandomTokenInsertMutator<P, S>
+impl<P, S> PacketMutator<P, S> for TokenStreamRandomInsertMutator<P, S>
 where
     P: HasTokenStream,
     S: HasRand,
