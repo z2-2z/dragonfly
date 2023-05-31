@@ -121,6 +121,7 @@ where
             };
             
             token_stream.tokens_mut().insert(idx, new_token);
+            return Ok(MutationResult::Mutated);
         }
         
         Ok(MutationResult::Skipped)

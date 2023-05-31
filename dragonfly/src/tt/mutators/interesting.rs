@@ -154,6 +154,7 @@ where
             
             let idx = state.rand_mut().below(token_stream.tokens().len() as u64 + 1) as usize;
             token_stream.tokens_mut().insert(idx, new_token);
+            return Ok(MutationResult::Mutated);
         }
         
         Ok(MutationResult::Skipped)
