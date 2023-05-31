@@ -1,3 +1,3 @@
 mod value;
 
-pub use value::TokenStreamValueMutator;
+pub use value::RandomTokenValueMutator;

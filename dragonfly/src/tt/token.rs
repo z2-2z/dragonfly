@@ -9,7 +9,7 @@ pub(crate) const WHITESPACE: [u8; 6] = [
     b'\r',
 ];
 
-fn is_ascii(b: u8) -> bool {
+pub(crate) fn is_ascii(b: u8) -> bool {
     b <= 127
 }
 

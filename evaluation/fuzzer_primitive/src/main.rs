@@ -53,7 +53,7 @@ use dragonfly::{
     tt::{
         TokenStream,
         HasTokenStream,
-        TokenStreamValueMutator
+        RandomTokenValueMutator
     },
 };
 
@@ -172,7 +172,7 @@ fn main() -> Result<(), Error> {
         
         let packet_mutator = ScheduledPacketMutator::new(
             tuple_list!(
-                TokenStreamValueMutator::new()
+                RandomTokenValueMutator::new()
             )
         );
 

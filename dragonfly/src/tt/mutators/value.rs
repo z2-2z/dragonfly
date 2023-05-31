@@ -1,12 +1,14 @@
 use std::marker::PhantomData;
 use crate::{
-    tt::token::{HasTokenStream, TextToken, WHITESPACE},
+    tt::token::{HasTokenStream, TextToken, WHITESPACE, is_ascii},
     mutators::PacketMutator,
 };
 use libafl::prelude::{MutationResult, Error, HasRand, Rand};
 
 const MAX_NUMBER_LEN: usize = 32;
 const MAX_WHITESPACE_LEN: usize = 4;
+const MAX_TEXT_LEN: usize = 16;
+const MAX_BLOB_LEN: usize = 16;
 
 fn random_number_value<R: Rand>(rand: &mut R, output: &mut Vec<u8>) {
     let mut text = [0u8; MAX_NUMBER_LEN];
@@ -72,7 +74,7 @@ fn random_whitespace_value<R: Rand>(rand: &mut R, output: &mut Vec<u8>) {
     output.resize(new_len, 0);
     
     let num_bits = (WHITESPACE.len().wrapping_next_power_of_two() - 1).count_ones();
-    assert!(num_bits > 0);
+    debug_assert!(num_bits > 0);
     
     let mut pool = rand.next();
     let mut pool_size = 64;
@@ -91,16 +93,57 @@ fn random_whitespace_value<R: Rand>(rand: &mut R, output: &mut Vec<u8>) {
     }
 }
 
+fn random_text_value<R: Rand>(rand: &mut R, output: &mut Vec<u8>) {
+    let new_len = 1 + rand.below(MAX_TEXT_LEN as u64) as usize;
+    output.resize(new_len, 0);
+    
+    let mut pool = rand.next();
+    let mut pool_size = 64;
+    
+    for byte in output.iter_mut() {
+        if pool_size < 8 {
+            pool = rand.next();
+            pool_size = 64;
+        }
+        
+        *byte = (pool as usize % 94) as u8 + 33;
+        debug_assert!(is_ascii(*byte));
+        
+        pool >>= 8;
+        pool_size -= 8;
+    }
+}
+
+fn random_blob_value<R: Rand>(rand: &mut R, output: &mut Vec<u8>) {
+    let new_len = 1 + rand.below(MAX_BLOB_LEN as u64) as usize;
+    output.resize(new_len, 0);
+    
+    let mut pool = rand.next();
+    let mut pool_size = 64;
+    
+    for byte in output.iter_mut() {
+        if pool_size < 8 {
+            pool = rand.next();
+            pool_size = 64;
+        }
+        
+        *byte = pool as u8;
+        
+        pool >>= 8;
+        pool_size -= 8;
+    }
+}
+
 /// Replaces one random TextToken in a TokenStream with a randomly
 /// generated value.
-pub struct TokenStreamValueMutator<P, S>
+pub struct RandomTokenValueMutator<P, S>
 where
     P: HasTokenStream,
 {
     phantom: PhantomData<(P,S)>,
 }
 
-impl<P, S> TokenStreamValueMutator<P, S>
+impl<P, S> RandomTokenValueMutator<P, S>
 where
     P: HasTokenStream,
 {
@@ -112,7 +155,7 @@ where
     }
 }
 
-impl<P, S> PacketMutator<P, S> for TokenStreamValueMutator<P, S>
+impl<P, S> PacketMutator<P, S> for RandomTokenValueMutator<P, S>
 where
     P: HasTokenStream,
     S: HasRand,
@@ -128,21 +171,27 @@ where
             let idx = state.rand_mut().below(len as u64) as usize;
             
             match &mut token_stream.tokens_mut()[idx] {
-                TextToken::Constant(_) => Ok(MutationResult::Skipped),
+                TextToken::Constant(_) => {},
                 TextToken::Number(data) => {
                     random_number_value(state.rand_mut(), data);
-                    Ok(MutationResult::Mutated)
+                    return Ok(MutationResult::Mutated);
                 },
                 TextToken::Whitespace(data) => {
                     random_whitespace_value(state.rand_mut(), data);
-                    Ok(MutationResult::Mutated)
+                    return Ok(MutationResult::Mutated);
                 },
-                TextToken::Text(_) => todo!(),
-                TextToken::Blob(_) => todo!(),
+                TextToken::Text(data) => {
+                    random_text_value(state.rand_mut(), data);
+                    return Ok(MutationResult::Mutated);
+                },
+                TextToken::Blob(data) => {
+                    random_blob_value(state.rand_mut(), data);
+                    return Ok(MutationResult::Mutated);
+                },
             }
-        } else {
-            Ok(MutationResult::Skipped)
         }
+        
+        Ok(MutationResult::Skipped)
     }
 }
 
@@ -197,5 +246,27 @@ mod tests {
             black_box(&mut rand),
             black_box(&mut result)
         ));
+    }
+    
+    #[test]
+    fn random_text() {
+        let mut rand = RomuDuoJrRand::with_seed(current_nanos());
+        let mut result = Vec::with_capacity(MAX_TEXT_LEN);
+        
+        for _ in 0..10 {
+            random_text_value(&mut rand, &mut result);
+            println!("{:?}", std::str::from_utf8(&result).unwrap());
+        }
+    }
+    
+    #[test]
+    fn random_blob() {
+        let mut rand = RomuDuoJrRand::with_seed(current_nanos());
+        let mut result = Vec::with_capacity(MAX_BLOB_LEN);
+        
+        for _ in 0..10 {
+            random_blob_value(&mut rand, &mut result);
+            println!("{:?}", result);
+        }
     }
 }
