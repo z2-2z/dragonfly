@@ -73,14 +73,14 @@ const INTERESTING: [&[u8]; 34] = [
 ];
 
 /// A mutator that replaces a single, random number token with an interesting value
-pub struct TokenInterestingMutator<P, S>
+pub struct TokenReplaceInterestingMutator<P, S>
 where
     P: HasTokenStream,
 {
     phantom: PhantomData<(P,S)>,
 }
 
-impl<P, S> TokenInterestingMutator<P, S>
+impl<P, S> TokenReplaceInterestingMutator<P, S>
 where
     P: HasTokenStream,
 {
@@ -92,7 +92,7 @@ where
     }
 }
 
-impl<P, S> PacketMutator<P, S> for TokenInterestingMutator<P, S>
+impl<P, S> PacketMutator<P, S> for TokenReplaceInterestingMutator<P, S>
 where
     P: HasTokenStream,
     S: HasRand,
@@ -119,5 +119,57 @@ where
         }
         
         Ok(MutationResult::Skipped)
+    }
+}
+
+/// A mutator that insert a random number token with an interesting value
+pub struct TokenStreamInsertInterestingMutator<P, S>
+where
+    P: HasTokenStream,
+{
+    phantom: PhantomData<(P,S)>,
+}
+
+impl<P, S> TokenStreamInsertInterestingMutator<P, S>
+where
+    P: HasTokenStream,
+{
+    #[allow(clippy::new_without_default)]
+    pub fn new() -> Self {
+        Self {
+            phantom: PhantomData,
+        }
+    }
+}
+
+impl<P, S> PacketMutator<P, S> for TokenStreamInsertInterestingMutator<P, S>
+where
+    P: HasTokenStream,
+    S: HasRand,
+{
+    fn mutate_packet(&mut self, state: &mut S, packet: &mut P, _stage_idx: i32) -> Result<MutationResult, Error> {
+        if let Some(token_stream) = packet.get_tokenstream() {
+            let idx = state.rand_mut().below(INTERESTING.len() as u64) as usize;
+            let new_token = TextToken::Number(INTERESTING[idx].to_vec());
+            
+            let idx = state.rand_mut().below(token_stream.tokens().len() as u64 + 1) as usize;
+            token_stream.tokens_mut().insert(idx, new_token);
+        }
+        
+        Ok(MutationResult::Skipped)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::tt::TokenStream;
+    
+    #[test]
+    fn test_interesting_valid() {
+        for number in INTERESTING {
+            let number = std::str::from_utf8(number).unwrap();
+            TokenStream::builder().number(number).build();
+        }
     }
 }

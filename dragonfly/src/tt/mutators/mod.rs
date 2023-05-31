@@ -9,7 +9,10 @@ pub use random::{
     TokenValueInsertRandomMutator
 };
 pub use split::TokenSplitMutator;
-pub use interesting::TokenInterestingMutator;
+pub use interesting::{
+    TokenReplaceInterestingMutator,
+    TokenStreamInsertInterestingMutator
+};
 pub use duplicate::{
     TokenStreamDuplicateMutator,
     TokenValueDuplicateMutator,
