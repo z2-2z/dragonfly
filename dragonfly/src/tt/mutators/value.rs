@@ -1,10 +1,72 @@
 use std::marker::PhantomData;
 use crate::{
-    tt::token::HasTokenStream,
+    tt::token::{HasTokenStream, TextToken},
     mutators::PacketMutator,
 };
-use libafl::prelude::{MutationResult, Error};
+use libafl::prelude::{MutationResult, Error, HasRand, Rand};
 
+pub(crate) const MAX_NUMBER_LEN: usize = 32;
+
+pub(crate) fn random_number_value<R: Rand>(rand: &mut R, output: &mut Vec<u8>) {
+    let mut text = [0u8; MAX_NUMBER_LEN];
+    let mut i = MAX_NUMBER_LEN - 1;
+    
+    /* Convert a random number to string */
+    let mut value = rand.next();
+    let mut pool = rand.next();
+    
+    match pool % 4 {
+        0 => value &= 0xFF,
+        1 => value &= 0xFFFF,
+        2 => value &= 0xFFFFFFFF,
+        3 => value &= 0xFFFFFFFFFFFFFFFF,
+        _ => unreachable!(),
+    };
+    pool >>= 4;
+    
+    while i < MAX_NUMBER_LEN {
+        text[i] = (value % 10) as u8 + b'0';
+        i = i.wrapping_sub(1);
+        value /= 10;
+        if value == 0 {
+            break;
+        }
+    }
+    
+    /* Generate leading zeros */
+    if i < MAX_NUMBER_LEN && (pool & 1) == 1 {
+        let amount = rand.below(i as u64 + 2);
+        
+        for _ in 0..amount {
+            text[i] = b'0';
+            i = i.wrapping_sub(1);
+        }
+    }
+    pool >>= 1;
+    
+    /* Generate a sign */
+    if i < MAX_NUMBER_LEN {
+        match pool % 4 {
+            0 | 1 => {},
+            2 => {
+                text[i] = b'+';
+                i = i.wrapping_sub(1);
+            },
+            3 => {
+                text[i] = b'-';
+                i = i.wrapping_sub(1);
+            },
+            _ => unreachable!()
+        }
+    }
+    
+    let new_len = MAX_NUMBER_LEN - (i + 1);
+    output.resize(new_len, 0);
+    output[..].copy_from_slice(&text[i + 1..MAX_NUMBER_LEN]);
+}
+
+/// Replaces one random TextToken in a TokenStream with a randomly
+/// generated value.
 pub struct TokenStreamValueMutator<P, S>
 where
     P: HasTokenStream,
@@ -27,13 +89,61 @@ where
 impl<P, S> PacketMutator<P, S> for TokenStreamValueMutator<P, S>
 where
     P: HasTokenStream,
+    S: HasRand,
 {
     fn mutate_packet(&mut self, state: &mut S, packet: &mut P, _stage_idx: i32) -> Result<MutationResult, Error> {
         if let Some(token_stream) = packet.get_tokenstream() {
+            let len = token_stream.tokens().len();
             
-            todo!()
+            if len == 0 {
+                return Ok(MutationResult::Skipped);
+            }
+            
+            let idx = state.rand_mut().below(len as u64) as usize;
+            
+            match &mut token_stream.tokens_mut()[idx] {
+                TextToken::Constant(_) => Ok(MutationResult::Skipped),
+                TextToken::Number(data) => {
+                    random_number_value(state.rand_mut(), data);
+                    Ok(MutationResult::Mutated)
+                },
+                TextToken::Whitespace(_) => todo!(),
+                TextToken::Text(_) => todo!(),
+                TextToken::Blob(_) => todo!(),
+            }
         } else {
             Ok(MutationResult::Skipped)
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    extern crate test;
+    
+    use super::*;
+    use libafl::prelude::RomuDuoJrRand;
+    use test::{Bencher, black_box};
+    
+    #[test]
+    fn random_number() {
+        let mut rand = RomuDuoJrRand::with_seed(1234);
+        let mut result = Vec::with_capacity(MAX_NUMBER_LEN);
+        
+        for _ in 0..10 {
+            random_number_value(&mut rand, &mut result);
+            println!("{:?}", std::str::from_utf8(&result).unwrap());
+        }
+    }
+    
+    #[bench]
+    fn bench_random_number(b: &mut Bencher) {
+        let mut rand = RomuDuoJrRand::with_seed(1234);
+        let mut result = Vec::with_capacity(MAX_NUMBER_LEN);
+        
+        b.iter(|| random_number_value(
+            black_box(&mut rand),
+            black_box(&mut result)
+        ));
     }
 }

@@ -58,6 +58,14 @@ impl TokenStream {
         
         written
     }
+    
+    pub fn tokens(&self) -> &[TextToken] {
+        &self.tokens
+    }
+    
+    pub fn tokens_mut(&mut self) -> &mut Vec<TextToken> {
+        &mut self.tokens
+    }
 }
 
 pub struct TokenStreamBuilder {
