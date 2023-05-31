@@ -93,6 +93,7 @@ use crate::{
         TokenStreamSwapMutator,
         TokenStreamDeleteMutator,
         TokenRepeatCharMutator,
+        TokenRotateCharMutator
     },
 };
 
@@ -255,7 +256,8 @@ fn fuzz(
             TokenStreamCopyMutator::new(),
             TokenStreamSwapMutator::new(),
             TokenStreamDeleteMutator::new(),
-            TokenRepeatCharMutator::new()
+            TokenRepeatCharMutator::new(),
+            TokenRotateCharMutator::new()
         )
     );
 

@@ -99,7 +99,6 @@ mod tests {
     
     #[bench]
     fn bench_repeat_char(b: &mut Bencher) {
-        // 7000 ns
         let mut rand = RomuDuoJrRand::with_seed(1234);
         
         b.iter(|| {
