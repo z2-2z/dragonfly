@@ -64,6 +64,7 @@ where
             };
             
             token_stream.tokens_mut().insert(idx + 1, new_token);
+            return Ok(MutationResult::Mutated);
         }
         
         Ok(MutationResult::Skipped)
