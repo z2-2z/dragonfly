@@ -7,6 +7,7 @@ mod swap;
 mod delete;
 mod repeat;
 mod rotate;
+mod special;
 
 pub use random::{
     TokenReplaceRandomMutator,
@@ -30,3 +31,7 @@ pub use delete::{
 };
 pub use repeat::TokenRepeatCharMutator;
 pub use rotate::TokenRotateCharMutator;
+pub use special::{
+    TokenReplaceSpecialCharMutator,
+    TokenInsertSpecialCharMutator,
+};
