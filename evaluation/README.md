@@ -94,17 +94,34 @@ echo content > /tmp/ftproot/file
 - "USER ftp\r\n" => Constant("USER"), Whitespace(" "), Text("ftp"), Constant("\r\n")
 - "PORT 127,0,0,1,123,234\r\n" => Constant("PORT"), Whitespace(" "), Number("127"), Text(","), Number("0"), ...
 - mutators
-    - interior mutators
-    - split up
-    - text-havoc for text
-    - normal havoc for binary
-    - duplicate
-    - reorder
-    - delete
+    - ~~number interesting mutator~~
+    - ~~split up~~
+    - AFL mutators for binary
+    - ~~duplicate~~
+    - ~~swap tokens~~
+    - ~~copy token to some random position~~
+    - ~~delete~~
     - dictionary insert
-    - random any insert with random content
-    - crossover (slice of tokens into current stream) ?
-- utf-{8,16,32} generators
+    - ~~random any insert with random content~~
+    - crossover
+        - inside tokenstream
+        - between tokenstreams
+        - between packets
+        - between inputs
+    - ~~invert case~~
+    - all uppercase
+    - all lowercase
+    - ~~insert special chars~~
+    - ~~replace special chars~~
+    - ~~stretch out (repeat char)~~
+    - ~~rotate alphabet~~
+    - ~~random insert~~
+    - ~~delete content in tokens~~
+    - scanner mutator => scan for numbers/whitespace in text
+- utf-{8,16,32} support
+
+- check where mutators can panic if token value is empty
+- test that mutations keep token invariants with custom executor that just checks those invariants
 
 ## Mutators
     - StatefulMutator
