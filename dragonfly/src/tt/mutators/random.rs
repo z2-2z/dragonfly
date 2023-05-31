@@ -47,7 +47,7 @@ where
             match &mut token_stream.tokens_mut()[idx] {
                 TextToken::Constant(_) => {},
                 TextToken::Number(data) => {
-                    random_number_value(state.rand_mut(), data);
+                    random_number_value(state.rand_mut(), data, true);
                     return Ok(MutationResult::Mutated);
                 },
                 TextToken::Whitespace(data) => {
@@ -70,14 +70,14 @@ where
 }
 
 /// Inserts a new TextToken with random value
-pub struct TokenStreamRandomInsertMutator<P, S>
+pub struct TokenStreamInsertRandomMutator<P, S>
 where
     P: HasTokenStream,
 {
     phantom: PhantomData<(P,S)>,
 }
 
-impl<P, S> TokenStreamRandomInsertMutator<P, S>
+impl<P, S> TokenStreamInsertRandomMutator<P, S>
 where
     P: HasTokenStream,
 {
@@ -89,7 +89,7 @@ where
     }
 }
 
-impl<P, S> PacketMutator<P, S> for TokenStreamRandomInsertMutator<P, S>
+impl<P, S> PacketMutator<P, S> for TokenStreamInsertRandomMutator<P, S>
 where
     P: HasTokenStream,
     S: HasRand,
@@ -102,7 +102,7 @@ where
             
             let new_token = match state.rand_mut().below(4) {
                 0 => {
-                    random_number_value(state.rand_mut(), &mut data);
+                    random_number_value(state.rand_mut(), &mut data, true);
                     TextToken::Number(data)
                 },
                 1 => {
@@ -121,6 +121,70 @@ where
             };
             
             token_stream.tokens_mut().insert(idx, new_token);
+        }
+        
+        Ok(MutationResult::Skipped)
+    }
+}
+
+/// Inserts random data into a single, random token
+pub struct TokenValueInsertRandomMutator<P, S>
+where
+    P: HasTokenStream,
+{
+    phantom: PhantomData<(P,S)>,
+}
+
+impl<P, S> TokenValueInsertRandomMutator<P, S>
+where
+    P: HasTokenStream,
+{
+    #[allow(clippy::new_without_default)]
+    pub fn new() -> Self {
+        Self {
+            phantom: PhantomData,
+        }
+    }
+}
+
+impl<P, S> PacketMutator<P, S> for TokenValueInsertRandomMutator<P, S>
+where
+    P: HasTokenStream,
+    S: HasRand,
+{
+    fn mutate_packet(&mut self, state: &mut S, packet: &mut P, _stage_idx: i32) -> Result<MutationResult, Error> {
+        if let Some(token_stream) = packet.get_tokenstream() {
+            let len = token_stream.tokens().len();
+            let idx = state.rand_mut().below(len as u64) as usize;
+            let mut new_data = Vec::new();
+            
+            match &mut token_stream.tokens_mut()[idx] {
+                TextToken::Constant(_) => {},
+                TextToken::Number(data) => {
+                    let idx = state.rand_mut().below(data.len() as u64 + 1) as usize;
+                    random_number_value(state.rand_mut(), &mut new_data, idx == 0);
+                    data.splice(idx..idx, new_data);
+                    return Ok(MutationResult::Mutated);
+                },
+                TextToken::Whitespace(data) => {
+                    let idx = state.rand_mut().below(data.len() as u64 + 1) as usize;
+                    random_whitespace_value(state.rand_mut(), &mut new_data);
+                    data.splice(idx..idx, new_data);
+                    return Ok(MutationResult::Mutated);
+                },
+                TextToken::Text(data) => {
+                    let idx = state.rand_mut().below(data.len() as u64 + 1) as usize;
+                    random_text_value(state.rand_mut(), &mut new_data);
+                    data.splice(idx..idx, new_data);
+                    return Ok(MutationResult::Mutated);
+                },
+                TextToken::Blob(data) => {
+                    let idx = state.rand_mut().below(data.len() as u64 + 1) as usize;
+                    random_blob_value(state.rand_mut(), &mut new_data);
+                    data.splice(idx..idx, new_data);
+                    return Ok(MutationResult::Mutated);
+                },
+            }
         }
         
         Ok(MutationResult::Skipped)

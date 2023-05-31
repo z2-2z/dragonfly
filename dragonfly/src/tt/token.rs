@@ -7,7 +7,7 @@ pub(crate) const MAX_WHITESPACE_LEN: usize = 4;
 pub(crate) const MAX_TEXT_LEN: usize = 16;
 pub(crate) const MAX_BLOB_LEN: usize = 16;
 
-pub(crate) fn random_number_value<R: Rand>(rand: &mut R, output: &mut Vec<u8>) {
+pub(crate) fn random_number_value<R: Rand>(rand: &mut R, output: &mut Vec<u8>, gen_sign: bool) {
     let mut text = [0u8; MAX_NUMBER_LEN];
     let mut i = MAX_NUMBER_LEN - 1;
     
@@ -45,7 +45,7 @@ pub(crate) fn random_number_value<R: Rand>(rand: &mut R, output: &mut Vec<u8>) {
     pool >>= 1;
     
     /* Generate a sign */
-    if i < MAX_NUMBER_LEN {
+    if gen_sign && i < MAX_NUMBER_LEN {
         match pool % 4 {
             0 | 1 => {},
             2 => {
@@ -362,7 +362,7 @@ mod tests {
         let mut result = Vec::with_capacity(MAX_NUMBER_LEN);
         
         for _ in 0..10 {
-            random_number_value(&mut rand, &mut result);
+            random_number_value(&mut rand, &mut result, true);
             println!("{:?}", std::str::from_utf8(&result).unwrap());
         }
     }
@@ -374,7 +374,8 @@ mod tests {
         
         b.iter(|| random_number_value(
             black_box(&mut rand),
-            black_box(&mut result)
+            black_box(&mut result),
+            true
         ));
     }
     
