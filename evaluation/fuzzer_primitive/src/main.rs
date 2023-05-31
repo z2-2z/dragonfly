@@ -44,13 +44,17 @@ use dragonfly::{
         PacketDeleteMutator,
         PacketDuplicateMutator,
         PacketReorderMutator,
-        NopMutator,
+        ScheduledPacketMutator,
         StateObserver,
         StateFeedback,
         HasStateGraph,
         DragonflyInput,
     },
-    tt::TokenStream,
+    tt::{
+        TokenStream,
+        HasTokenStream,
+        TokenStreamValueMutator
+    },
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize, Hash)]
@@ -81,6 +85,16 @@ impl SerializeIntoBuffer for FTPPacket {
 
     fn terminates_group(&self) -> bool {
         matches!(self, FTPPacket::Sep)
+    }
+}
+
+impl HasTokenStream for FTPPacket {
+    fn get_tokenstream(&mut self) -> Option<&mut TokenStream> {
+        match self {
+            FTPPacket::Ctrl(data) |
+            FTPPacket::Data(data) => Some(data),
+            FTPPacket::Sep => None,
+        }
     }
 }
 
@@ -155,15 +169,21 @@ fn main() -> Result<(), Error> {
             &mut objective,
         ).unwrap());
         state.init_stategraph();
-
-        let mutator = StdScheduledMutator::new(
+        
+        let packet_mutator = ScheduledPacketMutator::new(
             tuple_list!(
-                /*
+                TokenStreamValueMutator::new()
+            )
+        );
+
+        let mutator = StdScheduledMutator::with_max_stack_pow(
+            tuple_list!(
                 PacketDeleteMutator::new(1),
                 PacketDuplicateMutator::new(16),
-                PacketReorderMutator::new()*/
-                NopMutator::new(),
-            )
+                PacketReorderMutator::new(),
+                packet_mutator
+            ),
+            0
         );
 
         let mutational = StdMutationalStage::new(mutator);

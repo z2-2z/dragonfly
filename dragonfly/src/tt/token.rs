@@ -129,6 +129,10 @@ impl TokenStreamBuilder {
     }
 }
 
+pub trait HasTokenStream {
+    fn get_tokenstream(&mut self) -> Option<&mut TokenStream>;
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
