@@ -1,4 +1,5 @@
 #![feature(test)]
+#![feature(wrapping_next_power_of_two)]
 
 #[cfg(test)]
 mod tests;

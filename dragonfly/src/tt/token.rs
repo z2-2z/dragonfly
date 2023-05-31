@@ -1,6 +1,6 @@
 use serde::{Serialize, Deserialize};
 
-const WHITESPACE: [u8; 6] = [
+pub(crate) const WHITESPACE: [u8; 6] = [
     b' ',
     b'\t',
     b'\n',

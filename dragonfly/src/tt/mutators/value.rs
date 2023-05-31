@@ -1,13 +1,14 @@
 use std::marker::PhantomData;
 use crate::{
-    tt::token::{HasTokenStream, TextToken},
+    tt::token::{HasTokenStream, TextToken, WHITESPACE},
     mutators::PacketMutator,
 };
 use libafl::prelude::{MutationResult, Error, HasRand, Rand};
 
-pub(crate) const MAX_NUMBER_LEN: usize = 32;
+const MAX_NUMBER_LEN: usize = 32;
+const MAX_WHITESPACE_LEN: usize = 4;
 
-pub(crate) fn random_number_value<R: Rand>(rand: &mut R, output: &mut Vec<u8>) {
+fn random_number_value<R: Rand>(rand: &mut R, output: &mut Vec<u8>) {
     let mut text = [0u8; MAX_NUMBER_LEN];
     let mut i = MAX_NUMBER_LEN - 1;
     
@@ -65,6 +66,31 @@ pub(crate) fn random_number_value<R: Rand>(rand: &mut R, output: &mut Vec<u8>) {
     output[..].copy_from_slice(&text[i + 1..MAX_NUMBER_LEN]);
 }
 
+fn random_whitespace_value<R: Rand>(rand: &mut R, output: &mut Vec<u8>) {
+    let new_len = 1 + rand.below(MAX_WHITESPACE_LEN as u64) as usize;
+    
+    output.resize(new_len, 0);
+    
+    let num_bits = (WHITESPACE.len().wrapping_next_power_of_two() - 1).count_ones();
+    assert!(num_bits > 0);
+    
+    let mut pool = rand.next();
+    let mut pool_size = 64;
+    
+    for byte in output.iter_mut() {
+        if pool_size < num_bits {
+            pool = rand.next();
+            pool_size = 64;
+        }
+        
+        let idx = pool as usize % WHITESPACE.len();
+        *byte = WHITESPACE[idx];
+        
+        pool >>= num_bits;
+        pool_size -= num_bits;
+    }
+}
+
 /// Replaces one random TextToken in a TokenStream with a randomly
 /// generated value.
 pub struct TokenStreamValueMutator<P, S>
@@ -107,7 +133,10 @@ where
                     random_number_value(state.rand_mut(), data);
                     Ok(MutationResult::Mutated)
                 },
-                TextToken::Whitespace(_) => todo!(),
+                TextToken::Whitespace(data) => {
+                    random_whitespace_value(state.rand_mut(), data);
+                    Ok(MutationResult::Mutated)
+                },
                 TextToken::Text(_) => todo!(),
                 TextToken::Blob(_) => todo!(),
             }
@@ -122,12 +151,12 @@ mod tests {
     extern crate test;
     
     use super::*;
-    use libafl::prelude::RomuDuoJrRand;
+    use libafl::prelude::{RomuDuoJrRand, current_nanos};
     use test::{Bencher, black_box};
     
     #[test]
     fn random_number() {
-        let mut rand = RomuDuoJrRand::with_seed(1234);
+        let mut rand = RomuDuoJrRand::with_seed(current_nanos());
         let mut result = Vec::with_capacity(MAX_NUMBER_LEN);
         
         for _ in 0..10 {
@@ -138,10 +167,33 @@ mod tests {
     
     #[bench]
     fn bench_random_number(b: &mut Bencher) {
-        let mut rand = RomuDuoJrRand::with_seed(1234);
+        let mut rand = RomuDuoJrRand::with_seed(current_nanos());
         let mut result = Vec::with_capacity(MAX_NUMBER_LEN);
         
         b.iter(|| random_number_value(
+            black_box(&mut rand),
+            black_box(&mut result)
+        ));
+    }
+    
+    #[test]
+    fn random_whitespace() {
+        let mut rand = RomuDuoJrRand::with_seed(current_nanos());
+        let mut result = Vec::with_capacity(MAX_WHITESPACE_LEN);
+        
+        for _ in 0..10 {
+            random_whitespace_value(&mut rand, &mut result);
+            let _ = std::str::from_utf8(&result).unwrap();
+            println!("{:?}", result);
+        }
+    }
+    
+    #[bench]
+    fn bench_random_whitespace(b: &mut Bencher) {
+        let mut rand = RomuDuoJrRand::with_seed(current_nanos());
+        let mut result = Vec::with_capacity(MAX_WHITESPACE_LEN);
+        
+        b.iter(|| random_whitespace_value(
             black_box(&mut rand),
             black_box(&mut result)
         ));

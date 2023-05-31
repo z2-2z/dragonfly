@@ -1,3 +1,3 @@
-pub(crate) mod value;
+mod value;
 
 pub use value::TokenStreamValueMutator;
