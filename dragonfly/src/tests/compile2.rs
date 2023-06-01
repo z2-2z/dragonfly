@@ -256,7 +256,7 @@ fn fuzz(
             NopPacketMutator::new(),
             TokenStreamInsertRandomMutator::new(max_tokens),
             TokenReplaceRandomMutator::new(),
-            TokenSplitMutator::new(),
+            TokenSplitMutator::new(max_tokens),
             TokenStreamInsertInterestingMutator::new(max_tokens),
             TokenReplaceInterestingMutator::new(),
             TokenStreamDuplicateMutator::new(max_tokens),

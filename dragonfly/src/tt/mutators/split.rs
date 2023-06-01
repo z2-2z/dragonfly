@@ -12,6 +12,7 @@ pub struct TokenSplitMutator<P, S>
 where
     P: HasTokenStream,
 {
+    max_len: usize,
     phantom: PhantomData<(P,S)>,
 }
 
@@ -20,8 +21,9 @@ where
     P: HasTokenStream,
 {
     #[allow(clippy::new_without_default)]
-    pub fn new() -> Self {
+    pub fn new(max_len: usize) -> Self {
         Self {
+            max_len,
             phantom: PhantomData,
         }
     }
@@ -36,7 +38,7 @@ where
         if let Some(token_stream) = packet.get_tokenstream() {
             let len = token_stream.tokens().len();
             
-            if len == 0 {
+            if len == 0 || len >= self.max_len {
                 return Ok(MutationResult::Skipped);
             }
             
@@ -53,7 +55,19 @@ where
                 return Ok(MutationResult::Skipped);
             }
             
-            let split_point = 1 + state.rand_mut().below(len as u64 - 1) as usize;
+            let mut split_point = 1;
+            
+            if let TextToken::Number(data) = token {
+                if matches!(data.first(), Some(b'+') | Some(b'-')) {
+                    split_point += 1;
+                }
+            }
+            
+            split_point += state.rand_mut().below(len as u64 - split_point as u64) as usize;
+            
+            if split_point >= len {
+                return Ok(MutationResult::Skipped);
+            }
             
             let new_token = match token {
                 TextToken::Constant(_) => unreachable!(),
