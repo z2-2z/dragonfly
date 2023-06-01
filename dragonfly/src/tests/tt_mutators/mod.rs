@@ -98,7 +98,7 @@ fn main() -> Result<(), Error> {
             /* 19 */ TokenStreamScannerMutator::new(max_tokens),
             /* 20 */ TokenTransformConstantMutator::new()
         ),
-        2
+        4
     );
 
     let mutational = StdMutationalStage::new(tt_mutations);

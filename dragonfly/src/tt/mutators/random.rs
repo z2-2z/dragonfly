@@ -163,6 +163,11 @@ where
     fn mutate_packet(&mut self, state: &mut S, packet: &mut P, _stage_idx: i32) -> Result<MutationResult, Error> {
         if let Some(token_stream) = packet.get_tokenstream() {
             let len = token_stream.tokens().len();
+            
+            if len == 0 {
+                return Ok(MutationResult::Skipped);
+            }
+            
             let idx = state.rand_mut().below(len as u64) as usize;
             let mut new_data = Vec::new();
             
