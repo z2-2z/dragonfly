@@ -98,7 +98,7 @@ fn main() -> Result<(), Error> {
             /* 19 */ TokenStreamScannerMutator::new(max_tokens),
             /* 20 */ TokenTransformConstantMutator::new()
         ),
-        4
+        16
     );
 
     let mutational = StdMutationalStage::new(tt_mutations);
@@ -122,7 +122,8 @@ fn main() -> Result<(), Error> {
 
     let input = DragonflyInput::new(
         vec![
-            TokenStream::builder().constant("").whitespace("").text("").blob("").build()
+            TokenStream::builder().constant("").whitespace("").text("").blob("").build(),
+            TokenStream::builder().build(),
         ]
     );
     fuzzer.add_input(&mut state, &mut executor, &mut mgr, input)?;

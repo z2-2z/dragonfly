@@ -116,6 +116,8 @@ echo content > /tmp/ftproot/file
 - ~~delete content in tokens~~
 - ~~scanner mutator => scan for numbers/whitespace in text~~
 - ~~transform constant into text or blob~~
+- replacement mutators also for subslice not entire token
+- more transforms between types
 
 ## TODO
 - move certain files into memory ?
