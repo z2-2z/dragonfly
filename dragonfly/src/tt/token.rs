@@ -220,16 +220,8 @@ pub struct TokenStreamBuilder {
 }
 
 impl TokenStreamBuilder {
-    pub fn constant<S: AsRef<str>>(mut self, s: S) -> Self {
-        let s = s.as_ref().as_bytes();
-        
-        for byte in s {
-            if !is_ascii(*byte) {
-                panic!("Not a pure ASCII constant");
-            }
-        }
-        
-        self.tokens.push(TextToken::Constant(s.to_vec()));
+    pub fn constant<S: AsRef<[u8]>>(mut self, s: S) -> Self {
+        self.tokens.push(TextToken::Constant(s.as_ref().to_vec()));
         self
     }
     

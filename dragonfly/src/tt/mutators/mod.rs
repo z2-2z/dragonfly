@@ -9,6 +9,7 @@ mod repeat;
 mod rotate;
 mod special;
 mod case;
+mod tokens;
 
 pub use random::{
     TokenReplaceRandomMutator,
@@ -37,3 +38,7 @@ pub use special::{
     TokenInsertSpecialCharMutator,
 };
 pub use case::TokenInvertCaseMutator;
+pub use tokens::{
+    TokenStreamDictInsertMutator,
+    TokenReplaceDictMutator,
+};
