@@ -11,6 +11,7 @@ mod special;
 mod case;
 mod tokens;
 mod scanner;
+mod transform;
 
 pub use random::{
     TokenReplaceRandomMutator,
@@ -44,3 +45,4 @@ pub use tokens::{
     TokenReplaceDictMutator,
 };
 pub use scanner::TokenStreamScannerMutator;
+pub use transform::TokenTransformConstantMutator;
