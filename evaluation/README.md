@@ -47,11 +47,6 @@ echo content > /tmp/ftproot/file
 ./libdragonfly/packet_write '0:s:USER ftp\r\n' '0:s:PASS x\r\n' '0:s:CWD uploads\r\n' '0:s:EPSV\r\n' '0::STOR packetio.txt\r\n' '1::successful' '1:s:' '0:s:QUIT\r\n' "./proftpd/proftpd -d 10 -X -c $PWD/fuzz.conf -n"
 ```
 
-## Notes
-- move certain files into memory ?
-- desyscall: gethostbyname(), sleep(), usleep()
-- DragonflyInput / StatefulInput over generic packet type
-
 ## State
 - mod_auth.c
     - logged_in
@@ -93,40 +88,37 @@ echo content > /tmp/ftproot/file
     - Blob: like Text but also binary content allowed
 - "USER ftp\r\n" => Constant("USER"), Whitespace(" "), Text("ftp"), Constant("\r\n")
 - "PORT 127,0,0,1,123,234\r\n" => Constant("PORT"), Whitespace(" "), Number("127"), Text(","), Number("0"), ...
-- mutators
-    - ~~number interesting mutator~~
-    - ~~split up~~
-    - AFL mutators for binary
-    - ~~duplicate~~
-    - ~~swap tokens~~
-    - ~~copy token to some random position~~
-    - ~~delete~~
-    - dictionary insert
-    - ~~random any insert with random content~~
-    - crossover
-        - inside tokenstream
-        - between tokenstreams
-        - between packets
-        - between inputs
-    - ~~invert case~~
-    - all uppercase
-    - all lowercase
-    - ~~insert special chars~~
-    - ~~replace special chars~~
-    - ~~stretch out (repeat char)~~
-    - ~~rotate alphabet~~
-    - ~~random insert~~
-    - ~~delete content in tokens~~
-    - scanner mutator => scan for numbers/whitespace in text
 - utf-{8,16,32} support
 
+## Mutators
+- ~~number interesting mutator~~
+- ~~split up~~
+- AFL mutators for binary
+- ~~duplicate~~
+- ~~swap tokens~~
+- ~~copy token to some random position~~
+- ~~delete~~
+- ~~dictionary insert~~
+- ~~random any insert with random content~~
+- crossover
+    - inside tokenstream
+    - between tokenstreams
+    - between packets
+    - between inputs
+- ~~invert case~~
+- all uppercase
+- all lowercase
+- ~~insert special chars~~
+- ~~replace special chars~~
+- ~~stretch out (repeat char)~~
+- ~~rotate alphabet~~
+- ~~random insert~~
+- ~~delete content in tokens~~
+- ~~scanner mutator => scan for numbers/whitespace in text~~
+- ~~transform constant into text or blob~~
+
+## TODO
+- move certain files into memory ?
+- desyscall: gethostbyname(), sleep(), usleep()
 - check where mutators can panic if token value is empty
 - test that mutations keep token invariants with custom executor that just checks those invariants
-
-## Mutators
-    - StatefulMutator
-        - packet selection strategy
-        - has tuple of packet mutators
-    - PacketMutatorTuple
-    - PacketMutator
-        - gets a single packet and mutates it
