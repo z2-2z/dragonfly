@@ -103,7 +103,7 @@ pub(crate) fn random_text_value<R: Rand>(rand: &mut R, output: &mut Vec<u8>) {
             pool_size = 64;
         }
         
-        *byte = (pool as usize % 94) as u8 + 33;
+        *byte = (pool as usize % 128) as u8;
         debug_assert!(is_ascii(*byte));
         
         pool >>= 8;
