@@ -67,11 +67,21 @@ where
     }
     
     fn scheduled_mutate(&mut self, state: &mut S, packet: &mut P, stage_idx: i32) -> Result<MutationResult, Error> {
+        #[cfg(test)] 
+        println!("--- NEW MUTATION RUN ---");
+        
         let mut result = MutationResult::Skipped;
         let num = self.iterations(state);
         for _ in 0..num {
             let mutation = self.schedule_mutation(state);
             let outcome = self.mutators.get_and_mutate(mutation, state, packet, stage_idx)?;
+            
+            #[cfg(test)] {
+                if outcome == MutationResult::Mutated {
+                    println!("Ran mutation #{}", mutation);
+                }
+            }
+            
             if outcome == MutationResult::Mutated {
                 result = MutationResult::Mutated;
             }

@@ -173,7 +173,6 @@ where
             
             match &mut token_stream.tokens_mut()[idx] {
                 TextToken::Whitespace(_) |
-                TextToken::Blob(_) |
                 TextToken::Constant(_) => {},
                 TextToken::Number(data) => {
                     if !data.is_empty() && !matches!(data.first(), Some(b'+') | Some(b'-')) {
@@ -181,6 +180,7 @@ where
                         return Ok(MutationResult::Mutated);
                     }
                 },
+                TextToken::Blob(data) |
                 TextToken::Text(data) => {
                     let len = data.len();
                     insert_special(state.rand_mut(), data, len, &TEXT_SPECIAL);

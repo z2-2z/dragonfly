@@ -169,7 +169,8 @@ where
             match &mut token_stream.tokens_mut()[idx] {
                 TextToken::Constant(_) => {},
                 TextToken::Number(data) => {
-                    let idx = state.rand_mut().below(data.len() as u64 + 1) as usize;
+                    let start = usize::from(matches!(data.first(), Some(b'+') | Some(b'-')));
+                    let idx = start + state.rand_mut().below(data.len() as u64 + 1 - start as u64) as usize;
                     random_number_value(state.rand_mut(), &mut new_data, idx == 0);
                     data.splice(idx..idx, new_data);
                     return Ok(MutationResult::Mutated);
