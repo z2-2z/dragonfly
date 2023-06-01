@@ -60,9 +60,10 @@ pub(crate) fn random_number_value<R: Rand>(rand: &mut R, output: &mut Vec<u8>, g
         }
     }
     
-    let new_len = MAX_NUMBER_LEN - (i + 1);
+    let start_text = i.wrapping_add(1);
+    let new_len = MAX_NUMBER_LEN - start_text;
     output.resize(new_len, 0);
-    output[..].copy_from_slice(&text[i + 1..MAX_NUMBER_LEN]);
+    output[..].copy_from_slice(&text[start_text..MAX_NUMBER_LEN]);
 }
 
 pub(crate) fn random_whitespace_value<R: Rand>(rand: &mut R, output: &mut Vec<u8>) {
@@ -226,15 +227,19 @@ impl TokenStreamBuilder {
     }
     
     pub fn number<S: AsRef<str>>(mut self, s: S) -> Self {
-        let mut s = s.as_ref();
+        let s = s.as_ref().as_bytes();
+        let mut i = 0;
         
-        if s.starts_with('-') || s.starts_with('+') {
-            s = &s[1..];
+        if matches!(s.first(), Some(b'-') | Some(b'+')) {
+            i += 1;
         }
         
-        let _ = s.parse::<u64>().expect("Invalid decimal number");
+        while i < s.len() {
+            assert!((b'0'..=b'9').contains(&s[i]));
+            i += 1;
+        }
         
-        self.tokens.push(TextToken::Number(s.as_bytes().to_vec()));
+        self.tokens.push(TextToken::Number(s.to_vec()));
         self
     }
     
