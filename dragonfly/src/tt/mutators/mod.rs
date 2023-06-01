@@ -10,6 +10,7 @@ mod rotate;
 mod special;
 mod case;
 mod tokens;
+mod scanner;
 
 pub use random::{
     TokenReplaceRandomMutator,
@@ -42,3 +43,4 @@ pub use tokens::{
     TokenStreamDictInsertMutator,
     TokenReplaceDictMutator,
 };
+pub use scanner::TokenStreamScannerMutator;

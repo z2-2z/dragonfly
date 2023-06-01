@@ -99,6 +99,7 @@ use crate::{
         TokenInvertCaseMutator,
         TokenStreamDictInsertMutator,
         TokenReplaceDictMutator,
+        TokenStreamScannerMutator,
     },
 };
 
@@ -270,7 +271,8 @@ fn fuzz(
             TokenInsertSpecialCharMutator::new(),
             TokenInvertCaseMutator::new(),
             TokenStreamDictInsertMutator::new(max_tokens),
-            TokenReplaceDictMutator::new()
+            TokenReplaceDictMutator::new(),
+            TokenStreamScannerMutator::new(max_tokens)
         )
     );
 
