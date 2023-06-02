@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 use crate::{
     tt::token::{
-        HasTokenStream, TextToken,
+        HasTokenStream, TextToken, has_valid_sign,
     },
     mutators::PacketMutator,
 };
@@ -112,12 +112,9 @@ where
                     let mut start = 0;
                     let mut len = data.len();
                     
-                    match data.first() {
-                        Some(b'+') | Some(b'-') => {
-                            len -= 1;
-                            start += 1;
-                        },
-                        _ => {},
+                    if has_valid_sign(&data) {
+                        start += 1;
+                        len -= 1;
                     }
                     
                     return duplicate_subslice(state.rand_mut(), data, start, len);

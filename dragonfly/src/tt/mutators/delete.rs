@@ -97,7 +97,12 @@ where
             let start = state.rand_mut().below(token_len as u64) as usize;
             let len = state.rand_mut().below(token_len as u64 - start as u64) as usize;
             
-            if token_len - len < self.min_length {
+            let min_length = match token {
+                TextToken::Number(_) => std::cmp::max(self.min_length, 2),
+                _ => self.min_length,
+            };
+            
+            if token_len - len < min_length {
                 return Ok(MutationResult::Skipped);
             }
             

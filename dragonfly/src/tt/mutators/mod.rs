@@ -9,7 +9,7 @@ mod repeat;
 mod rotate;
 mod special;
 mod case;
-mod tokens;
+mod dicts;
 mod scanner;
 mod transform;
 
@@ -40,7 +40,7 @@ pub use special::{
     TokenInsertSpecialCharMutator,
 };
 pub use case::TokenInvertCaseMutator;
-pub use tokens::{
+pub use dicts::{
     TokenStreamDictInsertMutator,
     TokenReplaceDictMutator,
 };

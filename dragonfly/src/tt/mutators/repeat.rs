@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 use crate::{
     tt::token::{
-        HasTokenStream, TextToken,
+        HasTokenStream, TextToken, has_valid_sign,
     },
     mutators::PacketMutator,
 };
@@ -64,7 +64,7 @@ where
             match &mut token_stream.tokens_mut()[idx] {
                 TextToken::Constant(_) => {},
                 TextToken::Number(data) => {
-                    let offset: usize = matches!(data.first(), Some(b'+') | Some(b'-')).into();
+                    let offset = usize::from(has_valid_sign(&data));
                     return repeat_byte(state.rand_mut(), data, offset, data.len() - offset);
                 },
                 TextToken::Text(data) |

@@ -4,6 +4,7 @@ use crate::{
         HasTokenStream, TextToken, 
         random_number_value, random_whitespace_value,
         random_text_value, random_blob_value,
+        has_valid_sign,
     },
     mutators::PacketMutator,
 };
@@ -174,7 +175,7 @@ where
             match &mut token_stream.tokens_mut()[idx] {
                 TextToken::Constant(_) => {},
                 TextToken::Number(data) => {
-                    let start = usize::from(matches!(data.first(), Some(b'+') | Some(b'-')));
+                    let start = usize::from(has_valid_sign(&data));
                     let idx = start + state.rand_mut().below(data.len() as u64 + 1 - start as u64) as usize;
                     random_number_value(state.rand_mut(), &mut new_data, idx == 0);
                     data.splice(idx..idx, new_data);

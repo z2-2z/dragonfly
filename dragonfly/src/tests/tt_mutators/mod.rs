@@ -5,7 +5,7 @@ use libafl::prelude::{
     CrashFeedback,
     TimeFeedback,
     Fuzzer, StdFuzzer,
-    SimplePrintingMonitor,
+    NopMonitor,
     TimeObserver,
     RandScheduler,
     StdMutationalStage,
@@ -47,7 +47,7 @@ fn test_token_stream(input: &DragonflyInput<TokenStream>) -> ExitKind {
 fn main() -> Result<(), Error> {
     let seed = current_nanos();
     
-    let monitor = SimplePrintingMonitor::new();
+    let monitor = NopMonitor::new();
     let mut mgr = SimpleEventManager::new(monitor);
         
     let time_observer = TimeObserver::new("time");

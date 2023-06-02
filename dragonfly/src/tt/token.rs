@@ -64,6 +64,7 @@ pub(crate) fn random_number_value<R: Rand>(rand: &mut R, output: &mut Vec<u8>, g
     let new_len = MAX_NUMBER_LEN - start_text;
     output.resize(new_len, 0);
     output[..].copy_from_slice(&text[start_text..MAX_NUMBER_LEN]);
+    debug_assert!(is_number(output));
 }
 
 pub(crate) fn random_whitespace_value<R: Rand>(rand: &mut R, output: &mut Vec<u8>) {
@@ -89,6 +90,8 @@ pub(crate) fn random_whitespace_value<R: Rand>(rand: &mut R, output: &mut Vec<u8
         pool >>= num_bits;
         pool_size -= num_bits;
     }
+    
+    debug_assert!(is_whitespace(output));
 }
 
 pub(crate) fn random_text_value<R: Rand>(rand: &mut R, output: &mut Vec<u8>) {
@@ -110,6 +113,8 @@ pub(crate) fn random_text_value<R: Rand>(rand: &mut R, output: &mut Vec<u8>) {
         pool >>= 8;
         pool_size -= 8;
     }
+    
+    debug_assert!(is_text(output));
 }
 
 pub(crate) fn random_blob_value<R: Rand>(rand: &mut R, output: &mut Vec<u8>) {
@@ -132,7 +137,50 @@ pub(crate) fn random_blob_value<R: Rand>(rand: &mut R, output: &mut Vec<u8>) {
     }
 }
 
-pub(crate) const WHITESPACE: [u8; 6] = [
+pub(crate) fn has_valid_sign<S: AsRef<[u8]>>(s: S) -> bool {
+    let s = s.as_ref();
+    matches!(s.first(), Some(b'+') | Some(b'-'))
+}
+
+pub(crate) fn is_decimal<S: AsRef<[u8]>>(s: S) -> bool {
+    let s = s.as_ref();
+    
+    for byte in s {
+        if !(b'0'..=b'9').contains(byte) {
+            return false;
+        }
+    }
+    
+    !s.is_empty()
+}
+
+pub(crate) fn is_number<S: AsRef<[u8]>>(s: S) -> bool { 
+    let s = s.as_ref();
+    let mut i = 0;
+    
+    if has_valid_sign(s) {
+        i = 1;
+    }
+    
+    is_decimal(&s[i..])
+}
+
+pub(crate) fn is_ascii(b: u8) -> bool {
+    b <= 127
+}
+
+pub(crate) fn is_text<S: AsRef<[u8]>>(s: S) -> bool {
+    let s = s.as_ref();
+    let mut result = true;
+    
+    for byte in s {
+        result &= is_ascii(*byte);
+    }
+    
+    result
+}
+
+const WHITESPACE: [u8; 6] = [
     b' ',
     b'\t',
     b'\n',
@@ -141,8 +189,15 @@ pub(crate) const WHITESPACE: [u8; 6] = [
     b'\r',
 ];
 
-pub(crate) fn is_ascii(b: u8) -> bool {
-    b <= 127
+pub(crate) fn is_whitespace<S: AsRef<[u8]>>(s: S) -> bool {
+    let s = s.as_ref();
+    let mut result = true;
+    
+    for byte in s {
+        result &= WHITESPACE.contains(byte);
+    }
+    
+    result
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug, Hash)]
@@ -228,43 +283,21 @@ impl TokenStreamBuilder {
     
     pub fn number<S: AsRef<str>>(mut self, s: S) -> Self {
         let s = s.as_ref().as_bytes();
-        let mut i = 0;
-        
-        if matches!(s.first(), Some(b'-') | Some(b'+')) {
-            i += 1;
-        }
-        
-        while i < s.len() {
-            assert!((b'0'..=b'9').contains(&s[i]));
-            i += 1;
-        }
-        
+        assert!(is_number(s));
         self.tokens.push(TextToken::Number(s.to_vec()));
         self
     }
     
     pub fn whitespace<S: AsRef<str>>(mut self, s: S) -> Self {
         let s = s.as_ref().as_bytes();
-        
-        for byte in s {
-            if !WHITESPACE.contains(byte) {
-                panic!("Invalid whitespace character: {}", byte);
-            }
-        }
-        
+        assert!(is_whitespace(s));
         self.tokens.push(TextToken::Whitespace(s.to_vec()));
         self
     }
     
     pub fn text<S: AsRef<str>>(mut self, s: S) -> Self {
         let s = s.as_ref().as_bytes();
-        
-        for byte in s {
-            if !is_ascii(*byte) {
-                panic!("Not a pure ASCII text");
-            }
-        }
-        
+        assert!(is_text(s));
         self.tokens.push(TextToken::Text(s.to_vec()));
         self
     }

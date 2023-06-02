@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 use crate::{
     tt::token::{
-        HasTokenStream, TextToken,
+        HasTokenStream, TextToken, has_valid_sign,
     },
     mutators::PacketMutator,
 };
@@ -58,7 +58,7 @@ where
             let mut split_point = 1;
             
             if let TextToken::Number(data) = token {
-                if matches!(data.first(), Some(b'+') | Some(b'-')) {
+                if has_valid_sign(data) {
                     split_point += 1;
                 }
             }

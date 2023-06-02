@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 use crate::{
     tt::token::{
-        HasTokenStream, TextToken, 
+        HasTokenStream, TextToken, has_valid_sign,
     },
     mutators::PacketMutator,
 };
@@ -114,14 +114,14 @@ where
             
             match &mut token_stream.tokens_mut()[idx] {
                 TextToken::Whitespace(_) |
-                TextToken::Blob(_) |
                 TextToken::Constant(_) => {},
                 TextToken::Number(data) => {
-                    if !data.is_empty() && !matches!(data.first(), Some(b'+') | Some(b'-')) {
+                    if !data.is_empty() && !has_valid_sign(&data) {
                         replace_special(state.rand_mut(), data, 1, &NUMBER_SPECIAL);
                         return Ok(MutationResult::Mutated);
                     }
                 },
+                TextToken::Blob(data) |
                 TextToken::Text(data) => {
                     let len = data.len();
                     if len > 0 {
@@ -175,7 +175,7 @@ where
                 TextToken::Whitespace(_) |
                 TextToken::Constant(_) => {},
                 TextToken::Number(data) => {
-                    if !data.is_empty() && !matches!(data.first(), Some(b'+') | Some(b'-')) {
+                    if !data.is_empty() && !has_valid_sign(&data) {
                         insert_special(state.rand_mut(), data, 1, &NUMBER_SPECIAL);
                         return Ok(MutationResult::Mutated);
                     }

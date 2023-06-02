@@ -1,7 +1,8 @@
 use std::marker::PhantomData;
 use crate::{
     tt::token::{
-        HasTokenStream, TextToken, WHITESPACE,
+        HasTokenStream, TextToken, is_whitespace, is_decimal,
+        has_valid_sign,
     },
     mutators::PacketMutator,
 };
@@ -17,10 +18,10 @@ struct SplitInfo {
 fn scan_tokens(data: &[u8]) -> Option<SplitInfo> {
     for i in 0..data.len() {
         /* check if its a whitespace */
-        if WHITESPACE.contains(&data[i]) {
+        if is_whitespace(&data[i..i + 1]) {
             let mut j = i;
             
-            while j < data.len() && WHITESPACE.contains(&data[j]) {
+            while j < data.len() && is_whitespace(&data[j..j + 1]) {
                 j += 1;
             }
             
@@ -32,16 +33,16 @@ fn scan_tokens(data: &[u8]) -> Option<SplitInfo> {
         }
         
         /* check if its a number */
-        else if (b'0'..=b'9').contains(&data[i]) {
+        else if is_decimal(&data[i..i + 1]) {
             let mut pos = i;
             
-            if i > 0 && [b'+', b'-'].contains(&data[i - 1]) {
+            if i > 0 && has_valid_sign(&data[i - 1..i]) {
                 pos -= 1;
             }
             
             let mut j = i;
             
-            while j < data.len() && (b'0'..=b'9').contains(&data[j]) {
+            while j < data.len() && is_decimal(&data[j..j + 1]) {
                 j += 1;
             }
             
