@@ -96,7 +96,7 @@ fn main() -> Result<(), Error> {
             /* 17 */ TokenStreamDictInsertMutator::new(max_tokens),
             /* 18 */ TokenReplaceDictMutator::new(),
             /* 19 */ TokenStreamScannerMutator::new(max_tokens),
-            /* 20 */ TokenTransformConstantMutator::new()
+            /* 20 */ TokenConvertMutator::new()
         ),
         16
     );

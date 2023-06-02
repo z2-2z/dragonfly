@@ -11,7 +11,7 @@ mod special;
 mod case;
 mod dicts;
 mod scanner;
-mod transform;
+mod convert;
 
 pub use random::{
     TokenReplaceRandomMutator,
@@ -45,4 +45,4 @@ pub use dicts::{
     TokenReplaceDictMutator,
 };
 pub use scanner::TokenStreamScannerMutator;
-pub use transform::TokenTransformConstantMutator;
+pub use convert::TokenConvertMutator;
