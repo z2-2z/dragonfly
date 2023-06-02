@@ -77,6 +77,7 @@ use crate::{
         PacketDuplicateMutator,
         PacketReorderMutator,
         ScheduledPacketMutator,
+        InsertRandomPacketMutator,
     },
     observer::StateObserver,
     tt::{
@@ -279,8 +280,19 @@ fn fuzz(
     );
 
     // Setup a MOPT mutator
-    let mutator =
-        StdMOptMutator::new(&mut state, tuple_list!(stateful, PacketReorderMutator::new(), PacketDeleteMutator::new(0), NopMutator::new(), PacketDuplicateMutator::new(max_packets)), 7, 5)?;
+    let mutator = StdMOptMutator::new(
+        &mut state,
+        tuple_list!(
+            stateful,
+            PacketReorderMutator::new(),
+            PacketDeleteMutator::new(0),
+            NopMutator::new(),
+            PacketDuplicateMutator::new(max_packets),
+            InsertRandomPacketMutator::new()
+        ), 
+        7, 
+        5
+    )?;
 
     let power = StdPowerMutationalStage::new(mutator);
 

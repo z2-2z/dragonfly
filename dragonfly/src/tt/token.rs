@@ -1,6 +1,9 @@
 use serde::{Serialize, Deserialize};
-use crate::input::SerializeIntoBuffer;
-use libafl::prelude::{Rand};
+use crate::{
+    input::SerializeIntoBuffer,
+    mutators::NewRandom,
+};
+use libafl::prelude::{Rand, HasRand, HasMetadata, Tokens};
 
 pub(crate) const MAX_NUMBER_LEN: usize = 32;
 pub(crate) const MAX_WHITESPACE_LEN: usize = 4;
@@ -281,22 +284,22 @@ impl TokenStreamBuilder {
         self
     }
     
-    pub fn number<S: AsRef<str>>(mut self, s: S) -> Self {
-        let s = s.as_ref().as_bytes();
+    pub fn number<S: AsRef<[u8]>>(mut self, s: S) -> Self {
+        let s = s.as_ref();
         assert!(is_number(s));
         self.tokens.push(TextToken::Number(s.to_vec()));
         self
     }
     
-    pub fn whitespace<S: AsRef<str>>(mut self, s: S) -> Self {
-        let s = s.as_ref().as_bytes();
+    pub fn whitespace<S: AsRef<[u8]>>(mut self, s: S) -> Self {
+        let s = s.as_ref();
         assert!(is_whitespace(s));
         self.tokens.push(TextToken::Whitespace(s.to_vec()));
         self
     }
     
-    pub fn text<S: AsRef<str>>(mut self, s: S) -> Self {
-        let s = s.as_ref().as_bytes();
+    pub fn text<S: AsRef<[u8]>>(mut self, s: S) -> Self {
+        let s = s.as_ref();
         assert!(is_text(s));
         self.tokens.push(TextToken::Text(s.to_vec()));
         self
@@ -331,6 +334,56 @@ impl SerializeIntoBuffer for TokenStream {
 
     fn get_connection(&self) -> usize {
         0
+    }
+}
+
+impl<S> NewRandom<S> for TokenStream
+where
+    S: HasRand + HasMetadata,
+{
+    fn new_random(state: &mut S) -> Self {
+        let mut builder = TokenStream::builder();
+        let n = state.rand_mut().below(16);
+        let (dict_size, choices) = if let Some(dict) = state.metadata_map().get::<Tokens>() {
+            (dict.len(), 2)
+        } else {
+            (0, 1)
+        };
+        
+        for _ in 0..n {
+            let use_dict = state.rand_mut().below(choices);
+            
+            if use_dict == 1 {
+                let idx = state.rand_mut().below(dict_size as u64) as usize;
+                let dict = state.metadata_map().get::<Tokens>().unwrap();
+                builder = builder.constant(&dict.tokens()[idx]);
+            } else {
+                let mut new_data = Vec::new();
+                let typ = state.rand_mut().below(4);
+                
+                match typ {
+                    0 => {
+                        random_number_value(state.rand_mut(), &mut new_data, true);
+                        builder = builder.number(new_data);
+                    },
+                    1 => {
+                        random_whitespace_value(state.rand_mut(), &mut new_data);
+                        builder = builder.whitespace(new_data);
+                    },
+                    2 => {
+                        random_text_value(state.rand_mut(), &mut new_data);
+                        builder = builder.text(new_data);
+                    },
+                    3 => {
+                        random_blob_value(state.rand_mut(), &mut new_data);
+                        builder = builder.text(new_data);
+                    },
+                    _ => unreachable!()
+                }
+            }
+        }
+        
+        builder.build()
     }
 }
 
