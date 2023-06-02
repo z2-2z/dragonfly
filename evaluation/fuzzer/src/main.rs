@@ -269,7 +269,9 @@ fn main() -> Result<(), Error> {
         );
 
         let input = DragonflyInput::new(
-            vec![]
+            vec![
+                FTPPacket::Ctrl(TokenStream::builder().build())
+            ]
         );
         fuzzer.evaluate_input(&mut state, &mut executor, &mut mgr, input)?;
 

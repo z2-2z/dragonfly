@@ -376,7 +376,7 @@ where
                     },
                     3 => {
                         random_blob_value(state.rand_mut(), &mut new_data);
-                        builder = builder.text(new_data);
+                        builder = builder.blob(new_data);
                     },
                     _ => unreachable!()
                 }
