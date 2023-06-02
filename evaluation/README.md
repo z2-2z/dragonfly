@@ -117,10 +117,8 @@ echo content > /tmp/ftproot/file
 - ~~scanner mutator => scan for numbers/whitespace in text~~
 - ~~transform constant into text or blob~~
 - replacement mutators also for subslice not entire token
-- more transforms between types
+- ~~more transforms between types~~
 
 ## TODO
 - move certain files into memory ?
 - desyscall: gethostbyname(), sleep(), usleep()
-- check where mutators can panic if token value is empty
-- test that mutations keep token invariants with custom executor that just checks those invariants

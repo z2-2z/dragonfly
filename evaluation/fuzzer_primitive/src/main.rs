@@ -27,6 +27,9 @@ use libafl::prelude::{
     Error,
     Evaluator,
     EventConfig,
+    HasRand,
+    Rand,
+    HasMetadata,
 };
 use nix::sys::signal::Signal;
 use serde::{
@@ -49,11 +52,31 @@ use dragonfly::{
         StateFeedback,
         HasStateGraph,
         DragonflyInput,
+        InsertRandomPacketMutator, NewRandom,
     },
     tt::{
         TokenStream,
         HasTokenStream,
-        RandomTokenValueMutator
+        TokenStreamInsertRandomMutator,
+        TokenReplaceRandomMutator,
+        TokenSplitMutator,
+        TokenReplaceInterestingMutator,
+        TokenStreamInsertInterestingMutator,
+        TokenStreamDuplicateMutator,
+        TokenValueDuplicateMutator,
+        TokenValueInsertRandomMutator,
+        TokenStreamCopyMutator,
+        TokenStreamSwapMutator,
+        TokenStreamDeleteMutator,
+        TokenRepeatCharMutator,
+        TokenRotateCharMutator,
+        TokenValueDeleteMutator,
+        TokenInsertSpecialCharMutator,
+        TokenInvertCaseMutator,
+        TokenStreamDictInsertMutator,
+        TokenReplaceDictMutator,
+        TokenStreamScannerMutator,
+        TokenConvertMutator,
     },
 };
 
@@ -94,6 +117,22 @@ impl HasTokenStream for FTPPacket {
             FTPPacket::Ctrl(data) |
             FTPPacket::Data(data) => Some(data),
             FTPPacket::Sep => None,
+        }
+    }
+}
+
+impl<S> NewRandom<S> for FTPPacket 
+where
+    S: HasRand + HasMetadata,
+{
+    fn new_random(state: &mut S) -> Self {
+        let typ = state.rand_mut().below(3);
+        
+        match typ {
+            0 => FTPPacket::Ctrl(TokenStream::new_random(state)),
+            1 => FTPPacket::Data(TokenStream::new_random(state)),
+            2 => FTPPacket::Sep,
+            _ => unreachable!()
         }
     }
 }
@@ -170,9 +209,29 @@ fn main() -> Result<(), Error> {
         ).unwrap());
         state.init_stategraph();
         
+        let max_tokens = 256;
         let packet_mutator = ScheduledPacketMutator::new(
             tuple_list!(
-                RandomTokenValueMutator::new()
+                TokenStreamInsertRandomMutator::new(max_tokens),
+                TokenReplaceRandomMutator::new(),
+                TokenSplitMutator::new(max_tokens),
+                TokenStreamInsertInterestingMutator::new(max_tokens),
+                TokenReplaceInterestingMutator::new(),
+                TokenStreamDuplicateMutator::new(max_tokens),
+                TokenValueDuplicateMutator::new(),
+                TokenValueInsertRandomMutator::new(),
+                TokenStreamCopyMutator::new(max_tokens),
+                TokenStreamSwapMutator::new(),
+                TokenStreamDeleteMutator::new(1),
+                TokenRepeatCharMutator::new(),
+                TokenRotateCharMutator::new(),
+                TokenValueDeleteMutator::new(1),
+                TokenInsertSpecialCharMutator::new(),
+                TokenInvertCaseMutator::new(),
+                TokenStreamDictInsertMutator::new(max_tokens),
+                TokenReplaceDictMutator::new(),
+                TokenStreamScannerMutator::new(max_tokens),
+                TokenConvertMutator::new()
             )
         );
 
@@ -181,7 +240,8 @@ fn main() -> Result<(), Error> {
                 PacketDeleteMutator::new(1),
                 PacketDuplicateMutator::new(16),
                 PacketReorderMutator::new(),
-                packet_mutator
+                packet_mutator,
+                InsertRandomPacketMutator::new()
             ),
             0
         );
@@ -209,37 +269,7 @@ fn main() -> Result<(), Error> {
         );
 
         let input = DragonflyInput::new(
-            vec![
-                FTPPacket::Ctrl(
-                    TokenStream::builder().constant("USER").whitespace(" ").text("ftp").constant("\r\n").build()
-                ),
-                FTPPacket::Sep,
-                FTPPacket::Ctrl(
-                    TokenStream::builder().constant("PASS").whitespace(" ").text("x").constant("\r\n").build()
-                ),
-                FTPPacket::Sep,
-                FTPPacket::Ctrl(
-                    TokenStream::builder().constant("CWD").whitespace(" ").text("uploads").constant("\r\n").build()
-                ),
-                FTPPacket::Sep,
-                FTPPacket::Ctrl(
-                    TokenStream::builder().constant("EPSV").constant("\r\n").build()
-                ),
-                FTPPacket::Sep,
-                FTPPacket::Ctrl(
-                    TokenStream::builder().constant("STOR").whitespace(" ").text("fuzzertest.txt").constant("\r\n").build()
-                ),
-                FTPPacket::Data(
-                    TokenStream::builder().blob(b"it werks!!!").build()
-                ),
-                FTPPacket::Data(
-                    TokenStream::builder().build()
-                ),
-                FTPPacket::Sep,
-                FTPPacket::Ctrl(
-                    TokenStream::builder().constant("QUIT").constant("\r\n").build()
-                ),
-            ]
+            vec![]
         );
         fuzzer.evaluate_input(&mut state, &mut executor, &mut mgr, input)?;
 
