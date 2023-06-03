@@ -1,5 +1,20 @@
 # Evaluation
 
+To evaluate dragonfly's performance, it is compared against AFLNet
+in a 24h fuzzing campaign
+
+## Dragonfly harness
+```
+cd dragonfly
+docker pull rust
+docker pull archlinux
+docker build -t evaluation-dragonfly .
+```
+
+
+
+OLD:
+
 ## Building libdragonfly
 ```
 meson setup ./libdragonfly ../libdragonfly

@@ -193,7 +193,7 @@ fn main() -> Result<(), Error> {
         "-q".to_string(),
         "-X".to_string(),
         "-c".to_string(),
-        fs::canonicalize("../fuzz.conf").unwrap().to_str().unwrap().to_string(),
+        fs::canonicalize("./fuzz.conf").unwrap().to_str().unwrap().to_string(),
         "-n".to_string(),
     ];
     
@@ -244,7 +244,7 @@ fn main() -> Result<(), Error> {
 
     let mut objective = CrashFeedback::new();
     
-    let dictionary = Tokens::from_file("ftp.dict")?;
+    let dictionary = Tokens::from_file("../ftp.dict")?;
     
     let mut state = StdState::new(
         StdRand::with_seed(seed),
