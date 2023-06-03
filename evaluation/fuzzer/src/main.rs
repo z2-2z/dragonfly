@@ -78,6 +78,7 @@ use dragonfly::{
         TokenReplaceDictMutator,
         TokenStreamScannerMutator,
         TokenConvertMutator,
+        TokenReplaceSpecialCharMutator,
     },
 };
 
@@ -214,7 +215,7 @@ fn main() -> Result<(), Error> {
         state.add_metadata(dictionary);
         
         let max_tokens = 256;
-        let packet_mutator = ScheduledPacketMutator::new(
+        let packet_mutator = ScheduledPacketMutator::with_max_stack_pow(
             tuple_list!(
                 TokenStreamInsertRandomMutator::new(max_tokens),
                 TokenReplaceRandomMutator::new(),
@@ -235,8 +236,10 @@ fn main() -> Result<(), Error> {
                 TokenStreamDictInsertMutator::new(max_tokens),
                 TokenReplaceDictMutator::new(),
                 TokenStreamScannerMutator::new(max_tokens),
-                TokenConvertMutator::new()
-            )
+                TokenConvertMutator::new(),
+                TokenReplaceSpecialCharMutator::new()
+            ),
+            2
         );
 
         let mutator = StdScheduledMutator::with_max_stack_pow(
@@ -279,7 +282,11 @@ fn main() -> Result<(), Error> {
         );
         fuzzer.evaluate_input(&mut state, &mut executor, &mut mgr, input)?;
 
-        fuzzer.fuzz_loop_for(&mut stages, &mut executor, &mut state, &mut mgr, 1)?;
+        #[cfg(debug_assertions)]
+        fuzzer.fuzz_loop_for(&mut stages, &mut executor, &mut state, &mut mgr, 50)?;
+        
+        #[cfg(not(debug_assertions))]
+        fuzzer.fuzz_loop(&mut stages, &mut executor, &mut state, &mut mgr)?;
         
         println!("Stopping client {}", core.0);
         Ok(())
