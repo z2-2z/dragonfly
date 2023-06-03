@@ -4,6 +4,7 @@ use crate::{
     mutators::NewRandom,
 };
 use libafl::prelude::{Rand, HasRand, HasMetadata, Tokens};
+use std::fmt::Display;
 
 pub(crate) const MAX_NUMBER_LEN: usize = 32;
 pub(crate) const MAX_WHITESPACE_LEN: usize = 4;
@@ -228,6 +229,24 @@ impl TextToken {
     }
 }
 
+impl Display for TextToken {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            TextToken::Constant(data) => {
+                if is_text(data) {
+                    write!(f, "Constant(\"{}\")", std::str::from_utf8(data).unwrap())
+                } else {
+                    write!(f, "Constant({:?})", data)
+                }
+            },
+            TextToken::Number(data) => write!(f, "Number(\"{}\")", std::str::from_utf8(data).unwrap()),
+            TextToken::Whitespace(data) => write!(f, "Whitespace({:?})", data),
+            TextToken::Text(data) => write!(f, "Text(\"{:?}\")", std::str::from_utf8(data).unwrap()),
+            TextToken::Blob(data) => write!(f, "Blob({:?})", data),
+        }
+    }
+}
+
 #[derive(Default, Debug, Clone, Serialize, Deserialize, Hash)]
 pub struct TokenStream {
     tokens: Vec<TextToken>,
@@ -384,6 +403,22 @@ where
         }
         
         builder.build()
+    }
+}
+
+impl Display for TokenStream {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let len = self.tokens.len();
+        
+        if len > 0 {
+            for i in 0..len - 1 {
+                write!(f, "{}, ", self.tokens[i])?;
+            }
+            
+            write!(f, "{}", self.tokens[len - 1])?;
+        }
+        
+        Ok(())
     }
 }
 

@@ -32,6 +32,7 @@ use libafl::prelude::{
     HasMetadata,
     Tokens,
     current_time,
+    Input,
 };
 use nix::sys::signal::Signal;
 use serde::{
@@ -55,6 +56,7 @@ use dragonfly::{
         HasStateGraph,
         DragonflyInput,
         InsertRandomPacketMutator, NewRandom,
+        HasPacketVector,
     },
     tt::{
         TokenStream,
@@ -82,6 +84,8 @@ use dragonfly::{
         TokenReplaceSpecialCharMutator,
     },
 };
+use clap::Parser;
+use std::fmt::Display;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Hash)]
 enum FTPPacket {
@@ -140,10 +144,36 @@ where
     }
 }
 
-fn main() -> Result<(), Error> {
-    let args: Vec<String> = std::env::args().collect();
+impl Display for FTPPacket {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            FTPPacket::Ctrl(data) => write!(f, "Ctrl({})", data),
+            FTPPacket::Data(data) => write!(f, "Data({})", data),
+            FTPPacket::Sep => write!(f, "Sep"),
+        }
+    }
+}
+
+#[derive(clap::Parser)]
+struct Args {
+    input_file: Option<String>,
     
-    let cores = args.get(1).map(|x| x.as_str()).unwrap_or("0");
+    #[arg(short, long, value_name = "core specification", default_value_t = String::from("0"))]
+    cores: String,
+}
+
+fn main() -> Result<(), Error> {
+    let args = Args::parse();
+    
+    if let Some(input_file) = &args.input_file {
+        let input = DragonflyInput::<FTPPacket>::from_file(input_file).unwrap();
+        
+        for packet in input.packets() {
+            println!("{}", packet);
+        }
+        
+        std::process::exit(0);
+    }
     
     let out_dir = PathBuf::from("output");
     let _ = fs::create_dir(&out_dir);
@@ -293,7 +323,7 @@ fn main() -> Result<(), Error> {
         Ok(())
     };
 
-    let cores = Cores::from_cmdline(cores)?;
+    let cores = Cores::from_cmdline(&args.cores)?;
     
     let mut last_updated = 0;
     let monitor = OnDiskJSONMonitor::new(
