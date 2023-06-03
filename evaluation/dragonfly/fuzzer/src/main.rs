@@ -172,7 +172,7 @@ fn main() -> Result<(), Error> {
     
     CoreId(0).set_affinity()?;
     
-    let out_dir = PathBuf::from("output");
+    let out_dir = PathBuf::from("/output");
     let _ = fs::create_dir(&out_dir);
     
     let mut crashes = out_dir.clone();
