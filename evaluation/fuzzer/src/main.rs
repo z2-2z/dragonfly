@@ -2,11 +2,8 @@ use core::time::Duration;
 use libafl::prelude::{
     current_nanos, StdRand, ShMem,
     ShMemProvider, UnixShMemProvider,
-    StdShMemProvider,
     tuple_list,
     AsMutSlice,
-    Cores, CoreId,
-    Launcher,
     CachedOnDiskCorpus,
     OnDiskCorpus,
     feedback_or,
@@ -26,13 +23,14 @@ use libafl::prelude::{
     StdState,
     Error,
     Evaluator,
-    EventConfig,
+    SimpleEventManager,
     HasRand,
     Rand,
     HasMetadata,
     Tokens,
     current_time,
     Input,
+    CoreId,
 };
 use nix::sys::signal::Signal;
 use serde::{
@@ -157,9 +155,6 @@ impl Display for FTPPacket {
 #[derive(clap::Parser)]
 struct Args {
     input_file: Option<String>,
-    
-    #[arg(short, long, value_name = "core specification", default_value_t = String::from("0"))]
-    cores: String,
 }
 
 fn main() -> Result<(), Error> {
@@ -174,6 +169,8 @@ fn main() -> Result<(), Error> {
         
         std::process::exit(0);
     }
+    
+    CoreId(0).set_affinity()?;
     
     let out_dir = PathBuf::from("output");
     let _ = fs::create_dir(&out_dir);
@@ -206,125 +203,6 @@ fn main() -> Result<(), Error> {
     
     let seed = current_nanos();
     
-    let mut client = |old_state: Option<_>, mut mgr, core: CoreId| {
-        println!("Launch client @ {}", core.0);
-        
-        let mut shmem_provider = UnixShMemProvider::new()?;
-        const MAP_SIZE: usize = 65536;
-        let mut shmem = shmem_provider.new_shmem(MAP_SIZE)?;
-        shmem.write_to_env("__AFL_SHM_ID")?;
-        let shmem_buf = shmem.as_mut_slice();
-        std::env::set_var("AFL_MAP_SIZE", format!("{}", MAP_SIZE));
-
-        let state_observer = StateObserver::new(&mut shmem_provider, "StateObserver")?;
-        let edges_observer = HitcountsMapObserver::new(unsafe { StdMapObserver::new("shared_mem", shmem_buf) });
-        let time_observer = TimeObserver::new("time");
-        
-        let state_feedback = StateFeedback::new(&state_observer);
-        let map_feedback = MaxMapFeedback::tracking(&edges_observer, true, false);
-
-        let calibration = CalibrationStage::new(&map_feedback);
-
-        let mut feedback = feedback_or!(
-            state_feedback,
-            map_feedback,
-            TimeFeedback::with_observer(&time_observer)
-        );
-
-        let mut objective = CrashFeedback::new();
-        
-        let dictionary = Tokens::from_file("ftp.dict")?;
-        
-        let mut state = old_state.unwrap_or_else(|| StdState::new(
-            StdRand::with_seed(seed),
-            CachedOnDiskCorpus::<DragonflyInput<FTPPacket>>::new(&queue, 128).expect("queue"),
-            OnDiskCorpus::<DragonflyInput<FTPPacket>>::new(&crashes).expect("crashes"),
-            &mut feedback,
-            &mut objective,
-        ).unwrap());
-        state.init_stategraph();
-        state.add_metadata(dictionary);
-        
-        let max_tokens = 256;
-        let packet_mutator = ScheduledPacketMutator::with_max_stack_pow(
-            tuple_list!(
-                TokenStreamInsertRandomMutator::new(max_tokens),
-                TokenReplaceRandomMutator::new(),
-                TokenSplitMutator::new(max_tokens),
-                TokenStreamInsertInterestingMutator::new(max_tokens),
-                TokenReplaceInterestingMutator::new(),
-                TokenStreamDuplicateMutator::new(max_tokens),
-                TokenValueDuplicateMutator::new(),
-                TokenValueInsertRandomMutator::new(),
-                TokenStreamCopyMutator::new(max_tokens),
-                TokenStreamSwapMutator::new(),
-                TokenStreamDeleteMutator::new(1),
-                TokenRepeatCharMutator::new(),
-                TokenRotateCharMutator::new(),
-                TokenValueDeleteMutator::new(1),
-                TokenInsertSpecialCharMutator::new(),
-                TokenInvertCaseMutator::new(),
-                TokenStreamDictInsertMutator::new(max_tokens),
-                TokenReplaceDictMutator::new(),
-                TokenStreamScannerMutator::new(max_tokens),
-                TokenConvertMutator::new(),
-                TokenReplaceSpecialCharMutator::new()
-            ),
-            2
-        );
-
-        let mutator = StdScheduledMutator::with_max_stack_pow(
-            tuple_list!(
-                PacketDeleteMutator::new(1),
-                PacketDuplicateMutator::new(16),
-                PacketReorderMutator::new(),
-                packet_mutator,
-                InsertRandomPacketMutator::new()
-            ),
-            0
-        );
-
-        let mutational = StdMutationalStage::new(mutator);
-
-        let scheduler = RandScheduler::new();
-
-        let mut fuzzer = StdFuzzer::new(scheduler, feedback, objective);
-
-        let mut executor = LibdragonflyExecutorBuilder::new()
-            .observers(tuple_list!(state_observer, edges_observer, time_observer))
-            .shmem_provider(&mut shmem_provider)
-            .timeout(timeout)
-            .signal(signal)
-            .debug_child(debug_child)
-            .program(&executable)
-            .args(&arguments)
-            .is_deferred_forkserver(true)
-            .build()?;
-
-        let mut stages = tuple_list!(
-            calibration, 
-            mutational
-        );
-
-        let input = DragonflyInput::new(
-            vec![
-                FTPPacket::Ctrl(TokenStream::builder().build())
-            ]
-        );
-        fuzzer.evaluate_input(&mut state, &mut executor, &mut mgr, input)?;
-
-        #[cfg(debug_assertions)]
-        fuzzer.fuzz_loop_for(&mut stages, &mut executor, &mut state, &mut mgr, 50)?;
-        
-        #[cfg(not(debug_assertions))]
-        fuzzer.fuzz_loop(&mut stages, &mut executor, &mut state, &mut mgr)?;
-        
-        println!("Stopping client {}", core.0);
-        Ok(())
-    };
-
-    let cores = Cores::from_cmdline(&args.cores)?;
-    
     let mut last_updated = 0;
     let monitor = OnDiskJSONMonitor::new(
         logfile,
@@ -340,22 +218,117 @@ fn main() -> Result<(), Error> {
             }
         }
     );
+    let mut mgr = SimpleEventManager::new(monitor);
+        
+    let mut shmem_provider = UnixShMemProvider::new()?;
+    const MAP_SIZE: usize = 65536;
+    let mut shmem = shmem_provider.new_shmem(MAP_SIZE)?;
+    shmem.write_to_env("__AFL_SHM_ID")?;
+    let shmem_buf = shmem.as_mut_slice();
+    std::env::set_var("AFL_MAP_SIZE", format!("{}", MAP_SIZE));
 
-    let mut launcher = Launcher::builder()
-        .shmem_provider(StdShMemProvider::new()?)
-        .configuration(EventConfig::from_name("default"))
-        .run_client(&mut client)
-        .cores(&cores)
-        .monitor(monitor)
-        .broker_port(1337)
-        .remote_broker_addr(Some("127.0.0.1:1337".parse().unwrap()))
-        .build();
+    let state_observer = StateObserver::new(&mut shmem_provider, "StateObserver")?;
+    let edges_observer = HitcountsMapObserver::new(unsafe { StdMapObserver::new("shared_mem", shmem_buf) });
+    let time_observer = TimeObserver::new("time");
+    
+    let state_feedback = StateFeedback::new(&state_observer);
+    let map_feedback = MaxMapFeedback::tracking(&edges_observer, true, false);
 
-    match launcher.launch() {
-        Ok(_) => {},
-        Err(Error::ShuttingDown) => {},
-        err => panic!("Failed to lauch instances: {:?}", err)
-    };
+    let calibration = CalibrationStage::new(&map_feedback);
 
+    let mut feedback = feedback_or!(
+        state_feedback,
+        map_feedback,
+        TimeFeedback::with_observer(&time_observer)
+    );
+
+    let mut objective = CrashFeedback::new();
+    
+    let dictionary = Tokens::from_file("ftp.dict")?;
+    
+    let mut state = StdState::new(
+        StdRand::with_seed(seed),
+        CachedOnDiskCorpus::<DragonflyInput<FTPPacket>>::new(&queue, 128)?,
+        OnDiskCorpus::<DragonflyInput<FTPPacket>>::new(&crashes)?,
+        &mut feedback,
+        &mut objective,
+    )?;
+    state.init_stategraph();
+    state.add_metadata(dictionary);
+    
+    let max_tokens = 256;
+    let packet_mutator = ScheduledPacketMutator::with_max_stack_pow(
+        tuple_list!(
+            TokenStreamInsertRandomMutator::new(max_tokens),
+            TokenReplaceRandomMutator::new(),
+            TokenSplitMutator::new(max_tokens),
+            TokenStreamInsertInterestingMutator::new(max_tokens),
+            TokenReplaceInterestingMutator::new(),
+            TokenStreamDuplicateMutator::new(max_tokens),
+            TokenValueDuplicateMutator::new(),
+            TokenValueInsertRandomMutator::new(),
+            TokenStreamCopyMutator::new(max_tokens),
+            TokenStreamSwapMutator::new(),
+            TokenStreamDeleteMutator::new(1),
+            TokenRepeatCharMutator::new(),
+            TokenRotateCharMutator::new(),
+            TokenValueDeleteMutator::new(1),
+            TokenInsertSpecialCharMutator::new(),
+            TokenInvertCaseMutator::new(),
+            TokenStreamDictInsertMutator::new(max_tokens),
+            TokenReplaceDictMutator::new(),
+            TokenStreamScannerMutator::new(max_tokens),
+            TokenConvertMutator::new(),
+            TokenReplaceSpecialCharMutator::new()
+        ),
+        2
+    );
+
+    let mutator = StdScheduledMutator::with_max_stack_pow(
+        tuple_list!(
+            PacketDeleteMutator::new(1),
+            PacketDuplicateMutator::new(16),
+            PacketReorderMutator::new(),
+            packet_mutator,
+            InsertRandomPacketMutator::new()
+        ),
+        0
+    );
+
+    let mutational = StdMutationalStage::new(mutator);
+
+    let scheduler = RandScheduler::new();
+
+    let mut fuzzer = StdFuzzer::new(scheduler, feedback, objective);
+
+    let mut executor = LibdragonflyExecutorBuilder::new()
+        .observers(tuple_list!(state_observer, edges_observer, time_observer))
+        .shmem_provider(&mut shmem_provider)
+        .timeout(timeout)
+        .signal(signal)
+        .debug_child(debug_child)
+        .program(&executable)
+        .args(&arguments)
+        .is_deferred_forkserver(true)
+        .build()?;
+
+    let mut stages = tuple_list!(
+        calibration, 
+        mutational
+    );
+
+    let input = DragonflyInput::new(
+        vec![
+            FTPPacket::Ctrl(TokenStream::builder().build())
+        ]
+    );
+    fuzzer.evaluate_input(&mut state, &mut executor, &mut mgr, input)?;
+
+    #[cfg(debug_assertions)]
+    fuzzer.fuzz_loop_for(&mut stages, &mut executor, &mut state, &mut mgr, 50)?;
+    
+    #[cfg(not(debug_assertions))]
+    fuzzer.fuzz_loop(&mut stages, &mut executor, &mut state, &mut mgr)?;
+        
     Ok(())
 }

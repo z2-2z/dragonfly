@@ -11,6 +11,7 @@ TransferLog none
 SystemLog /dev/null
 UseReverseDNS off
 WtmpLog off
+AllowOverwrite on
 
 User				$USER
 Group				$USER
