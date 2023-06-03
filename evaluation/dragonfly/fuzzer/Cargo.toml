@@ -13,7 +13,7 @@ codegen-units = 1
 
 [dependencies]
 libafl = "0.10"
-dragonfly = { path = "../../dragonfly" }
+dragonfly = { path = "../../../dragonfly" }
 nix = "0.26"
 serde = "1.0"
 clap = { version = "4.3", features = ["default", "derive"] }
