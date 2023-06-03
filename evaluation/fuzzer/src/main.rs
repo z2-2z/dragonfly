@@ -14,7 +14,7 @@ use libafl::prelude::{
     MaxMapFeedback,
     TimeFeedback,
     Fuzzer, StdFuzzer,
-    OnDiskTOMLMonitor,
+    OnDiskJSONMonitor,
     SimplePrintingMonitor,
     StdScheduledMutator,
     HitcountsMapObserver,
@@ -31,6 +31,7 @@ use libafl::prelude::{
     Rand,
     HasMetadata,
     Tokens,
+    current_time,
 };
 use nix::sys::signal::Signal;
 use serde::{
@@ -293,7 +294,22 @@ fn main() -> Result<(), Error> {
     };
 
     let cores = Cores::from_cmdline(cores)?;
-    let monitor = OnDiskTOMLMonitor::new(logfile, SimplePrintingMonitor::new());
+    
+    let mut last_updated = 0;
+    let monitor = OnDiskJSONMonitor::new(
+        logfile,
+        SimplePrintingMonitor::new(),
+        move |_| {
+            let now = current_time().as_secs();
+            
+            if (now - last_updated) >= 60 {
+                last_updated = now;
+                true
+            } else {
+                false
+            }
+        }
+    );
 
     let mut launcher = Launcher::builder()
         .shmem_provider(StdShMemProvider::new()?)
