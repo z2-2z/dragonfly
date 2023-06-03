@@ -144,9 +144,36 @@ index 1f1746f78..c4d71182e 100644
    config_rec *c = NULL;
    unsigned int ctxt_precedence = 0;
 diff --git a/src/fsio.c b/src/fsio.c
-index ac4e83b9e..204844bc7 100644
+index ac4e83b9e..a80d0b27b 100644
 --- a/src/fsio.c
 +++ b/src/fsio.c
+@@ -4068,7 +4068,7 @@ int pr_fsio_mkdir(const char *path, mode_t mode) {
+ 
+   pr_trace_msg(trace_channel, 8, "using %s mkdir() for path '%s'", fs->fs_name,
+     path);
+-  res = (fs->mkdir)(fs, path, mode);
++  res = 0; //(fs->mkdir)(fs, path, mode);
+   xerrno = errno;
+ 
+   if (res == 0) {
+@@ -4625,7 +4625,7 @@ int pr_fsio_rmdir(const char *path) {
+ 
+   pr_trace_msg(trace_channel, 8, "using %s rmdir() for path '%s'", fs->fs_name,
+     path);
+-  res = (fs->rmdir)(fs, path);
++  res = 0; //(fs->rmdir)(fs, path);
+   if (res == 0) {
+     pr_fs_clear_cache2(path);
+   }
+@@ -4875,7 +4875,7 @@ int pr_fsio_rename(const char *rnfr, const char *rnto) {
+ 
+   pr_trace_msg(trace_channel, 8, "using %s rename() for paths '%s', '%s'",
+     fs->fs_name, rnfr, rnto);
+-  res = (fs->rename)(fs, rnfr, rnto);
++  res = 0; //(fs->rename)(fs, rnfr, rnto);
+   if (res == 0) {
+     pr_fs_clear_cache2(rnfr);
+     pr_fs_clear_cache2(rnto);
 @@ -4930,7 +4930,7 @@ int pr_fsio_unlink(const char *name) {
  
    pr_trace_msg(trace_channel, 8, "using %s unlink() for path '%s'",
@@ -156,15 +183,177 @@ index ac4e83b9e..204844bc7 100644
    if (res == 0) {
      pr_fs_clear_cache2(name);
    }
+@@ -5279,7 +5279,7 @@ ssize_t pr_fsio_pwrite(pr_fh_t *fh, const void *buf, size_t size,
+   pr_trace_msg(trace_channel, 8, "using %s pwrite() for path '%s' (%lu bytes, %"
+     PR_LU " offset)", fs->fs_name, fh->fh_path, (unsigned long) size,
+     (pr_off_t) offset);
+-  res = (fs->pwrite)(fh, fh->fh_fd, buf, size, offset);
++  res = (ssize_t) size; //(fs->pwrite)(fh, fh->fh_fd, buf, size, offset);
+ 
+   return res;
+ }
 @@ -5304,7 +5304,7 @@ int pr_fsio_write(pr_fh_t *fh, const char *buf, size_t size) {
  
    pr_trace_msg(trace_channel, 8, "using %s write() for path '%s' (%lu bytes)",
      fs->fs_name, fh->fh_path, (unsigned long) size);
 -  res = (fs->write)(fh, fh->fh_fd, buf, size);
-+  res = size; // (fs->write)(fh, fh->fh_fd, buf, size);
++  res = (ssize_t) size; // (fs->write)(fh, fh->fh_fd, buf, size);
  
    return res;
  }
+@@ -5401,7 +5401,7 @@ int pr_fsio_link(const char *target_path, const char *link_path) {
+ 
+   pr_trace_msg(trace_channel, 8, "using %s link() for paths '%s', '%s'",
+     fs->fs_name, target_path, link_path);
+-  res = (fs->link)(fs, target_path, link_path);
++  res = 0; //(fs->link)(fs, target_path, link_path);
+   if (res == 0) {
+     pr_fs_clear_cache2(link_path);
+   }
+@@ -5433,7 +5433,7 @@ int pr_fsio_symlink(const char *target_path, const char *link_path) {
+ 
+   pr_trace_msg(trace_channel, 8, "using %s symlink() for path '%s'",
+     fs->fs_name, link_path);
+-  res = (fs->symlink)(fs, target_path, link_path);
++  res = 0; //(fs->symlink)(fs, target_path, link_path);
+   if (res == 0) {
+     pr_fs_clear_cache2(link_path);
+   }
+@@ -5460,7 +5460,7 @@ int pr_fsio_ftruncate(pr_fh_t *fh, off_t len) {
+ 
+   pr_trace_msg(trace_channel, 8, "using %s ftruncate() for path '%s'",
+     fs->fs_name, fh->fh_path);
+-  res = (fs->ftruncate)(fh, fh->fh_fd, len);
++  res = 0; //(fs->ftruncate)(fh, fh->fh_fd, len);
+   if (res == 0) {
+     pr_fs_clear_cache2(fh->fh_path);
+ 
+@@ -5497,7 +5497,7 @@ int pr_fsio_truncate(const char *path, off_t len) {
+ 
+   pr_trace_msg(trace_channel, 8, "using %s truncate() for path '%s'",
+     fs->fs_name, path);
+-  res = (fs->truncate)(fs, path, len);
++  res = 0; //(fs->truncate)(fs, path, len);
+   if (res == 0) {
+     pr_fs_clear_cache2(path);
+   }
+@@ -5528,7 +5528,7 @@ int pr_fsio_chmod(const char *name, mode_t mode) {
+ 
+   pr_trace_msg(trace_channel, 8, "using %s chmod() for path '%s'",
+     fs->fs_name, name);
+-  res = (fs->chmod)(fs, name, mode);
++  res = 0; //(fs->chmod)(fs, name, mode);
+   if (res == 0) {
+     pr_fs_clear_cache2(name);
+   }
+@@ -5578,7 +5578,7 @@ int pr_fsio_fchmod(pr_fh_t *fh, mode_t mode) {
+ 
+   pr_trace_msg(trace_channel, 8, "using %s fchmod() for path '%s'",
+     fs->fs_name, fh->fh_path);
+-  res = (fs->fchmod)(fh, fh->fh_fd, mode);
++  res = 0; //(fs->fchmod)(fh, fh->fh_fd, mode);
+   if (res == 0) {
+     pr_fs_clear_cache2(fh->fh_path);
+   }
+@@ -5638,7 +5638,7 @@ int pr_fsio_chown(const char *name, uid_t uid, gid_t gid) {
+ 
+   pr_trace_msg(trace_channel, 8, "using %s chown() for path '%s'",
+     fs->fs_name, name);
+-  res = (fs->chown)(fs, name, uid, gid);
++  res = 0; //(fs->chown)(fs, name, uid, gid);
+   if (res == 0) {
+     pr_fs_clear_cache2(name);
+   }
+@@ -5688,7 +5688,7 @@ int pr_fsio_fchown(pr_fh_t *fh, uid_t uid, gid_t gid) {
+ 
+   pr_trace_msg(trace_channel, 8, "using %s fchown() for path '%s'",
+     fs->fs_name, fh->fh_path);
+-  res = (fs->fchown)(fh, fh->fh_fd, uid, gid);
++  res = 0; //(fs->fchown)(fh, fh->fh_fd, uid, gid);
+   if (res == 0) {
+     pr_fs_clear_cache2(fh->fh_path);
+   }
+@@ -5748,7 +5748,7 @@ int pr_fsio_lchown(const char *name, uid_t uid, gid_t gid) {
+ 
+   pr_trace_msg(trace_channel, 8, "using %s lchown() for path '%s'",
+     fs->fs_name, name);
+-  res = (fs->lchown)(fs, name, uid, gid);
++  res = 0; //(fs->lchown)(fs, name, uid, gid);
+   if (res == 0) {
+     pr_fs_clear_cache2(name);
+   }
+@@ -5851,7 +5851,7 @@ int pr_fsio_utimes(const char *path, struct timeval *tvs) {
+ 
+   pr_trace_msg(trace_channel, 8, "using %s utimes() for path '%s'",
+     fs->fs_name, path);
+-  res = (fs->utimes)(fs, path, tvs);
++  res = 0; //(fs->utimes)(fs, path, tvs);
+   if (res == 0) {
+     pr_fs_clear_cache2(path);
+   }
+@@ -5946,7 +5946,7 @@ int pr_fsio_futimes(pr_fh_t *fh, struct timeval *tvs) {
+ 
+   pr_trace_msg(trace_channel, 8, "using %s futimes() for path '%s'",
+     fs->fs_name, fh->fh_path);
+-  res = (fs->futimes)(fh, fh->fh_fd, tvs);
++  res = 0; //(fs->futimes)(fh, fh->fh_fd, tvs);
+   if (res == 0) {
+     pr_fs_clear_cache2(fh->fh_path);
+   }
+@@ -6210,7 +6210,7 @@ int pr_fsio_removexattr(pool *p, const char *path, const char *name) {
+ 
+   pr_trace_msg(trace_channel, 8, "using %s removexattr() for path '%s'",
+     fs->fs_name, path);
+-  res = (fs->removexattr)(p, fs, path, name);
++  res = 0; //(fs->removexattr)(p, fs, path, name);
+   return res;
+ }
+ 
+@@ -6244,7 +6244,7 @@ int pr_fsio_lremovexattr(pool *p, const char *path, const char *name) {
+ 
+   pr_trace_msg(trace_channel, 8, "using %s lremovexattr() for path '%s'",
+     fs->fs_name, path);
+-  res = (fs->lremovexattr)(p, fs, path, name);
++  res = 0; //(fs->lremovexattr)(p, fs, path, name);
+   return res;
+ }
+ 
+@@ -6274,7 +6274,7 @@ int pr_fsio_fremovexattr(pool *p, pr_fh_t *fh, const char *name) {
+ 
+   pr_trace_msg(trace_channel, 8, "using %s fremovexattr() for path '%s'",
+     fs->fs_name, fh->fh_path);
+-  res = (fs->fremovexattr)(p, fh, fh->fh_fd, name);
++  res = 0; //(fs->fremovexattr)(p, fh, fh->fh_fd, name);
+   return res;
+ }
+ 
+@@ -6309,7 +6309,7 @@ int pr_fsio_setxattr(pool *p, const char *path, const char *name, void *val,
+ 
+   pr_trace_msg(trace_channel, 8, "using %s setxattr() for path '%s'",
+     fs->fs_name, path);
+-  res = (fs->setxattr)(p, fs, path, name, val, valsz, flags);
++  res = 0; //(fs->setxattr)(p, fs, path, name, val, valsz, flags);
+   return res;
+ }
+ 
+@@ -6344,7 +6344,7 @@ int pr_fsio_lsetxattr(pool *p, const char *path, const char *name, void *val,
+ 
+   pr_trace_msg(trace_channel, 8, "using %s lsetxattr() for path '%s'",
+     fs->fs_name, path);
+-  res = (fs->lsetxattr)(p, fs, path, name, val, valsz, flags);
++  res = 0; //(fs->lsetxattr)(p, fs, path, name, val, valsz, flags);
+   return res;
+ }
+ 
+@@ -6375,7 +6375,7 @@ int pr_fsio_fsetxattr(pool *p, pr_fh_t *fh, const char *name, void *val,
+ 
+   pr_trace_msg(trace_channel, 8, "using %s fsetxattr() for path '%s'",
+     fs->fs_name, fh->fh_path);
+-  res = (fs->fsetxattr)(p, fh, fh->fh_fd, name, val, valsz, flags);
++  res = 0; //(fs->fsetxattr)(p, fh, fh->fh_fd, name, val, valsz, flags);
+   return res;
+ }
+ 
 @@ -6696,6 +6696,7 @@ char *pr_fsio_getline(char *buf, size_t buflen, pr_fh_t *fh,
  #define FSIO_MAX_FD_COUNT		1024
  
