@@ -30,6 +30,7 @@ use libafl::prelude::{
     HasRand,
     Rand,
     HasMetadata,
+    Tokens,
 };
 use nix::sys::signal::Signal;
 use serde::{
@@ -199,7 +200,9 @@ fn main() -> Result<(), Error> {
         );
 
         let mut objective = CrashFeedback::new();
-
+        
+        let dictionary = Tokens::from_file("ftp.dict")?;
+        
         let mut state = old_state.unwrap_or_else(|| StdState::new(
             StdRand::with_seed(seed),
             CachedOnDiskCorpus::<DragonflyInput<FTPPacket>>::new(&queue, 128).expect("queue"),
@@ -208,6 +211,7 @@ fn main() -> Result<(), Error> {
             &mut objective,
         ).unwrap());
         state.init_stategraph();
+        state.add_metadata(dictionary);
         
         let max_tokens = 256;
         let packet_mutator = ScheduledPacketMutator::new(
