@@ -63,3 +63,10 @@
 "CLNT"
 "RANG"
 "CSID"
+
+# The username for logins
+"ftp"
+
+# Files/folders in the FTP root
+"uploads"
+"file"
