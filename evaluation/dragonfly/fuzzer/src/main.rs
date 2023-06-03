@@ -82,7 +82,7 @@ use dragonfly::{
         TokenReplaceSpecialCharMutator,
     },
 };
-use clap::Parser;
+use clap::{Parser, CommandFactory};
 use std::fmt::Display;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Hash)]
@@ -154,13 +154,17 @@ impl Display for FTPPacket {
 
 #[derive(clap::Parser)]
 struct Args {
-    input_file: Option<String>,
+    #[arg(short, long)]
+    output: Option<String>,
+    
+    #[arg(short, long)]
+    seed_file: Option<String>,
 }
 
 fn main() -> Result<(), Error> {
     let args = Args::parse();
     
-    if let Some(input_file) = &args.input_file {
+    if let Some(input_file) = &args.seed_file {
         let input = DragonflyInput::<FTPPacket>::from_file(input_file).unwrap();
         
         for packet in input.packets() {
@@ -172,7 +176,15 @@ fn main() -> Result<(), Error> {
     
     CoreId(0).set_affinity()?;
     
-    let out_dir = PathBuf::from("/output");
+    let output = args.output.unwrap_or_else(|| {
+        Args::command()
+            .error(
+                clap::error::ErrorKind::ArgumentConflict,
+                "Output folder not specified"
+            )
+            .exit();
+    });
+    let out_dir = PathBuf::from(output);
     let _ = fs::create_dir(&out_dir);
     
     let mut crashes = out_dir.clone();
