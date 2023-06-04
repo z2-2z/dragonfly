@@ -54,12 +54,10 @@ RUN cargo build --release
 WORKDIR ..
 RUN useradd -M -r user && \
     passwd -d user
-RUN chmod 777 .
-USER user
 RUN USER=user ../gen-config.sh > fuzz.conf
 
-# Start the evaluation campaign.
-# The results are written to /output.
-# Set this up as a shared directory if you want
-# to access the results from the host.
-CMD timeout 24h ./fuzzer/target/release/fuzzer_dragonfly --output /output
+# Autostart the fuzzing campaign
+VOLUME ["/output"]
+RUN echo 'set -e; chmod 777 /output; su user -c "exec $*"' > /entrypoint.sh
+ENTRYPOINT ["/bin/sh", "/entrypoint.sh"]
+CMD ["timeout", "24h", "./fuzzer/target/release/fuzzer_dragonfly", "--output", "/output"]

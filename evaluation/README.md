@@ -10,8 +10,11 @@ FTP commands and fuzz for 24h.
 ```
 cd dragonfly
 docker build --pull -t evaluation-dragonfly .
-#TODO: run
+mkdir output
+docker run -v "$PWD/output":/output evaluation-dragonfly
 ```
+
+The container must be stopped with `docker stop`, Ctrl+C will not work.
 
 ## AFLNet Fuzzer
 TODO
