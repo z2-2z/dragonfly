@@ -21,6 +21,10 @@ The container must be stopped with `docker stop <container-id>`, Ctrl+C will not
 cd aflnet
 docker build --pull -t evaluation-aflnet .
 mkdir output
+echo core | sudo tee /proc/sys/kernel/core_pattern
+pushd /sys/devices/system/cpu
+echo performance | sudo tee cpu*/cpufreq/scaling_governor
+popd
 docker run -v "$PWD/output":/output evaluation-aflnet
 ```
 
