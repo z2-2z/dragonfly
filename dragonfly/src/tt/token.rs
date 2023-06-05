@@ -1,7 +1,7 @@
 use serde::{Serialize, Deserialize};
 use crate::{
     input::SerializeIntoBuffer,
-    mutators::NewRandom,
+    mutators::{NewRandom, HasCrossover},
 };
 use libafl::prelude::{Rand, HasRand, HasMetadata, Tokens};
 use std::fmt::Display;
@@ -419,6 +419,44 @@ impl Display for TokenStream {
         }
         
         Ok(())
+    }
+}
+
+impl<S> HasCrossover<S> for TokenStream
+where
+    S: HasRand,
+{
+    fn crossover_insert(&mut self, state: &mut S, mut other: Self) {
+        if other.tokens.is_empty() {
+            return;
+        }
+        
+        let other_start = state.rand_mut().below(other.tokens().len() as u64) as usize;
+        let other_len = std::cmp::min(
+            state.rand_mut().below(other.tokens().len() as u64 - other_start as u64) as usize,
+            1
+        );
+        
+        let self_start = state.rand_mut().below(self.tokens.len() as u64 + 1) as usize;
+        
+        self.tokens.splice(self_start..self_start, other.tokens.drain(other_start..other_start + other_len));
+    }
+
+    fn crossover_replace(&mut self, state: &mut S, mut other: Self) {
+        if other.tokens.is_empty() {
+            return;
+        }
+        
+        let other_start = state.rand_mut().below(other.tokens().len() as u64) as usize;
+        let other_len = std::cmp::min(
+            state.rand_mut().below(other.tokens().len() as u64 - other_start as u64) as usize,
+            1
+        );
+        
+        let self_start = state.rand_mut().below(self.tokens.len() as u64 + 1) as usize;
+        let self_len  = state.rand_mut().below(self.tokens.len() as u64) as usize;
+        
+        self.tokens.splice(self_start..self_start + self_len, other.tokens.drain(other_start..other_start + other_len));
     }
 }
 

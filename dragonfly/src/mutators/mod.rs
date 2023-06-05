@@ -6,6 +6,7 @@ mod packet;
 mod scheduled;
 mod random;
 mod generate;
+mod crossover;
 
 pub use delete::PacketDeleteMutator;
 pub use duplicate::PacketDuplicateMutator;
@@ -15,3 +16,4 @@ pub use packet::{PacketMutator};
 pub use scheduled::ScheduledPacketMutator;
 pub use random::{InsertRandomPacketMutator, NewRandom};
 pub use generate::{NewGenerated, InsertGeneratedPacketMutator};
+pub use crossover::{HasCrossover, PacketCrossoverInsertMutator, PacketCrossoverReplaceMutator};
