@@ -167,6 +167,8 @@ where
     fn new_generated(state: &mut S) -> Self {
         let seed = state.rand_mut().next() as usize;
         
+        assert!(seed != 0);
+        
         unsafe {
             ftp_generator_seed(seed);
         }
