@@ -1,26 +1,29 @@
 FROM archlinux:latest
 
-RUN pacman -Sy --noconfirm git make gcc libcap coreutils python-pip
-RUN pip install gcovr
+RUN pacman --noconfirm -Sy git make gcc diffutils meson ninja coreutils libcap shadow rustup python-pip graphviz
+RUN pip install gcovr==6.0
 
 # Build AFLNet
 RUN git clone https://github.com/aflnet/aflnet.git
-
-RUN pacman --noconfirm -S graphviz
-
 RUN cd aflnet && \
-    make && \
-    test -f afl-gcc && \
-    test -f aflnet-replay
+    make aflnet-replay
+
+# Build AFLplusplus
+RUN git clone https://github.com/z2-2z/dragonfly
+RUN cd dragonfly && \
+    git submodule update --init \
+        AFLplusplus \
+        evaluation/proftpd
+
+WORKDIR dragonfly/AFLplusplus
+RUN NO_PYTHON=1 NO_NYX=1 make source-only && test -f afl-gcc
 
 # Build ProFTPD
-RUN git clone https://github.com/z2-2z/dragonfly
-WORKDIR dragonfly/evaluation/proftpd
-RUN git submodule update --init . && \
-    git apply ../aflnet/patch && \
+WORKDIR ../evaluation/proftpd
+RUN git apply ../aflnet/patch && \
     git apply ../aflnet/patch-cov
-RUN CC="/aflnet/afl-gcc" \
-    CFLAGS="-D__AFL_INIT\(\)= -O0 -g --coverage" \
+RUN CC="$(realpath ../../AFLplusplus/afl-gcc)" \
+    CFLAGS="-O0 -g --coverage" \
     LDFLAGS="--coverage" \
     ./configure --disable-shadow --disable-auth-pam --disable-cap && \
     rm -fv *.gcno && \
