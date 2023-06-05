@@ -1,0 +1,26 @@
+diff --git a/src/memcache.c b/src/memcache.c
+index 0eee5466e..2f47666aa 100644
+--- a/src/memcache.c
++++ b/src/memcache.c
+@@ -1523,7 +1523,7 @@ static void memcache_tpl_fatal(char *fmt, ...) {
+   pr_trace_vmsg(trace_channel, 1, fmt, ap);
+   va_end(ap);
+ 
+-  _exit(1);
++  exit(1);
+ }
+ 
+ int memcache_clear(void) {
+diff --git a/src/session.c b/src/session.c
+index b32301bee..5e782161e 100644
+--- a/src/session.c
++++ b/src/session.c
+@@ -168,7 +168,7 @@ void pr_session_end(int flags) {
+    */
+   exit(exitcode);
+ #else
+-  _exit(exitcode);
++  exit(exitcode);
+ #endif /* PR_DEVEL_PROFILE */
+ }
+ 
