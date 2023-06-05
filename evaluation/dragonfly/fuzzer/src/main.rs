@@ -340,7 +340,7 @@ fn main() -> Result<(), Error> {
             for entry in std::fs::read_dir(replay)? {
                 let entry = entry?.path();
                 
-                if entry.is_file() && entry.starts_with("dragonfly-") {
+                if entry.is_file() && entry.file_name().unwrap().to_str().unwrap().starts_with("dragonfly-") {
                     println!("Replaying {}...", entry.display());
                     
                     let input = DragonflyInput::<FTPPacket>::from_file(entry)?;
