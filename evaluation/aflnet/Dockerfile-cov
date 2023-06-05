@@ -1,29 +1,19 @@
-FROM ubuntu:18.04
+FROM archlinux:latest
 
-RUN apt-get -y update && \
-    apt-get -y install \ 
-        apt-utils \
-        build-essential \
-        openssl \
-        clang \
-        graphviz-dev \
-        libcap-dev \
-        git \
-        libcap2-bin \
-        python3-pip
-RUN pip3 install gcovr==5.0
+RUN pacman -Sy --noconfirm git make gcc libcap coreutils python-pip
+RUN pip install gcovr
 
 # Build AFLNet
 RUN git clone https://github.com/aflnet/aflnet.git
+
+RUN pacman --noconfirm -S graphviz
+
 RUN cd aflnet && \
-    export LLVM_CONFIG="llvm-config-6.0" && \
-    make clean all && \
-    make -C llvm_mode
-ENV AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1
-ENV AFL_SKIP_CPUFREQ=1
+    make && \
+    test -f afl-gcc && \
+    test -f aflnet-replay
 
 # Build ProFTPD
-#TODO: change to aflnet/patch-cov
 RUN git clone https://github.com/z2-2z/dragonfly
 WORKDIR dragonfly/evaluation/proftpd
 RUN git submodule update --init . && \
@@ -47,11 +37,8 @@ RUN useradd -M -r user && \
     passwd -d user
 RUN USER=user ../gen-config.sh > fuzz.conf
 
-# Fuzzer setup
-RUN chmod 666 /dev/null
-
 # Autostart coverage collection
 VOLUME ["/output"]
-RUN echo 'set -e; ../proftpd/proftpd -d 0 -q -c /dragonfly/evaluation/aflnet/fuzz.conf -n & sleep 2; find /output/replayable-queue -type f | xargs -L 1 -I +++ /aflnet/aflnet-replay +++ FTP 2121; cd ../proftpd; mkdir -p /output/report; gcovr --output /output/report/index.html --html-details --html-title AFLNet;' > /coverage.sh
+RUN echo 'set -e; ../proftpd/proftpd -d 0 -q -c /dragonfly/evaluation/aflnet/fuzz.conf -n & sleep 2; find /output/replayable-queue -type f | xargs -L 1 -I +++ /aflnet/aflnet-replay +++ FTP 2121; cd ../proftpd; mkdir -p /output/report; gcovr --output /output/report/index.html --html-nested --html-title AFLNet;' > /coverage.sh
 RUN echo 'set -e; chmod -R 777 /output; su user /coverage.sh' > /entrypoint.sh
 ENTRYPOINT ["/bin/bash", "/entrypoint.sh"]
