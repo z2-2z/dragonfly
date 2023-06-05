@@ -31,6 +31,7 @@ use libafl::prelude::{
     current_time,
     Input,
     CoreId,
+    Executor,
 };
 use nix::sys::signal::Signal;
 use serde::{
@@ -84,6 +85,7 @@ use dragonfly::{
 };
 use clap::{Parser, CommandFactory};
 use std::fmt::Display;
+use std::path::Path;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Hash)]
 enum FTPPacket {
@@ -159,13 +161,16 @@ struct Args {
     
     #[arg(short, long)]
     seed_file: Option<String>,
+    
+    #[arg(short, long)]
+    replay: Option<String>,
 }
 
 fn main() -> Result<(), Error> {
     let args = Args::parse();
     
     if let Some(input_file) = &args.seed_file {
-        let input = DragonflyInput::<FTPPacket>::from_file(input_file).unwrap();
+        let input = DragonflyInput::<FTPPacket>::from_file(input_file)?;
         
         for packet in input.packets() {
             println!("{}", packet);
@@ -328,6 +333,36 @@ fn main() -> Result<(), Error> {
         calibration, 
         mutational
     );
+    
+    if let Some(replay) = &args.replay {
+        let replay = Path::new(replay);
+        
+        if replay.is_dir() {
+            for entry in std::fs::read_dir(replay)? {
+                let entry = entry?.path();
+                
+                if entry.is_file() && entry.starts_with("dragonfly-") {
+                    let input = DragonflyInput::<FTPPacket>::from_file(entry)?;
+                    executor.run_target(
+                        &mut fuzzer,
+                        &mut state,
+                        &mut mgr,
+                        &input
+                    )?;
+                }
+            }
+        } else {
+            let input = DragonflyInput::<FTPPacket>::from_file(replay)?;
+            executor.run_target(
+                &mut fuzzer,
+                &mut state,
+                &mut mgr,
+                &input
+            )?;
+        }
+        
+        std::process::exit(0);
+    }
 
     let input = DragonflyInput::new(
         vec![
