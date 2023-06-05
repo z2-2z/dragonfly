@@ -341,6 +341,8 @@ fn main() -> Result<(), Error> {
                 let entry = entry?.path();
                 
                 if entry.is_file() && entry.starts_with("dragonfly-") {
+                    println!("Replaying {}...", entry.display());
+                    
                     let input = DragonflyInput::<FTPPacket>::from_file(entry)?;
                     fuzzer.evaluate_input(&mut state, &mut executor, &mut mgr, input)?;
                 }
