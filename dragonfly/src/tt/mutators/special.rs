@@ -176,7 +176,7 @@ where
                 TextToken::Constant(_) => {},
                 TextToken::Number(data) => {
                     if !data.is_empty() && !has_valid_sign(&data) {
-                        insert_special(state.rand_mut(), data, 1, &NUMBER_SPECIAL);
+                        insert_special(state.rand_mut(), data, 0, &NUMBER_SPECIAL);
                         return Ok(MutationResult::Mutated);
                     }
                 },
