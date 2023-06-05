@@ -55,6 +55,7 @@ use dragonfly::{
         DragonflyInput,
         InsertRandomPacketMutator, NewRandom,
         HasPacketVector,
+        InsertGeneratedPacketMutator, NewGenerated,
     },
     tt::{
         TokenStream,
@@ -85,6 +86,12 @@ use dragonfly::{
 use clap::{Parser, CommandFactory};
 use std::fmt::Display;
 use std::path::Path;
+
+#[link(name = "generator")]
+extern "C" {
+    fn ftp_generator_seed(initial_seed: usize);
+    fn ftp_generator_generate(buf: *mut u8, len: usize) -> usize;
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize, Hash)]
 enum FTPPacket {
@@ -150,6 +157,30 @@ impl Display for FTPPacket {
             FTPPacket::Data(data) => write!(f, "Data({})", data),
             FTPPacket::Sep => write!(f, "Sep"),
         }
+    }
+}
+
+impl<S> NewGenerated<S> for FTPPacket 
+where
+    S: HasRand,
+{
+    fn new_generated(state: &mut S) -> Self {
+        let seed = state.rand_mut().next() as usize;
+        
+        unsafe {
+            ftp_generator_seed(seed);
+        }
+        
+        let mut buf = [0; 16];
+        
+        let len = unsafe {
+            ftp_generator_generate(buf.as_mut_ptr(), buf.len())
+        };
+        
+        assert!(len <= buf.len());
+        
+        let stream = TokenStream::builder().text(&buf[..len]).build();
+        FTPPacket::Ctrl(stream)
     }
 }
 
@@ -306,7 +337,8 @@ fn main() -> Result<(), Error> {
             PacketDuplicateMutator::new(16),
             PacketReorderMutator::new(),
             packet_mutator,
-            InsertRandomPacketMutator::new()
+            InsertRandomPacketMutator::new(),
+            InsertGeneratedPacketMutator::new()
         ),
         0
     );

@@ -17,3 +17,6 @@ dragonfly = { path = "../../../dragonfly" }
 nix = "0.26"
 serde = "1.0"
 clap = { version = "4.3", features = ["default", "derive"] }
+
+[build-dependencies]
+cc = "1.0"

@@ -1,0 +1,13 @@
+/*
+Compile with:
+chameleon -o generator.c --prefix ftp_generator --print-stats grammar.chm
+*/
+
+option scheduling = random;
+
+struct Root {
+    ftp_command: oneof {
+        user: string = "USER ftp\r\n";
+        pass: string = "PASS\r\n";
+    };
+}
