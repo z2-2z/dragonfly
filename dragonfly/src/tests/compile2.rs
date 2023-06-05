@@ -78,6 +78,7 @@ use crate::{
         PacketReorderMutator,
         ScheduledPacketMutator,
         InsertRandomPacketMutator,
+        InsertGeneratedPacketMutator,
     },
     observer::StateObserver,
     tt::{
