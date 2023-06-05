@@ -56,6 +56,7 @@ use dragonfly::{
         InsertRandomPacketMutator, NewRandom,
         HasPacketVector,
         InsertGeneratedPacketMutator, NewGenerated,
+        HasCrossover, PacketCrossoverInsertMutator, PacketCrossoverReplaceMutator,
     },
     tt::{
         TokenStream,
@@ -183,6 +184,43 @@ where
         
         let stream = TokenStream::builder().text(&buf[..len]).build();
         FTPPacket::Ctrl(stream)
+    }
+}
+
+impl<S> HasCrossover<S> for FTPPacket 
+where
+    S: HasRand,
+{
+    fn crossover_insert(&mut self, state: &mut S, other: Self) {
+        match self {
+            FTPPacket::Ctrl(data) |
+            FTPPacket::Data(data) => {
+                match other {
+                    FTPPacket::Ctrl(other_data) |
+                    FTPPacket::Data(other_data) => {
+                        data.crossover_insert(state, other_data);
+                    },
+                    FTPPacket::Sep => {},
+                }
+            },
+            FTPPacket::Sep => {},
+        }
+    }
+
+    fn crossover_replace(&mut self, state: &mut S, other: Self) {
+        match self {
+            FTPPacket::Ctrl(data) |
+            FTPPacket::Data(data) => {
+                match other {
+                    FTPPacket::Ctrl(other_data) |
+                    FTPPacket::Data(other_data) => {
+                        data.crossover_replace(state, other_data);
+                    },
+                    FTPPacket::Sep => {},
+                }
+            },
+            FTPPacket::Sep => {},
+        }
     }
 }
 
@@ -340,7 +378,9 @@ fn main() -> Result<(), Error> {
             PacketReorderMutator::new(),
             packet_mutator,
             InsertRandomPacketMutator::new(),
-            InsertGeneratedPacketMutator::new()
+            InsertGeneratedPacketMutator::new(),
+            PacketCrossoverInsertMutator::new(),
+            PacketCrossoverReplaceMutator::new()
         ),
         0
     );

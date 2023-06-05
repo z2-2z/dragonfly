@@ -48,11 +48,6 @@ Mutators:
 - ~~delete~~
 - ~~dictionary insert~~
 - ~~random any insert with random content~~
-- crossover
-    - inside tokenstream
-    - between tokenstreams
-    - between packets
-    - between inputs
 - ~~invert case~~
 - all uppercase
 - all lowercase
@@ -66,6 +61,8 @@ Mutators:
 - ~~transform constant into text or blob~~
 - replacement mutators also for subslice not entire token
 - ~~more transforms between types~~
+- ~~random packet generator with callback(rand)~~
+- ~~packet crossover~~
 
 TODO:
 - desyscall: gethostbyname(), sleep(), usleep()
