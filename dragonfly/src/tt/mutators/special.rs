@@ -48,7 +48,7 @@ const NUMBER_SPECIAL: [u8; 2] = [
 ];
 
 fn replace_special<R: Rand>(rand: &mut R, data: &mut [u8], data_len: usize, charset: &[u8]) {
-    let n = std::cmp::min(
+    let n = std::cmp::max(
         rand.below(data_len as u64 / 2),
         1
     );
@@ -63,7 +63,7 @@ fn replace_special<R: Rand>(rand: &mut R, data: &mut [u8], data_len: usize, char
 }
 
 fn insert_special<R: Rand>(rand: &mut R, data: &mut Vec<u8>, data_len: usize, charset: &[u8]) {
-    let n = std::cmp::min(
+    let n = std::cmp::max(
         rand.below(data_len as u64 / 2),
         1
     );

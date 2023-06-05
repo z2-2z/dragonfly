@@ -432,7 +432,7 @@ where
         }
         
         let other_start = state.rand_mut().below(other.tokens().len() as u64) as usize;
-        let other_len = std::cmp::min(
+        let other_len = std::cmp::max(
             state.rand_mut().below(other.tokens().len() as u64 - other_start as u64) as usize,
             1
         );
@@ -448,7 +448,7 @@ where
         }
         
         let other_start = state.rand_mut().below(other.tokens().len() as u64) as usize;
-        let other_len = std::cmp::min(
+        let other_len = std::cmp::max(
             state.rand_mut().below(other.tokens().len() as u64 - other_start as u64) as usize,
             1
         );

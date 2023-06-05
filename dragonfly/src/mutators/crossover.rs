@@ -30,7 +30,7 @@ where
     P: HasCrossover<S> + Clone,
 {
     fn mutate(&mut self, state: &mut S, input: &mut I, _stage_idx: i32) -> Result<MutationResult, Error> {
-        let n = std::cmp::min(
+        let n = std::cmp::max(
             state.rand_mut().below(input.packets().len() as u64 / 8),
             1
         );
@@ -78,7 +78,7 @@ where
     P: HasCrossover<S> + Clone,
 {
     fn mutate(&mut self, state: &mut S, input: &mut I, _stage_idx: i32) -> Result<MutationResult, Error> {
-        let n = std::cmp::min(
+        let n = std::cmp::max(
             state.rand_mut().below(input.packets().len() as u64 / 8),
             1
         );
