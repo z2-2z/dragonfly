@@ -31,7 +31,6 @@ use libafl::prelude::{
     current_time,
     Input,
     CoreId,
-    Executor,
 };
 use nix::sys::signal::Signal;
 use serde::{
@@ -343,22 +342,12 @@ fn main() -> Result<(), Error> {
                 
                 if entry.is_file() && entry.starts_with("dragonfly-") {
                     let input = DragonflyInput::<FTPPacket>::from_file(entry)?;
-                    executor.run_target(
-                        &mut fuzzer,
-                        &mut state,
-                        &mut mgr,
-                        &input
-                    )?;
+                    fuzzer.evaluate_input(&mut state, &mut executor, &mut mgr, input)?;
                 }
             }
         } else {
             let input = DragonflyInput::<FTPPacket>::from_file(replay)?;
-            executor.run_target(
-                &mut fuzzer,
-                &mut state,
-                &mut mgr,
-                &input
-            )?;
+            fuzzer.evaluate_input(&mut state, &mut executor, &mut mgr, input)?;
         }
         
         std::process::exit(0);
