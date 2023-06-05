@@ -1,0 +1,65 @@
+# Create the fuzzers environment
+FROM archlinux:latest
+
+RUN pacman --noconfirm -Sy git make gcc diffutils meson ninja coreutils libcap shadow rustup python-pip
+RUN pip install gcovr
+
+RUN git clone https://github.com/z2-2z/dragonfly
+RUN cd dragonfly && \
+    git submodule update --init \
+        AFLplusplus \
+        libdragonfly \
+        evaluation/proftpd
+
+# Build AFL++
+WORKDIR dragonfly/AFLplusplus
+RUN NO_PYTHON=1 NO_NYX=1 make source-only && test -f afl-gcc
+
+# Build libdragonfly
+WORKDIR ../libdragonfly
+RUN meson setup ./build && \
+    cd build && \
+    meson configure -D desock_client=true \
+        -D desock_server=true \
+        -D max_conns=2 \
+        -D desyscall_alarm=true \
+        -D desyscall_rand=true \
+        -D desyscall_random=true \
+        -D desyscall_resolve=true \
+        -D desyscall_signals=true \
+        -D desyscall_sigprocmask=true \
+        -D desyscall_symbol_version=GLIBC_2.2.5 && \
+    meson compile
+
+# Build ProFTPD
+WORKDIR ../evaluation/proftpd
+RUN git apply ../dragonfly/patch && git apply ../dragonfly/patch-cov
+RUN export LIBDRAGONFLY="$(realpath ../../libdragonfly/build)" && \
+    CC="$(realpath ../../AFLplusplus/afl-gcc)" \
+    CFLAGS="-I$LIBDRAGONFLY/include -O0 -g --coverage" \
+    LDFLAGS="-L$LIBDRAGONFLY -ldragonfly -Wl,-rpath=$LIBDRAGONFLY --coverage" \
+    ./configure --disable-shadow --disable-auth-pam --disable-cap && \
+    rm -fv *.gcno && \
+    make
+RUN chmod -R 777 . && setcap cap_sys_chroot+ep ./proftpd
+
+# Setup FTP root
+RUN mkdir -p /tmp/ftproot/uploads
+RUN echo content > /tmp/ftproot/file
+
+# Build the fuzzer
+WORKDIR ../dragonfly/fuzzer
+RUN rustup default nightly
+RUN cargo build --release
+
+# Configure ProFTPD
+WORKDIR ..
+RUN useradd -M -r user && \
+    passwd -d user
+RUN USER=user ../gen-config.sh > fuzz.conf
+
+# Autostart coverage collection
+VOLUME ["/output"]
+RUN echo 'set -e; ./fuzzer/target/release/fuzzer_dragonfly --output /tmp --replay /output/queue; cd ../proftpd; mkdir -p /output/report; gcovr --output /output/report/index.html --html-nested --html-title dragonfly;' > /coverage.sh
+RUN echo 'set -e; chmod 777 /output; su user /coverage.sh' > /entrypoint.sh
+ENTRYPOINT ["/bin/bash", "/entrypoint.sh"]
