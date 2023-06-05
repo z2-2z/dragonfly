@@ -35,7 +35,7 @@ where
         );
         
         for _ in 0..n {
-            let idx = state.rand_mut().below(input.packets().len() as u64) as usize;
+            let idx = state.rand_mut().below(input.packets().len() as u64 + 1) as usize;
             let new_packet = P::new_generated(state);
             input.packets_mut().insert(idx, new_packet);
         }
@@ -46,6 +46,6 @@ where
 
 impl Named for InsertGeneratedPacketMutator {
     fn name(&self) -> &str {
-        "PacketGeneratorMutator"
+        "InsertGeneratedPacketMutator"
     }
 }
