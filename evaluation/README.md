@@ -9,17 +9,26 @@ The campaign is run for 24h and after that, the _statement_ coverage, obtained v
 ## Dragonfly Fuzzer
 ```
 cd dragonfly
-docker build --pull -t evaluation-dragonfly .
+docker build --pull -t evaluation-dragonfly -f Dockerfile-fuzz .
 mkdir output
 docker run -v "$PWD/output":/output evaluation-dragonfly
 ```
 
 The container must be stopped with `docker stop <container-id>`, Ctrl+C will not work.
 
+To collect the coverage report execute:
+```
+cd dragonfly
+docker build --pull -t coverage-dragonfly -f Dockerfile-cov .
+docker run -v "$PWD/output":/output coverage-dragonfly
+```
+
+The report can be found in `output/report/index.html`.
+
 ## AFLNet Fuzzer
 ```
 cd aflnet
-docker build --pull -t evaluation-aflnet .
+docker build --pull -t evaluation-aflnet -f Dockerfile-fuzz .
 mkdir output
 echo core | sudo tee /proc/sys/kernel/core_pattern
 pushd /sys/devices/system/cpu
@@ -29,3 +38,20 @@ docker run -v "$PWD/output":/output evaluation-aflnet
 ```
 
 The container must be stopped with `docker stop <container-id>`, Ctrl+C will not work.
+
+To collect the coverage report execute:
+```
+cd aflnet
+docker build --pull -t coverage-aflnet -f Dockerfile-cov .
+docker run -v "$PWD/output":/output coverage-aflnet
+```
+
+The report can be found in `output/report/index.html`.
+
+## Results
+### Test run 1
+|              | dragonfly     | AFLNet |
+|--------------|-----------|------------|
+| State Selection | random     | favor        |
+| Total Line Coverage      | 17.5%  | 10.0%       |
+| Average exec/s | 500 | 10 |
