@@ -7,7 +7,39 @@ option scheduling = random;
 
 struct Root {
     ftp_command: oneof {
+        /* From RFC 959 */
         user: string = "USER ftp\r\n";
         pass: string = "PASS\r\n";
+        port: string = "PORT 127,0,0,1,12,34\r\n";
+        acct: string = "ACCT ftp\r\n";
+        cwd: string = "CWD uploads\r\n";
+        cdup: string = "CDUP\r\n";
+        smnt: string = "SMNT uploads\r\n";
+        quit: string = "QUIT\r\n";
+        rein: string = "REIN\r\n";
+        pasv: string = "PASV\r\n";
+        type: string = "TYPE A N\r\n";
+        stru: string = "STRU F\r\n";
+        mode: string = "MODE S\r\n";
+        retr: string = "RETR file\r\n";
+        stor: string = "STOR abc\r\n";
+        stou: string = "STOU\r\n";
+        appe: string = "APPE abc\r\n";
+        allo: string = "ALLO 4096 R 1\r\n";
+        rest: string = "REST marker\r\n";
+        rnfr: string = "RNFR abc\r\n";
+        rnto: string = "RNTO xyz\r\n";
+        abor: string = "ABOR\r\n";
+        dele: string = "DELE abc\r\n";
+        rmd: string = "RMD abc\r\n";
+        mkd: string = "MKD abc\r\n";
+        pwd: string = "PWD\r\n";
+        list: string = "LIST abc\r\n";
+        nlst: string = "NLST abc\r\n";
+        site: string = "SITE ???\r\n";
+        syst: string = "SYST\r\n";
+        stat: string = "STAT abc\r\n";
+        help: string = "HELP ???\r\n";
+        noop: string = "NOOP\r\n";
     };
 }

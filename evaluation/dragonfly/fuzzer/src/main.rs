@@ -174,7 +174,7 @@ where
             ftp_generator_seed(seed);
         }
         
-        let mut buf = [0; 16];
+        let mut buf = [0; 32];
         
         let len = unsafe {
             ftp_generator_generate(buf.as_mut_ptr(), buf.len())
