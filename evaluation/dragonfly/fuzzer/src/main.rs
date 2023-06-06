@@ -12,7 +12,6 @@ use libafl::prelude::{
     TimeFeedback,
     Fuzzer, StdFuzzer,
     OnDiskJSONMonitor,
-    SimplePrintingMonitor,
     StdScheduledMutator,
     HitcountsMapObserver,
     StdMapObserver,
@@ -87,6 +86,10 @@ use dragonfly::{
 use clap::{Parser, CommandFactory};
 use std::fmt::Display;
 use std::path::Path;
+#[cfg(debug_assertions)]
+use libafl::prelude::SimplePrintingMonitor;
+#[cfg(not(debug_assertions))]
+use libafl::prelude::NopMonitor;
 
 #[link(name = "generator")]
 extern "C" {
@@ -291,9 +294,16 @@ fn main() -> Result<(), Error> {
     let seed = current_nanos();
     
     let mut last_updated = 0;
+    
+    #[cfg(debug_assertions)]
+    let inner_monitor = SimplePrintingMonitor::new();
+    
+    #[cfg(not(debug_assertions))]
+    let inner_monitor = NopMonitor::new();
+    
     let monitor = OnDiskJSONMonitor::new(
         logfile,
-        SimplePrintingMonitor::new(),
+        inner_monitor,
         move |_| {
             let now = current_time().as_secs();
             

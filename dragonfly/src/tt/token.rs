@@ -454,7 +454,7 @@ where
         );
         
         let self_start = state.rand_mut().below(self.tokens.len() as u64 + 1) as usize;
-        let self_len  = state.rand_mut().below(self.tokens.len() as u64) as usize;
+        let self_len  = state.rand_mut().below(self.tokens.len() as u64 - self_start as u64) as usize;
         
         self.tokens.splice(self_start..self_start + self_len, other.tokens.drain(other_start..other_start + other_len));
     }
