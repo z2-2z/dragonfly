@@ -30,6 +30,8 @@ use libafl::prelude::{
     current_time,
     Input,
     CoreId,
+    HasSolutions,
+    Corpus,
 };
 use nix::sys::signal::Signal;
 use serde::{
@@ -240,6 +242,9 @@ struct Args {
     
     #[arg(short, long)]
     debug: bool,
+    
+    #[arg(short, long)]
+    trace: bool,
 }
 
 fn main() -> Result<(), Error> {
@@ -303,6 +308,12 @@ fn main() -> Result<(), Error> {
         arguments.insert(0, "127.0.0.1:6666".to_string());
         arguments.insert(1, executable);
         executable = "gdbserver".to_string();
+    } else if args.trace {
+        arguments.insert(0, "-f".to_string());
+        arguments.insert(1, "--signal=!SIGCHLD".to_string());
+        arguments.insert(2, "--trace=none".to_string());
+        arguments.insert(3, executable);
+        executable = "strace".to_string();
     }
     
     #[cfg(debug_assertions)]
@@ -456,10 +467,16 @@ fn main() -> Result<(), Error> {
             fuzzer.evaluate_input(&mut state, &mut executor, &mut mgr, input)?;
         }
         
+        if args.trace {
+            let crashes = state.solutions().count();
+            println!();
+            println!("Crashes left: {}", crashes);
+        }
+        
         std::process::exit(0);
     }
     
-    assert!(!args.debug);
+    assert!(!args.debug && !args.trace);
 
     let input = DragonflyInput::new(
         vec![

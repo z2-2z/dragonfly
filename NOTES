@@ -90,3 +90,6 @@ AFLNet:
     - selection strategies: round-robin, random, favor
 - record number of paths that go through specific state for power schedules
 - region-level mutations
+
+Crashes:
+1: NULL deref in mod_auth.c:2883: path == NULL
