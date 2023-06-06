@@ -66,3 +66,27 @@ Mutators:
 
 TODO:
 - desyscall: gethostbyname(), sleep(), usleep()
+
+AFL:
+- interesting mutators:
+    - invoke integer overflows / underflows through injection of interesting constants
+    - invoke off-by-one overflows. Assumption is that buffers are usually a small power of 2 in size
+- favorable path: path that triggers all bits in the bitmap seen so far
+
+AFLNet:
+- Adds new fields to a queue_entry:
+    - region_t* regions
+    - region_count
+    - unique_state_count
+- default state selection: round-robin
+- default seed selection: random
+- randomly chooses region for region-level mutations
+- counts how many times (#fuzzs) states have been visited
+- each state has a score
+    - dependent on #fuzzs, #selected, #paths discovered
+    - calculated in update_scores_and_select_next_state
+- state_ids is list of all states in ipsm
+- for each state stores the seeds that can reach it
+    - selection strategies: round-robin, random, favor
+- record number of paths that go through specific state for power schedules
+- region-level mutations
