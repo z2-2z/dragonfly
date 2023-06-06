@@ -235,7 +235,7 @@ struct Args {
     output: Option<String>,
     
     #[arg(short, long)]
-    seed_file: Option<String>,
+    print: Option<String>,
     
     #[arg(short, long)]
     replay: Option<String>,
@@ -250,7 +250,7 @@ struct Args {
 fn main() -> Result<(), Error> {
     let args = Args::parse();
     
-    if let Some(input_file) = &args.seed_file {
+    if let Some(input_file) = &args.print {
         let input = DragonflyInput::<FTPPacket>::from_file(input_file)?;
         
         for packet in input.packets() {
