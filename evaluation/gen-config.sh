@@ -31,7 +31,7 @@ DeleteAbortedStores on
 TimeoutStalled			60
 
 UseSendfile off
-
+Umask 0000
 DefaultRoot /tmp/ftproot
 
 <Anonymous /tmp/ftproot>

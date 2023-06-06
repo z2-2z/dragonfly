@@ -303,15 +303,6 @@ fn main() -> Result<(), Error> {
         arguments.insert(0, "127.0.0.1:6666".to_string());
         arguments.insert(1, executable);
         executable = "gdbserver".to_string();
-        
-        /*
-        arguments.insert(0, "-f".to_string());
-        arguments.insert(1, "-k".to_string());
-        arguments.insert(2, "--trace=all".to_string());
-        arguments.insert(3, "--signal=all".to_string());
-        arguments.insert(4, executable);
-        executable = "strace".to_string();
-        */
     }
     
     #[cfg(debug_assertions)]
