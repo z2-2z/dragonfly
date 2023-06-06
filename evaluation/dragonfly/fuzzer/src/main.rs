@@ -237,6 +237,9 @@ struct Args {
     
     #[arg(short, long)]
     replay: Option<String>,
+    
+    #[arg(short, long)]
+    debug: bool,
 }
 
 fn main() -> Result<(), Error> {
@@ -274,12 +277,21 @@ fn main() -> Result<(), Error> {
     let mut logfile = out_dir;
     logfile.push("log");
     
+    #[cfg(debug_assertions)]
+    let timeout = Duration::from_secs(10000);
+    #[cfg(not(debug_assertions))]
     let timeout = Duration::from_millis(5000);
     
-    let executable = "../proftpd/proftpd".to_string();
-    let arguments = vec![
+    let mut executable = "../proftpd/proftpd".to_string();
+    
+    #[cfg(debug_assertions)]
+    let debug_level = "10";
+    #[cfg(not(debug_assertions))]
+    let debug_level = "0";
+    
+    let mut arguments = vec![
         "-d".to_string(),
-        "0".to_string(),
+        debug_level.to_string(),
         "-q".to_string(),
         "-X".to_string(),
         "-c".to_string(),
@@ -287,7 +299,25 @@ fn main() -> Result<(), Error> {
         "-n".to_string(),
     ];
     
+    if args.debug { 
+        arguments.insert(0, "127.0.0.1:6666".to_string());
+        arguments.insert(1, executable);
+        executable = "gdbserver".to_string();
+        
+        /*
+        arguments.insert(0, "-f".to_string());
+        arguments.insert(1, "-k".to_string());
+        arguments.insert(2, "--trace=all".to_string());
+        arguments.insert(3, "--signal=all".to_string());
+        arguments.insert(4, executable);
+        executable = "strace".to_string();
+        */
+    }
+    
+    #[cfg(debug_assertions)]
     let debug_child = true;
+    #[cfg(not(debug_assertions))]
+    let debug_child = false;
     
     let signal = str::parse::<Signal>("SIGKILL").unwrap();
     
@@ -297,7 +327,6 @@ fn main() -> Result<(), Error> {
     
     #[cfg(debug_assertions)]
     let inner_monitor = SimplePrintingMonitor::new();
-    
     #[cfg(not(debug_assertions))]
     let inner_monitor = NopMonitor::new();
     
@@ -438,6 +467,8 @@ fn main() -> Result<(), Error> {
         
         std::process::exit(0);
     }
+    
+    assert!(!args.debug);
 
     let input = DragonflyInput::new(
         vec![
