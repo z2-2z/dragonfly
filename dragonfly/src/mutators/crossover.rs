@@ -30,21 +30,26 @@ where
     P: HasCrossover<S> + Clone,
 {
     fn mutate(&mut self, state: &mut S, input: &mut I, _stage_idx: i32) -> Result<MutationResult, Error> {
+        let packets_len = input.packets().len();
+        
+        if packets_len == 0 {
+            return Ok(MutationResult::Skipped);
+        }
+        
         let n = std::cmp::max(
-            state.rand_mut().below(input.packets().len() as u64 / 8),
+            state.rand_mut().below(packets_len as u64 / 8),
             1
         );
         let mut changed = false;
         
         for _ in 0..n {
-            let src_idx = state.rand_mut().below(input.packets().len() as u64) as usize;
-            let dst_idx = state.rand_mut().below(input.packets().len() as u64) as usize;
+            let src_idx = state.rand_mut().below(packets_len as u64) as usize;
+            let dst_idx = state.rand_mut().below(packets_len as u64) as usize;
             
-            if src_idx != dst_idx {
-                let other = input.packets()[src_idx].clone();
-                input.packets_mut()[dst_idx].crossover_insert(state, other);
-                changed = true;
-            }
+            let other = input.packets()[src_idx].clone();
+            input.packets_mut()[dst_idx].crossover_insert(state, other);
+            
+            changed = true;
         }
         
         if changed {
@@ -78,6 +83,12 @@ where
     P: HasCrossover<S> + Clone,
 {
     fn mutate(&mut self, state: &mut S, input: &mut I, _stage_idx: i32) -> Result<MutationResult, Error> {
+        let packets_len = input.packets().len();
+        
+        if packets_len == 0 {
+            return Ok(MutationResult::Skipped);
+        }
+        
         let n = std::cmp::max(
             state.rand_mut().below(input.packets().len() as u64 / 8),
             1
@@ -88,11 +99,10 @@ where
             let src_idx = state.rand_mut().below(input.packets().len() as u64) as usize;
             let dst_idx = state.rand_mut().below(input.packets().len() as u64) as usize;
             
-            if src_idx != dst_idx {
-                let other = input.packets()[src_idx].clone();
-                input.packets_mut()[dst_idx].crossover_replace(state, other);
-                changed = true;
-            }
+            let other = input.packets()[src_idx].clone();
+            input.packets_mut()[dst_idx].crossover_replace(state, other);
+            
+            changed = true;
         }
         
         if changed {

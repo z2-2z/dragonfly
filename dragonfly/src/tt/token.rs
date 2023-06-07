@@ -427,15 +427,12 @@ where
     S: HasRand,
 {
     fn crossover_insert(&mut self, state: &mut S, mut other: Self) {
-        if other.tokens.is_empty() {
+        if other.tokens().is_empty() {
             return;
         }
         
         let other_start = state.rand_mut().below(other.tokens().len() as u64) as usize;
-        let other_len = std::cmp::max(
-            state.rand_mut().below(other.tokens().len() as u64 - other_start as u64) as usize,
-            1
-        );
+        let other_len = 1 + state.rand_mut().below(other.tokens().len() as u64 - other_start as u64) as usize;
         
         let self_start = state.rand_mut().below(self.tokens.len() as u64 + 1) as usize;
         
@@ -448,13 +445,10 @@ where
         }
         
         let other_start = state.rand_mut().below(other.tokens().len() as u64) as usize;
-        let other_len = std::cmp::max(
-            state.rand_mut().below(other.tokens().len() as u64 - other_start as u64) as usize,
-            1
-        );
+        let other_len = 1 + state.rand_mut().below(other.tokens().len() as u64 - other_start as u64) as usize;
         
-        let self_start = state.rand_mut().below(self.tokens.len() as u64 + 1) as usize;
-        let self_len  = state.rand_mut().below(self.tokens.len() as u64 - self_start as u64) as usize;
+        let self_start = state.rand_mut().below(self.tokens.len() as u64) as usize;
+        let self_len  = 1 + state.rand_mut().below(self.tokens.len() as u64 - self_start as u64) as usize;
         
         self.tokens.splice(self_start..self_start + self_len, other.tokens.drain(other_start..other_start + other_len));
     }
@@ -577,6 +571,43 @@ mod tests {
         for _ in 0..10 {
             random_blob_value(&mut rand, &mut result);
             println!("{:?}", result);
+        }
+    }
+    
+    struct TestState {
+        rand: RomuDuoJrRand,
+    }
+    
+    impl TestState {
+        fn new() -> Self {
+            Self {
+                rand: RomuDuoJrRand::with_seed(1234),
+            }
+        }
+    }
+    
+    impl HasRand for TestState {
+        type Rand = RomuDuoJrRand;
+
+        fn rand(&self) -> &Self::Rand {
+            &self.rand
+        }
+
+        fn rand_mut(&mut self) -> &mut Self::Rand {
+            &mut self.rand
+        }
+    }
+    
+    #[test]
+    fn test_crossover() {
+        let mut state = TestState::new();
+        let mut ts = TokenStream::builder().blob("").text("").build();
+        
+        loop {
+            ts.crossover_replace(
+                &mut state, 
+                ts.clone()
+            );
         }
     }
 }
