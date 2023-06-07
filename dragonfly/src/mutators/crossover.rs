@@ -90,14 +90,14 @@ where
         }
         
         let n = std::cmp::max(
-            state.rand_mut().below(input.packets().len() as u64 / 8),
+            state.rand_mut().below(packets_len as u64 / 8),
             1
         );
         let mut changed = false;
         
         for _ in 0..n {
-            let src_idx = state.rand_mut().below(input.packets().len() as u64) as usize;
-            let dst_idx = state.rand_mut().below(input.packets().len() as u64) as usize;
+            let src_idx = state.rand_mut().below(packets_len as u64) as usize;
+            let dst_idx = state.rand_mut().below(packets_len as u64) as usize;
             
             let other = input.packets()[src_idx].clone();
             input.packets_mut()[dst_idx].crossover_replace(state, other);

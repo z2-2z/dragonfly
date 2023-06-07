@@ -448,7 +448,7 @@ where
         let other_len = 1 + state.rand_mut().below(other.tokens().len() as u64 - other_start as u64) as usize;
         
         let self_start = state.rand_mut().below(self.tokens.len() as u64) as usize;
-        let self_len  = 1 + state.rand_mut().below(self.tokens.len() as u64 - self_start as u64) as usize;
+        let self_len  = state.rand_mut().below(self.tokens.len() as u64 - self_start as u64 + 1) as usize;
         
         self.tokens.splice(self_start..self_start + self_len, other.tokens.drain(other_start..other_start + other_len));
     }

@@ -49,7 +49,7 @@ RUN echo content > /tmp/ftproot/file
 WORKDIR ../dragonfly/fuzzer
 RUN rustup default nightly
 RUN cargo build --release
-ENV RUST_BACKTRACE=1
+ENV RUST_BACKTRACE=full
 
 # Configure ProFTPD
 WORKDIR ..
