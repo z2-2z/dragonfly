@@ -91,5 +91,21 @@ AFLNet:
 - record number of paths that go through specific state for power schedules
 - region-level mutations
 
+LibAFL:
+Corpus::current() only gives us the base testcase from which mutant is derived
+Scheduler::on_add() gets called with corpus id of mutant that was interesting
+
+- wrapper Scheduler that sets certain corpus indices to favored ?
+  - via IsFavoredMetadata in metadata of a testcase
+- also implement RemovableScheduler
+- try wrapping around StdWeightedScheduler
+- conflicts with a MinimizerScheduler, wrapper should be the only one setting IsFavoredMetadata
+- favored testcases are the ones going through the N least visited states
+- but have an upper bound M of favored testcases
+- in on_evaluation(): store current state sequence from shm in scheduler
+- in on_add(): recalculate favorites and forward to base scheduler
+- store state metadata: state -> (#fuzz, #selected)
+- store associations: state -> corpus indices
+
 Crashes:
 1: NULL deref in mod_auth.c:2883: path == NULL
