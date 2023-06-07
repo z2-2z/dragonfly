@@ -55,3 +55,8 @@ The report can be found in `output/report/index.html`.
 | State Selection | random     | favor        |
 | Total Line Coverage      | 17.5%  | 10.0%       |
 | Average exec/s | 500 | 10 |
+
+### Test run 2
+Added crossover mutators and packet generator to dragonfly fuzzer but
+only covered 22 more lines. Still unable to synthesize multiple valid packets
+in a row.
