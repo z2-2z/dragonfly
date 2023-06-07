@@ -423,7 +423,7 @@ fn main() -> Result<(), Error> {
             PacketCrossoverInsertMutator::new(),
             PacketCrossoverReplaceMutator::new()
         ),
-        0
+        2
     );
 
     let mutational = StdMutationalStage::new(mutator);
@@ -478,6 +478,7 @@ fn main() -> Result<(), Error> {
     
     assert!(!args.debug && !args.trace);
 
+    /* Start with an empty corpus */
     let input = DragonflyInput::new(
         vec![
             FTPPacket::Ctrl(TokenStream::builder().build())
@@ -487,7 +488,6 @@ fn main() -> Result<(), Error> {
 
     #[cfg(debug_assertions)]
     fuzzer.fuzz_loop_for(&mut stages, &mut executor, &mut state, &mut mgr, 50)?;
-    
     #[cfg(not(debug_assertions))]
     fuzzer.fuzz_loop(&mut stages, &mut executor, &mut state, &mut mgr)?;
         
