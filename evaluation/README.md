@@ -52,11 +52,12 @@ The report can be found in `output/report/index.html`.
 ### Test run 1
 |              | dragonfly     | AFLNet |
 |--------------|-----------|------------|
-| State Selection | random     | favor        |
+| State Selection | random     | (default)        |
 | Total Line Coverage      | 17.5%  | 10.0%       |
 | Average exec/s | 500 | 10 |
 
+Both fuzzers failed to synthesize a valid login sequence, locking them out of most of the application's functionality.
+
 ### Test run 2
 Added crossover mutators and packet generator to dragonfly fuzzer but
-only covered 22 more lines. Still unable to synthesize multiple valid packets
-in a row.
+only covered 22 more lines. Still unable to synthesize login sequence.
