@@ -54,6 +54,48 @@ impl StateGraph {
     pub fn edges(&self) -> &HashSet<(NodeId, NodeId), RandomState> {
         &self.edges
     }
+    
+    fn dump_node<S: std::io::Write>(&self, id: NodeId, stream: &mut S) -> std::io::Result<()> {
+        if id == Self::ENTRYPOINT {
+            writeln!(stream, "  {} [shape=\"point\"];", id)?;
+        } else {
+            writeln!(stream, "  {0} [shape=\"oval\"; label=\"{0:016x}\"];", id)?;
+        }
+        
+        Ok(())
+    }
+    
+    pub fn dump_dot<S: std::io::Write>(&self, stream: &mut S) -> std::io::Result<()> {
+        let mut seen = HashSet::new();
+        
+        writeln!(stream, "digraph ipsm {{")?;
+        writeln!(stream, "  label = \"IPSM\";")?;
+        writeln!(stream, "  center = true;")?;
+        writeln!(stream)?;
+        
+        /* First print all the nodes */
+        for (from, to) in &self.edges {
+            if !seen.contains(from) {
+                self.dump_node(*from, stream)?;
+                seen.insert(*from);
+            }
+            
+            if !seen.contains(to) {
+                self.dump_node(*to, stream)?;
+                seen.insert(*to);
+            }
+        }
+        
+        writeln!(stream)?;
+        
+        /* Then print all the edges */
+        for (from, to) in &self.edges {
+            writeln!(stream, "  {} -> {} [arrowhead=\"open\"];", from, to)?;
+        }
+        
+        writeln!(stream, "}}")?;
+        Ok(())
+    }
 }
 
 impl_serdeany!(StateGraph);

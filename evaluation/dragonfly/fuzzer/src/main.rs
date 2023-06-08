@@ -304,15 +304,20 @@ fn main() -> Result<(), Error> {
         "-n".to_string(),
     ];
     
-    if args.debug { 
-        arguments.insert(0, "127.0.0.1:6666".to_string());
-        arguments.insert(1, executable);
+    if args.debug {
+        arguments.splice(0..0, [
+            "127.0.0.1:6666".to_string(),
+            executable,
+        ]);
         executable = "gdbserver".to_string();
     } else if args.trace {
-        arguments.insert(0, "-f".to_string());
-        arguments.insert(1, "--signal=!SIGCHLD".to_string());
-        arguments.insert(2, "--trace=none".to_string());
-        arguments.insert(3, executable);
+        arguments.splice(0..0, [
+            "-f".to_string(),
+            "--signal=!SIGCHLD".to_string(),
+            "--trace=none".to_string(),
+            "--".to_string(),
+            executable,
+        ]);
         executable = "strace".to_string();
     }
     
@@ -513,6 +518,9 @@ fn main() -> Result<(), Error> {
     fuzzer.fuzz_loop_for(&mut stages, &mut executor, &mut state, &mut mgr, 50)?;
     #[cfg(not(debug_assertions))]
     fuzzer.fuzz_loop(&mut stages, &mut executor, &mut state, &mut mgr)?;
-        
+    
+    /* Dump state graph */
+    state.get_stategraph()?.dump_dot(&mut std::io::stdout())?;
+    
     Ok(())
 }
