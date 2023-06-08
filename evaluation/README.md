@@ -61,3 +61,7 @@ Both fuzzers failed to synthesize a valid login sequence, locking them out of mo
 ### Test run 2
 Added crossover mutators and packet generator to dragonfly fuzzer but
 only covered 22 more lines. Still unable to synthesize login sequence.
+
+### Test run 3
+Changed mutation distribution. It still couldn't synthesize a login sequence
+but the coverage plateau was reached faster than before.
