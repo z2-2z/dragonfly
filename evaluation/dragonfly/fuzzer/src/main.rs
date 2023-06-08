@@ -41,6 +41,8 @@ use serde::{
 use std::{
     fs,
     path::PathBuf,
+    io::Write,
+    fs::File,
 };
 use dragonfly::{
     prelude::{
@@ -245,6 +247,9 @@ struct Args {
     
     #[arg(short, long)]
     trace: bool,
+    
+    #[arg(short, long)]
+    ipsm: Option<String>,
 }
 
 fn main() -> Result<(), Error> {
@@ -520,7 +525,11 @@ fn main() -> Result<(), Error> {
     fuzzer.fuzz_loop(&mut stages, &mut executor, &mut state, &mut mgr)?;
     
     /* Dump state graph */
-    state.get_stategraph()?.dump_dot(&mut std::io::stdout())?;
+    if let Some(ipsm) = &args.ipsm {
+        let mut file = File::create(ipsm)?;
+        state.get_stategraph()?.dump_dot(&mut file)?;
+        file.flush()?;
+    }
     
     Ok(())
 }
