@@ -482,47 +482,45 @@ fn main() -> Result<(), Error> {
             println!();
             println!("Crashes left: {}", crashes);
         }
+    } else {
+        assert!(!args.debug && !args.trace);
         
-        std::process::exit(0);
+        /*
+        /* Start with a single interaction */
+        let input = DragonflyInput::new(
+            vec![
+                FTPPacket::Ctrl(TokenStream::builder().text("USER ftp\r\n").build()),
+                FTPPacket::Sep,
+                FTPPacket::Ctrl(TokenStream::builder().text("PASS x\r\n").build()),
+                FTPPacket::Sep,
+                FTPPacket::Ctrl(TokenStream::builder().text("CWD uploads\r\n").build()),
+                FTPPacket::Sep,
+                FTPPacket::Ctrl(TokenStream::builder().text("EPSV\r\n").build()),
+                FTPPacket::Sep,
+                FTPPacket::Ctrl(TokenStream::builder().text("STOR packetio.txt\r\n").build()),
+                FTPPacket::Data(TokenStream::builder().blob("content").build()),
+                FTPPacket::Data(TokenStream::builder().build()),
+                FTPPacket::Sep,
+                FTPPacket::Ctrl(TokenStream::builder().text("QUIT\r\n").build()),
+                FTPPacket::Sep, 
+            ]
+        );
+        */
+        
+        /* Start with an empty corpus */
+        let input = DragonflyInput::new(
+            vec![
+                FTPPacket::Ctrl(TokenStream::builder().build()),
+            ]
+        );
+        
+        fuzzer.evaluate_input(&mut state, &mut executor, &mut mgr, input)?;
+
+        #[cfg(debug_assertions)]
+        fuzzer.fuzz_loop_for(&mut stages, &mut executor, &mut state, &mut mgr, 50)?;
+        #[cfg(not(debug_assertions))]
+        fuzzer.fuzz_loop(&mut stages, &mut executor, &mut state, &mut mgr)?;
     }
-    
-    assert!(!args.debug && !args.trace);
-
-    /*
-    /* Start with a single interaction */
-    let input = DragonflyInput::new(
-        vec![
-            FTPPacket::Ctrl(TokenStream::builder().text("USER ftp\r\n").build()),
-            FTPPacket::Sep,
-            FTPPacket::Ctrl(TokenStream::builder().text("PASS x\r\n").build()),
-            FTPPacket::Sep,
-            FTPPacket::Ctrl(TokenStream::builder().text("CWD uploads\r\n").build()),
-            FTPPacket::Sep,
-            FTPPacket::Ctrl(TokenStream::builder().text("EPSV\r\n").build()),
-            FTPPacket::Sep,
-            FTPPacket::Ctrl(TokenStream::builder().text("STOR packetio.txt\r\n").build()),
-            FTPPacket::Data(TokenStream::builder().blob("content").build()),
-            FTPPacket::Data(TokenStream::builder().build()),
-            FTPPacket::Sep,
-            FTPPacket::Ctrl(TokenStream::builder().text("QUIT\r\n").build()),
-            FTPPacket::Sep, 
-        ]
-    );
-    */
-    
-    /* Start with an empty corpus */
-    let input = DragonflyInput::new(
-        vec![
-            FTPPacket::Ctrl(TokenStream::builder().build()),
-        ]
-    );
-    
-    fuzzer.evaluate_input(&mut state, &mut executor, &mut mgr, input)?;
-
-    #[cfg(debug_assertions)]
-    fuzzer.fuzz_loop_for(&mut stages, &mut executor, &mut state, &mut mgr, 50)?;
-    #[cfg(not(debug_assertions))]
-    fuzzer.fuzz_loop(&mut stages, &mut executor, &mut state, &mut mgr)?;
     
     /* Dump state graph */
     if let Some(ipsm) = &args.ipsm {

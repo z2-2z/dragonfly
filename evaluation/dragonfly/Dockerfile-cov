@@ -59,6 +59,6 @@ RUN USER=user ../gen-config.sh > fuzz.conf
 
 # Autostart coverage collection
 VOLUME ["/output"]
-RUN echo 'set -e; ./fuzzer/target/release/fuzzer_dragonfly --output /tmp --replay /output/queue; cd ../proftpd; mkdir -p /output/report; gcovr --output /output/report/index.html --html-nested --html-title dragonfly;' > /coverage.sh
+RUN echo 'set -e; ./fuzzer/target/release/fuzzer_dragonfly --output /tmp --replay /output/queue --ipsm /output/ipsm.dot; cd ../proftpd; mkdir -p /output/report; gcovr --output /output/report/index.html --html-nested --html-title dragonfly;' > /coverage.sh
 RUN echo 'set -e; chmod 777 /output; su user /coverage.sh' > /entrypoint.sh
 ENTRYPOINT ["/bin/bash", "/entrypoint.sh"]
