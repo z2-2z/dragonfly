@@ -18,8 +18,8 @@ Group				$USER
 
 AuthOrder mod_auth_file.c
 AuthFileOptions InsecurePerms
-AuthUserFile $(realpath ./passwd)
-AuthGroupFile $(realpath ./group)
+AuthUserFile $(realpath ../passwd)
+AuthGroupFile $(realpath ../group)
 
 MaxInstances                    5
 MaxStoreFileSize                1 Kb

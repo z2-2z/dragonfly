@@ -478,12 +478,35 @@ fn main() -> Result<(), Error> {
     
     assert!(!args.debug && !args.trace);
 
+    /*
+    /* Start with a single interaction */
+    let input = DragonflyInput::new(
+        vec![
+            FTPPacket::Ctrl(TokenStream::builder().text("USER ftp\r\n").build()),
+            FTPPacket::Sep,
+            FTPPacket::Ctrl(TokenStream::builder().text("PASS x\r\n").build()),
+            FTPPacket::Sep,
+            FTPPacket::Ctrl(TokenStream::builder().text("CWD uploads\r\n").build()),
+            FTPPacket::Sep,
+            FTPPacket::Ctrl(TokenStream::builder().text("EPSV\r\n").build()),
+            FTPPacket::Sep,
+            FTPPacket::Ctrl(TokenStream::builder().text("STOR packetio.txt\r\n").build()),
+            FTPPacket::Data(TokenStream::builder().blob("content").build()),
+            FTPPacket::Data(TokenStream::builder().build()),
+            FTPPacket::Sep,
+            FTPPacket::Ctrl(TokenStream::builder().text("QUIT\r\n").build()),
+            FTPPacket::Sep, 
+        ]
+    );
+    */
+    
     /* Start with an empty corpus */
     let input = DragonflyInput::new(
         vec![
-            FTPPacket::Ctrl(TokenStream::builder().build())
+            FTPPacket::Ctrl(TokenStream::builder().build()),
         ]
     );
+    
     fuzzer.evaluate_input(&mut state, &mut executor, &mut mgr, input)?;
 
     #[cfg(debug_assertions)]
