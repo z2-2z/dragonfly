@@ -67,7 +67,7 @@ Changed mutation distribution. It still couldn't synthesize a login sequence
 but the coverage plateau was reached faster than before.
 
 ---
-And at this point I reaized that I fucked up the mod_auth configuration and a valid login wasn't even possible
+And at this point I realized that I fucked up the mod_auth configuration and a valid login wasn't even possible
 so I have to do everything again :)
 
 ---
