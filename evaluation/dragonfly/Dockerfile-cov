@@ -45,6 +45,11 @@ RUN chmod -R 777 . && setcap cap_sys_chroot+ep ./proftpd
 # Setup FTP root
 RUN mkdir -p /tmp/ftproot/uploads
 RUN echo content > /tmp/ftproot/file
+RUN mkdir -p /tmp/ftproot/dragonfly/evaluation/proftpd/src && \
+    mkdir -p /tmp/ftproot/dragonfly/evaluation/proftpd/lib && \
+    mkdir -p /tmp/ftproot/dragonfly/evaluation/proftpd/modules && \
+    mkdir -p /tmp/ftproot/dragonfly/evaluation/proftpd/utils
+RUN chmod -R 777 /tmp/ftproot
 
 # Build the fuzzer
 WORKDIR ../dragonfly/fuzzer
@@ -59,6 +64,6 @@ RUN USER=user ../gen-config.sh > fuzz.conf
 
 # Autostart coverage collection
 VOLUME ["/output"]
-RUN echo 'set -e; ./fuzzer/target/release/fuzzer_dragonfly --output /tmp --replay /output/queue --ipsm /output/ipsm.dot; cd ../proftpd; mkdir -p /output/report; gcovr --output /output/report/index.html --html-nested --html-title dragonfly;' > /coverage.sh
+RUN echo 'set -e; shopt -s nullglob; ./fuzzer/target/release/fuzzer_dragonfly --output /tmp --replay /output/queue --ipsm /output/ipsm.dot; cd ../proftpd; for i in src lib modules utils; do for j in /tmp/ftproot/dragonfly/evaluation/proftpd/$i/*; do cp -v $j ./$i; done; done; mkdir -p /output/report; gcovr --output /output/report/index.html --html-nested --html-title dragonfly;' > /coverage.sh
 RUN echo 'set -e; chmod 777 /output; su user /coverage.sh' > /entrypoint.sh
 ENTRYPOINT ["/bin/bash", "/entrypoint.sh"]

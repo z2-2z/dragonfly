@@ -44,6 +44,7 @@ RUN setcap cap_sys_chroot+ep ./proftpd
 # Setup FTP root
 RUN mkdir -p /tmp/ftproot/uploads
 RUN echo content > /tmp/ftproot/file
+RUN chmod -R 777 /tmp/ftproot
 
 # Build the fuzzer
 WORKDIR ../dragonfly/fuzzer
