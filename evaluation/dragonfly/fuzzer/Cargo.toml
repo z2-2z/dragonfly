@@ -12,7 +12,7 @@ debug = true
 codegen-units = 1
 
 [dependencies]
-libafl = "0.10"
+libafl = { git = "https://github.com/AFLplusplus/LibAFL", rev = "62b1bde" }
 dragonfly = { path = "../../../dragonfly" }
 nix = "0.26"
 serde = "1.0"
