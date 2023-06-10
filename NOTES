@@ -109,3 +109,6 @@ Scheduler::on_add() gets called with corpus id of mutant that was interesting
 
 Crashes:
 1: NULL deref in mod_auth.c:2883: path == NULL
+
+Todo:
+AFLNet plot against executions not time ?
