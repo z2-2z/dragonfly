@@ -11,18 +11,22 @@ RUN apt-get -y update && \
         git \
         libcap2-bin
 
+RUN git clone https://github.com/z2-2z/dragonfly && \
+    git clone https://github.com/aflnet/aflnet
+
 # Build AFLNet
-RUN git clone https://github.com/aflnet/aflnet.git
-RUN cd aflnet && \
-    export LLVM_CONFIG="llvm-config-6.0" && \
-    make clean all && \
-    make -C llvm_mode
+WORKDIR aflnet
+RUN git checkout 213c9cf1ecfabffee8b5771bb6966136e6cf05ba && \
+    git apply ../dragonfly/evaluation/aflnet/patch-aflnet
+RUN export LLVM_CONFIG="llvm-config-6.0" && \
+    make all && \
+    make -C llvm_mode && \
+    test -f afl-clang-fast
 ENV AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1
 ENV AFL_SKIP_CPUFREQ=1
 
 # Build ProFTPD
-RUN git clone https://github.com/z2-2z/dragonfly
-WORKDIR dragonfly/evaluation/proftpd
+WORKDIR ../dragonfly/evaluation/proftpd
 RUN git submodule update --init . && \
     git apply ../aflnet/patch
 RUN CC="/aflnet/afl-clang-fast" \
