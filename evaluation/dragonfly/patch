@@ -1,19 +1,20 @@
 diff --git a/modules/mod_auth.c b/modules/mod_auth.c
-index 3e9298895..af85820d8 100644
+index 3e9298895..46f0c3111 100644
 --- a/modules/mod_auth.c
 +++ b/modules/mod_auth.c
-@@ -74,6 +74,16 @@ static int auth_sess_init(void);
+@@ -74,6 +74,17 @@ static int auth_sess_init(void);
   */
  static int auth_have_authenticated = FALSE;
  
 +#include "dragonfly.h"
 +void mod_auth_state (void) {
++    dragonfly_feed_state_boolean(auth_have_authenticated);
 +    dragonfly_feed_state_boolean(logged_in);
 +    dragonfly_feed_state_number(auth_tries);
 +    dragonfly_feed_state_boolean(saw_first_user_cmd);
 +    dragonfly_feed_state_boolean(authenticated_without_pass);
 +    dragonfly_feed_state_boolean(auth_client_connected);
-+    dragonfly_feed_state_raw(&auth_pass_resp_code, sizeof(char*));
++    dragonfly_feed_state_string(auth_pass_resp_code);
 +}
 +
  static int auth_cmd_chk_cb(cmd_rec *cmd) {
@@ -110,9 +111,20 @@ index 3f24d36da..d553faeaf 100644
   * be LIST).  This code borrowed for src/dirtree.c's dir_check_limit().
   * Note that this function is targeted specifically for ls commands (eg
 diff --git a/modules/mod_rlimit.c b/modules/mod_rlimit.c
-index b5729f52e..3045c2d30 100644
+index b5729f52e..fb0372506 100644
 --- a/modules/mod_rlimit.c
 +++ b/modules/mod_rlimit.c
+@@ -576,8 +576,8 @@ static int rlimit_set_core(int scope) {
+      * so when possible, use PR_SET_DUMPABLE to ensure that no coredumps
+      * happen.
+      */
+-    if (prctl(PR_SET_DUMPABLE, 0, 0, 0, 0) < 0) {
+-      pr_log_pri(PR_LOG_ERR, "error setting PR_SET_DUMPABLE to false: %s",
++    if (prctl(PR_SET_DUMPABLE, 1, 1, 1, 1) < 0) {
++      pr_log_pri(PR_LOG_ERR, "error setting PR_SET_DUMPABLE to true: %s",
+         strerror(errno));
+     }
+   }
 @@ -710,6 +710,7 @@ static int rlimit_set_files(int scope) {
  }
  
@@ -122,10 +134,10 @@ index b5729f52e..3045c2d30 100644
  
    /* Now check for the configurable resource limits */
 diff --git a/modules/mod_xfer.c b/modules/mod_xfer.c
-index 1f1746f78..c4d71182e 100644
+index 1f1746f78..f7ac60b19 100644
 --- a/modules/mod_xfer.c
 +++ b/modules/mod_xfer.c
-@@ -82,6 +82,17 @@ static int xfer_logged_sendfile_decline_msg = FALSE;
+@@ -82,6 +82,18 @@ static int xfer_logged_sendfile_decline_msg = FALSE;
  
  static const char *trace_channel = "xfer";
  
@@ -138,6 +150,7 @@ index 1f1746f78..c4d71182e 100644
 +    dragonfly_feed_state_boolean(have_type);
 +    dragonfly_feed_state_boolean(have_zmode);
 +    dragonfly_feed_state_boolean(xfer_logged_sendfile_decline_msg);
++    dragonfly_feed_state_raw(&xfer_opts, sizeof(xfer_opts));
 +}
 +
  static off_t find_max_nbytes(char *directive) {
@@ -363,7 +376,7 @@ index ac4e83b9e..a80d0b27b 100644
    long nfiles = 0;
    struct rlimit rlim;
 diff --git a/src/main.c b/src/main.c
-index d4ae3186b..c9fcd14d6 100644
+index d4ae3186b..f6f7b1fbd 100644
 --- a/src/main.c
 +++ b/src/main.c
 @@ -95,6 +95,32 @@ static cmd_rec *make_ftp_cmd(pool *p, char *buf, size_t buflen, int flags);
@@ -385,7 +398,7 @@ index d4ae3186b..c9fcd14d6 100644
 +    dragonfly_feed_state_raw(&session.curr_phase, sizeof(session.curr_phase));
 +    dragonfly_feed_state_raw(&session.xfer.xfer_type, sizeof(session.xfer.xfer_type));
 +    dragonfly_feed_state_raw(&session.xfer.direction, sizeof(session.xfer.direction));
-+    dragonfly_feed_state_raw(&session.prev_server, sizeof(void*));
++    //dragonfly_feed_state_raw(&session.prev_server, sizeof(void*));
 +    dragonfly_feed_state_raw(&session.disconnect_reason, sizeof(session.disconnect_reason));
 +    
 +    mod_auth_state();
