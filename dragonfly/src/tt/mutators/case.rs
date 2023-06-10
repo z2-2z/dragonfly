@@ -16,10 +16,10 @@ fn invert_case<R: Rand>(rand: &mut R, data: &mut [u8]) -> Result<MutationResult,
         let idx = rand.below(data.len() as u64) as usize;
         let mut byte = data[idx];
         
-        if (b'a'..=b'z').contains(&byte) {
+        if byte.is_ascii_lowercase() {
             byte -= 32;
             changed = true;
-        } else if (b'A'..=b'Z').contains(&byte) {
+        } else if byte.is_ascii_uppercase() {
             byte += 32;
             changed = true;
         }

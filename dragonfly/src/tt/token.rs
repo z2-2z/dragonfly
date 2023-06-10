@@ -150,7 +150,7 @@ pub(crate) fn is_decimal<S: AsRef<[u8]>>(s: S) -> bool {
     let s = s.as_ref();
     
     for byte in s {
-        if !(b'0'..=b'9').contains(byte) {
+        if byte.is_ascii_digit() {
             return false;
         }
     }

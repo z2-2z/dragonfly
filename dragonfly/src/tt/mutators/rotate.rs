@@ -19,15 +19,15 @@ fn rotate_char<R: Rand>(rand: &mut R, data: &mut Vec<u8>) -> Result<MutationResu
         let idx = rand.below(data.len() as u64) as usize;
         let byte = data[idx];
         
-        if (b'0'..=b'9').contains(&byte) {
+        if byte.is_ascii_digit() {
             let amount = 1 + rand.below(9) as u8;
             data[idx] = (((byte - b'0') + amount) % 10) + b'0';
             changed = true;
-        } else if (b'a'..=b'z').contains(&byte)  {
+        } else if byte.is_ascii_lowercase()  {
             let amount = 1 + rand.below(25) as u8;
             data[idx] = (((byte - b'a') + amount) % 26) + b'a';
             changed = true;
-        } else if (b'A'..=b'Z').contains(&byte)  {
+        } else if byte.is_ascii_uppercase()  {
             let amount = 1 + rand.below(25) as u8;
             data[idx] = (((byte - b'A') + amount) % 26) + b'A';
             changed = true;
