@@ -38,9 +38,20 @@ index 6bb46f6b4..c4cff1867 100644
    /* Module version */
    MOD_DELAY_VERSION
 diff --git a/modules/mod_rlimit.c b/modules/mod_rlimit.c
-index b5729f52e..3045c2d30 100644
+index b5729f52e..fb0372506 100644
 --- a/modules/mod_rlimit.c
 +++ b/modules/mod_rlimit.c
+@@ -576,8 +576,8 @@ static int rlimit_set_core(int scope) {
+      * so when possible, use PR_SET_DUMPABLE to ensure that no coredumps
+      * happen.
+      */
+-    if (prctl(PR_SET_DUMPABLE, 0, 0, 0, 0) < 0) {
+-      pr_log_pri(PR_LOG_ERR, "error setting PR_SET_DUMPABLE to false: %s",
++    if (prctl(PR_SET_DUMPABLE, 1, 1, 1, 1) < 0) {
++      pr_log_pri(PR_LOG_ERR, "error setting PR_SET_DUMPABLE to true: %s",
+         strerror(errno));
+     }
+   }
 @@ -710,6 +710,7 @@ static int rlimit_set_files(int scope) {
  }
  
@@ -269,18 +280,9 @@ index ac4e83b9e..a80d0b27b 100644
    long nfiles = 0;
    struct rlimit rlim;
 diff --git a/src/main.c b/src/main.c
-index d4ae3186b..463f043ba 100644
+index d4ae3186b..eae808349 100644
 --- a/src/main.c
 +++ b/src/main.c
-@@ -901,7 +901,7 @@ static cmd_rec *make_ftp_cmd(pool *p, char *buf, size_t buflen, int flags) {
- 
- static void cmd_loop(server_rec *server, conn_t *c) {
- 
--  while (TRUE) {
-+  while (TRUE) {    
-     int res = 0;
-     cmd_rec *cmd = NULL;
- 
 @@ -1300,7 +1300,7 @@ static void fork_server(int fd, conn_t *l, unsigned char no_fork) {
    pr_signals_block();
    PRIVS_ROOT

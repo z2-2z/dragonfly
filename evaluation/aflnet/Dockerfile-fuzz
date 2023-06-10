@@ -25,12 +25,16 @@ RUN git clone https://github.com/z2-2z/dragonfly
 WORKDIR dragonfly/evaluation/proftpd
 RUN git submodule update --init . && \
     git apply ../aflnet/patch
-RUN CC=/aflnet/afl-clang-fast ./configure --disable-shadow --disable-auth-pam --disable-cap && make
+RUN CC="/aflnet/afl-clang-fast" \
+    CFLAGS="-O3" \
+    ./configure --disable-shadow --disable-auth-pam --disable-cap && \
+    make
 RUN setcap cap_sys_chroot+ep ./proftpd
 
 # Setup FTP root
 RUN mkdir -p /tmp/ftproot/uploads
 RUN echo content > /tmp/ftproot/file
+RUN chmod -R 777 /tmp/ftproot
 
 # Configure ProFTPD
 WORKDIR ../aflnet
@@ -49,4 +53,4 @@ RUN mkdir -p /output
 VOLUME ["/output"]
 RUN echo 'set -e; chmod 777 /output; su user -c "exec $*"' > /entrypoint.sh
 ENTRYPOINT ["/bin/sh", "/entrypoint.sh"]
-CMD ["timeout", "24h", "/aflnet/afl-fuzz", "-i", "corpus", "-o", "/output", "-m", "none", "-x", "../ftp.dict", "-N", "tcp://127.0.0.1/2121", "-P", "FTP", "-E", "-R", "--", "../proftpd/proftpd", "-d", "0", "-q", "-X", "-c", "/dragonfly/evaluation/aflnet/fuzz.conf", "-n"]
+CMD ["timeout", "24h", "/aflnet/afl-fuzz", "-i", "corpus", "-o", "/output", "-m", "none", "-x", "../ftp.dict", "-N", "tcp://127.0.0.1/2121", "-P", "FTP", "-E", "-R", "-q", "3", "-s", "3", "--", "../proftpd/proftpd", "-d", "0", "-q", "-X", "-c", "/dragonfly/evaluation/aflnet/fuzz.conf", "-n"]
