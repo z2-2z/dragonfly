@@ -376,7 +376,7 @@ index ac4e83b9e..a80d0b27b 100644
    long nfiles = 0;
    struct rlimit rlim;
 diff --git a/src/main.c b/src/main.c
-index d4ae3186b..f6f7b1fbd 100644
+index d4ae3186b..a65c10ddc 100644
 --- a/src/main.c
 +++ b/src/main.c
 @@ -95,6 +95,32 @@ static cmd_rec *make_ftp_cmd(pool *p, char *buf, size_t buflen, int flags);
@@ -412,14 +412,14 @@ index d4ae3186b..f6f7b1fbd 100644
  /* Add child semaphore fds into the rfd for selecting */
  static int semaphore_fds(fd_set *rfd, int maxfd) {
    if (child_count()) {
-@@ -902,6 +928,8 @@ static cmd_rec *make_ftp_cmd(pool *p, char *buf, size_t buflen, int flags) {
- static void cmd_loop(server_rec *server, conn_t *c) {
+@@ -627,6 +653,8 @@ int pr_cmd_dispatch_phase(cmd_rec *cmd, int phase, int flags) {
+     errno = EINVAL;
+     return -1;
+   }
++  
++  collect_state();
  
-   while (TRUE) {
-+    collect_state();
-+    
-     int res = 0;
-     cmd_rec *cmd = NULL;
+   cmd->server = main_server;
  
 @@ -1300,7 +1328,7 @@ static void fork_server(int fd, conn_t *l, unsigned char no_fork) {
    pr_signals_block();
