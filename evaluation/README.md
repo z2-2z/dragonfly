@@ -49,26 +49,5 @@ docker run -v "$PWD/output":/output coverage-aflnet
 The report can be found in `output/report/index.html`.
 
 ## Results
-### Test run 1
-|              | dragonfly     | AFLNet |
-|--------------|-----------|------------|
-| State Selection | random     | (default)        |
-| Total Line Coverage      | 17.5%  | 10.0%       |
-| Average exec/s | 500 | 10 |
-
-Both fuzzers failed to synthesize a valid login sequence, locking them out of most of the application's functionality.
-
-### Test run 2
-Added crossover mutators and packet generator to dragonfly fuzzer but
-only covered 22 more lines. Still unable to synthesize login sequence.
-
-### Test run 3
-Changed mutation distribution. It still couldn't synthesize a login sequence
-but the coverage plateau was reached faster than before.
-
----
-And at this point I realized that I fucked up the mod_auth configuration and a valid login wasn't even possible
-so I have to do everything again :)
-
----
+TODO
 
