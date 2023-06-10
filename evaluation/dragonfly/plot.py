@@ -9,7 +9,7 @@ def extract(data, key):
     y = []
     
     for elem in data:
-        x.append(elem["run_time"]["secs"])
+        x.append(elem["executions"])
         y.append(elem[key])
         
     return x, y
