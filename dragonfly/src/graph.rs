@@ -1,7 +1,3 @@
-use ahash::{
-    AHasher,
-    RandomState,
-};
 use libafl::prelude::{
     impl_serdeany,
     Error,
@@ -16,14 +12,38 @@ use std::{
     collections::HashSet,
     hash::Hasher,
 };
+use fnv::{FnvHasher, FnvHashSet};
 
 use crate::observer::State;
 
-type NodeId = u64;
+pub type NodeId = u64;
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub struct Edge {
+    from: NodeId,
+    to: NodeId,
+}
+
+impl Edge {
+    fn new(from: NodeId, to: NodeId) -> Self {
+        Self {
+            from,
+            to,
+        }
+    }
+    
+    pub fn from(&self) -> NodeId {
+        self.from
+    }
+    
+    pub fn to(&self) -> NodeId {
+        self.to
+    }
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct StateGraph {
-    edges: HashSet<(NodeId, NodeId), RandomState>,
+    edges: FnvHashSet<Edge>,
 }
 
 impl StateGraph {
@@ -36,7 +56,7 @@ impl StateGraph {
     }
 
     pub fn add_node(&mut self, state: &State) -> NodeId {
-        let mut hasher = AHasher::default();
+        let mut hasher = FnvHasher::default();
         hasher.write(state);
         let id = hasher.finish();
 
@@ -48,10 +68,10 @@ impl StateGraph {
     }
 
     pub fn add_edge(&mut self, from: NodeId, to: NodeId) -> bool {
-        self.edges.insert((from, to))
+        self.edges.insert(Edge::new(from, to))
     }
 
-    pub fn edges(&self) -> &HashSet<(NodeId, NodeId), RandomState> {
+    pub fn edges(&self) -> &FnvHashSet<Edge> {
         &self.edges
     }
     
@@ -74,23 +94,23 @@ impl StateGraph {
         writeln!(stream)?;
         
         /* First print all the nodes */
-        for (from, to) in &self.edges {
-            if !seen.contains(from) {
-                self.dump_node(*from, stream)?;
-                seen.insert(*from);
+        for edge in &self.edges {
+            if !seen.contains(&edge.from) {
+                self.dump_node(edge.from, stream)?;
+                seen.insert(edge.from);
             }
             
-            if !seen.contains(to) {
-                self.dump_node(*to, stream)?;
-                seen.insert(*to);
+            if !seen.contains(&edge.to) {
+                self.dump_node(edge.to, stream)?;
+                seen.insert(edge.to);
             }
         }
         
         writeln!(stream)?;
         
         /* Then print all the edges */
-        for (from, to) in &self.edges {
-            writeln!(stream, "  {} -> {} [arrowhead=\"open\"];", from, to)?;
+        for edge in &self.edges {
+            writeln!(stream, "  {} -> {} [arrowhead=\"open\"];", edge.from, edge.to)?;
         }
         
         writeln!(stream, "}}")?;
