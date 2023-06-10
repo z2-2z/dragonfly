@@ -7,10 +7,9 @@ import matplotlib.pyplot as plt
 def extract(data, idx):
     x = []
     y = []
-    start_time = float(data[0][0])
     
     for elem in data:
-        x.append(float(elem[0]) - start_time)
+        x.append(float(elem[0]))
         y.append(float(elem[idx]))
     
     return x, y
@@ -32,8 +31,7 @@ def main():
                 )
             )
     
-    #x, y = plot_data = extract(data, 10) # exec/s
-    x, y = extract(data, 3) # coverage
+    x, y = extract(data, 4) # coverage
     
     fig, ax = plt.subplots()
     ax.plot(x, y)
