@@ -4,12 +4,22 @@ import sys
 import json
 import matplotlib.pyplot as plt
 
+# total_execs, unix_time, cycles_done, cur_path, paths_total, pending_total, pending_favs, map_size, unique_crashes, unique_hangs, max_depth, execs_per_sec
+TOTAL_EXECS = 0
+UNIX_TIME = 1
+PATHS_TOTAL = 4
+EXECS_PER_SEC = 11
+
 def extract(data, idx):
     x = []
     y = []
+    start_time = float(data[0][UNIX_TIME])
     
     for elem in data:
-        x.append(float(elem[0]))
+        if idx == EXECS_PER_SEC:
+            x.append(float(elem[UNIX_TIME]) - start_time)
+        else:
+            x.append(float(elem[TOTAL_EXECS]))
         y.append(float(elem[idx]))
     
     return x, y
@@ -31,7 +41,8 @@ def main():
                 )
             )
     
-    x, y = extract(data, 4) # coverage
+    x, y = extract(data, PATHS_TOTAL)
+    #x, y = extract(data, EXECS_PER_SEC)
     
     fig, ax = plt.subplots()
     ax.plot(x, y)
