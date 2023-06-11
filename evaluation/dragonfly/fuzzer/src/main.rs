@@ -329,7 +329,7 @@ fn main() -> Result<(), Error> {
             "strace".to_string(),
             "-f".to_string(),
             "--signal=!SIGCHLD".to_string(),
-            "--trace=none".to_string(),
+            "--trace=all".to_string(),
             "--".to_string(),
             executable,
         ]);
