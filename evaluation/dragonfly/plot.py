@@ -8,8 +8,14 @@ def extract(data, key):
     x = []
     y = []
     
+    if key == "exec_sec":
+        data = data[1:]
+
     for elem in data:
-        x.append(elem["executions"])
+        if key == "exec_sec":
+            x.append(elem["run_time"]["secs"])
+        else:
+            x.append(elem["executions"])
         y.append(elem[key])
         
     return x, y
