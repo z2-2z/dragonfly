@@ -308,22 +308,33 @@ fn main() -> Result<(), Error> {
         fs::canonicalize("./fuzz.conf").unwrap().to_str().unwrap().to_string(),
         "-n".to_string(),
     ];
+    const SUDO_ARGUMENTS: [&str; 6] = [
+        "-C", "256",
+        "-E",
+        "-n",
+        "-P",
+        "--",
+    ];
     
     if args.debug {
         arguments.splice(0..0, [
-            "127.0.0.1:6666".to_string(),
+            "gdbserver".to_string(),
+            "0.0.0.0:6666".to_string(),
             executable,
         ]);
-        executable = "gdbserver".to_string();
+        arguments.splice(0..0, SUDO_ARGUMENTS.iter().map(|x| x.to_string()));
+        executable = "sudo".to_string();
     } else if args.trace {
         arguments.splice(0..0, [
+            "strace".to_string(),
             "-f".to_string(),
             "--signal=!SIGCHLD".to_string(),
             "--trace=none".to_string(),
             "--".to_string(),
             executable,
         ]);
-        executable = "strace".to_string();
+        arguments.splice(0..0, SUDO_ARGUMENTS.iter().map(|x| x.to_string()));
+        executable = "sudo".to_string();
     }
     
     #[cfg(debug_assertions)]
