@@ -8,13 +8,13 @@ RUN git clone https://github.com/aflnet/aflnet.git
 RUN cd aflnet && \
     make aflnet-replay
 
-# Build AFLplusplus
 RUN git clone https://github.com/z2-2z/dragonfly
 RUN cd dragonfly && \
     git submodule update --init \
         AFLplusplus \
         evaluation/proftpd
 
+# Build AFL++
 WORKDIR dragonfly/AFLplusplus
 RUN NO_PYTHON=1 NO_NYX=1 make source-only && test -f afl-gcc
 
@@ -33,6 +33,11 @@ RUN chmod -R 777 . && setcap cap_sys_chroot+ep ./proftpd
 # Setup FTP root
 RUN mkdir -p /tmp/ftproot/uploads
 RUN echo content > /tmp/ftproot/file
+RUN mkdir -p /tmp/ftproot/dragonfly/evaluation/proftpd/src && \
+    mkdir -p /tmp/ftproot/dragonfly/evaluation/proftpd/lib && \
+    mkdir -p /tmp/ftproot/dragonfly/evaluation/proftpd/modules && \
+    mkdir -p /tmp/ftproot/dragonfly/evaluation/proftpd/utils
+RUN chmod -R 777 /tmp/ftproot
 
 # Configure ProFTPD
 WORKDIR ../aflnet
@@ -42,6 +47,6 @@ RUN USER=user ../gen-config.sh > fuzz.conf
 
 # Autostart coverage collection
 VOLUME ["/output"]
-RUN echo 'set -e; ../proftpd/proftpd -d 0 -q -c /dragonfly/evaluation/aflnet/fuzz.conf -n & sleep 2; find /output/replayable-queue -type f | xargs -L 1 -I +++ /aflnet/aflnet-replay +++ FTP 2121; cd ../proftpd; mkdir -p /output/report; gcovr --output /output/report/index.html --html-nested --html-title AFLNet;' > /coverage.sh
+RUN echo 'set -e; shopt -s nullglob; ../proftpd/proftpd -d 0 -q -c /dragonfly/evaluation/aflnet/fuzz.conf -n & sleep 2; find /output/replayable-queue -type f | xargs -L 1 -I +++ /aflnet/aflnet-replay +++ FTP 2121; cd ../proftpd; for i in src lib modules utils; do for j in /tmp/ftproot/dragonfly/evaluation/proftpd/$i/*; do cp -v $j ./$i; done; done; mkdir -p /output/report; gcovr --output /output/report/index.html --html-nested --html-title AFLNet;' > /coverage.sh
 RUN echo 'set -e; chmod -R 777 /output; su user /coverage.sh' > /entrypoint.sh
 ENTRYPOINT ["/bin/bash", "/entrypoint.sh"]
