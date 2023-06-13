@@ -11,6 +11,7 @@ mod input;
 mod mutators;
 mod observer;
 mod stats;
+mod scheduler;
 
 pub mod prelude {
     pub use super::{
@@ -20,6 +21,7 @@ pub mod prelude {
         mutators::*,
         observer::*,
         graph::*,
+        scheduler::*,
     };
 }
 pub mod tt;

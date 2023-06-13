@@ -61,7 +61,7 @@ impl<'a> StateObserver<'a> {
         })
     }
 
-    fn get_total_states(&self) -> u64 {
+    pub fn get_total_states(&self) -> u64 {
         u64::from_ne_bytes(self.state_channel.as_slice()[0..8].try_into().unwrap())
     }
 
@@ -69,10 +69,23 @@ impl<'a> StateObserver<'a> {
         self.state_channel.as_mut_slice()[0..8].copy_from_slice(&total_states.to_ne_bytes());
     }
 
-    fn get_state(&self, idx: usize) -> &State {
+    pub fn get_state(&self, idx: usize) -> &State {
         let offset = 8 + idx * size_of::<State>();
         let state = &self.state_channel.as_slice()[offset..offset + size_of::<State>()];
         state.try_into().unwrap()
+    }
+    
+    pub fn get_all_states(&self) -> &[State] {
+        let len = self.get_total_states() as usize;
+        assert!(len < NUM_STATES);
+        
+        let start_offset = 8;
+        let end_offset = start_offset + len * size_of::<State>();
+        let states = &self.state_channel.as_slice()[start_offset..end_offset];
+        unsafe {
+            let states = std::mem::transmute::<*const u8, *const State>(states.as_ptr());
+            std::slice::from_raw_parts(states, len)
+        }
     }
 
     pub fn had_new_transitions(&self) -> bool {
