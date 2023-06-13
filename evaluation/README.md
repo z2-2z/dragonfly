@@ -49,5 +49,16 @@ docker run -v "$PWD/output":/output coverage-aflnet
 The report can be found in `output/report/index.html`.
 
 ## Results
-TODO
+|                          | **AFLNet** | **dragonfly** |
+|--------------------------|------------|---------------|
+| **selection algorithms** | favor      | random        |
+| **line coverage**        | 10.7%      | 30.7%         |
+| **mean exec/s**          | 18.01      | 21.63         |
+| **unique bugs**          | 0          | 2             |
 
+Furthermore we can see that the time window of 24h was not enough for the dragonfly fuzzer, because
+coverage did not plateau yet:
+![dragonfly queue entries graph](./dragonfly_graph.png)
+
+In contrast to AFLNet:
+![dragonfly total paths graph](./aflnet_graph.png)
