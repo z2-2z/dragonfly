@@ -70,7 +70,7 @@ use std::{
 };
 
 use crate::{
-    executor::LibdragonflyExecutorBuilder,
+    executor::DragonflyExecutorBuilder,
     input::HasPacketVector,
     mutators::NopMutator,
 };
@@ -224,7 +224,7 @@ fn fuzz(objective_dir: PathBuf, logfile: &PathBuf, timeout: Duration, executable
     // A fuzzer with feedbacks and a corpus scheduler
     let mut fuzzer = StdFuzzer::new(scheduler, feedback, objective);
 
-    let mut executor = LibdragonflyExecutorBuilder::new()
+    let mut executor = DragonflyExecutorBuilder::new()
         .observers(tuple_list!(edges_observer, time_observer))
         .shmem_provider(&mut shmem_provider)
         .timeout(timeout)

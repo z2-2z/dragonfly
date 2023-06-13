@@ -77,7 +77,7 @@ fn align8(x: usize) -> usize {
 }
 
 #[derive(Debug)]
-pub struct LibdragonflyExecutor<OT, S, SP, I, P>
+pub struct DragonflyExecutor<OT, S, SP, I, P>
 where
     OT: ObserversTuple<S>,
     S: UsesInput<Input = I>,
@@ -93,7 +93,7 @@ where
     phantom: PhantomData<S>,
 }
 
-impl<OT, S, SP, I, P> LibdragonflyExecutor<OT, S, SP, I, P>
+impl<OT, S, SP, I, P> DragonflyExecutor<OT, S, SP, I, P>
 where
     OT: ObserversTuple<S>,
     S: UsesInput<Input = I>,
@@ -113,7 +113,7 @@ where
     }
 }
 
-impl<OT, S, SP, I, P> UsesState for LibdragonflyExecutor<OT, S, SP, I, P>
+impl<OT, S, SP, I, P> UsesState for DragonflyExecutor<OT, S, SP, I, P>
 where
     OT: ObserversTuple<S>,
     S: UsesInput<Input = I>,
@@ -124,7 +124,7 @@ where
     type State = S;
 }
 
-impl<OT, S, SP, I, P> UsesObservers for LibdragonflyExecutor<OT, S, SP, I, P>
+impl<OT, S, SP, I, P> UsesObservers for DragonflyExecutor<OT, S, SP, I, P>
 where
     OT: ObserversTuple<S>,
     S: UsesInput<Input = I>,
@@ -135,7 +135,7 @@ where
     type Observers = OT;
 }
 
-impl<OT, S, SP, I, P> HasObservers for LibdragonflyExecutor<OT, S, SP, I, P>
+impl<OT, S, SP, I, P> HasObservers for DragonflyExecutor<OT, S, SP, I, P>
 where
     OT: ObserversTuple<S>,
     S: UsesInput<Input = I>,
@@ -152,7 +152,7 @@ where
     }
 }
 
-impl<OT, S, SP, I, P, EM, Z> Executor<EM, Z> for LibdragonflyExecutor<OT, S, SP, I, P>
+impl<OT, S, SP, I, P, EM, Z> Executor<EM, Z> for DragonflyExecutor<OT, S, SP, I, P>
 where
     OT: ObserversTuple<S>,
     S: UsesInput<Input = I> + std::fmt::Debug,
@@ -242,7 +242,7 @@ where
     }
 }
 
-pub struct LibdragonflyExecutorBuilder<'a, OT, S, SP, I, P>
+pub struct DragonflyExecutorBuilder<'a, OT, S, SP, I, P>
 where
     OT: ObserversTuple<S>,
     S: UsesInput<Input = I>,
@@ -262,7 +262,7 @@ where
     phantom: PhantomData<(S, I, P)>,
 }
 
-impl<'a, OT, S, SP, I, P> LibdragonflyExecutorBuilder<'a, OT, S, SP, I, P>
+impl<'a, OT, S, SP, I, P> DragonflyExecutorBuilder<'a, OT, S, SP, I, P>
 where
     OT: ObserversTuple<S>,
     S: UsesInput<Input = I>,
@@ -358,10 +358,10 @@ where
         self
     }
 
-    pub fn build(self) -> Result<LibdragonflyExecutor<OT, S, SP, I, P>, Error> {
+    pub fn build(self) -> Result<DragonflyExecutor<OT, S, SP, I, P>, Error> {
         macro_rules! get_value {
             ($name:ident) => {
-                self.$name.ok_or(Error::illegal_argument(format!("LibdragonflyExecutorBuilder: {} was not set", stringify!($name))))?
+                self.$name.ok_or(Error::illegal_argument(format!("DragonflyExecutorBuilder: {} was not set", stringify!($name))))?
             };
         }
 
@@ -386,6 +386,6 @@ where
             return Err(Error::unknown("Failed to start a forkserver"));
         }
 
-        Ok(LibdragonflyExecutor::new(observers, packet_channel, timeout, self.signal, forkserver))
+        Ok(DragonflyExecutor::new(observers, packet_channel, timeout, self.signal, forkserver))
     }
 }

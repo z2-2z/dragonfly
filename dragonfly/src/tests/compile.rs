@@ -70,7 +70,7 @@ use std::{
 };
 
 use crate::{
-    executor::LibdragonflyExecutorBuilder,
+    executor::DragonflyExecutorBuilder,
     feedback::StateFeedback,
     graph::HasStateGraph,
     input::DragonflyInput,
@@ -262,7 +262,7 @@ fn fuzz(
         .expect("Failed to create the executor.");
     */
 
-    let mut executor = LibdragonflyExecutorBuilder::new()
+    let mut executor = DragonflyExecutorBuilder::new()
         .observers(tuple_list!(state_observer, edges_observer, time_observer))
         .shmem_provider(&mut shmem_provider)
         .timeout(timeout)
