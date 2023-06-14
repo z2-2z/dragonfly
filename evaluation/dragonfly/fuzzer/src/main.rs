@@ -454,14 +454,14 @@ fn main() -> Result<(), Error> {
         2
     );
 
-    //let mutational = StdPowerMutationalStage::new(mutator);
-    let mutational = StdMutationalStage::new(mutator);
+    let mutational = StdPowerMutationalStage::new(mutator);
+    //let mutational = StdMutationalStage::new(mutator);
 
-    /*let scheduler = IndexesLenTimeMinimizerScheduler::new(
-        /* StateAwareWeightedScheduler::new(&mut state, &edges_observer, Some(PowerSchedule::FAST), &state_observer) */
-        StdWeightedScheduler::with_schedule(&mut state, &edges_observer, Some(PowerSchedule::FAST))
-    );*/
-    let scheduler = RandScheduler::new();
+    let scheduler = 
+        StateAwareWeightedScheduler::new(&mut state, &edges_observer, Some(PowerSchedule::FAST), &state_observer)
+        /* StdWeightedScheduler::with_schedule(&mut state, &edges_observer, Some(PowerSchedule::FAST)) */
+    ;
+    //let scheduler = RandScheduler::new();
 
     let mut fuzzer = StdFuzzer::new(scheduler, feedback, objective);
 

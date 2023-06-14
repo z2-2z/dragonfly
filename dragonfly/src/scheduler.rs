@@ -194,7 +194,7 @@ where
         let mut result = F::compute(state, entry)?;
 
         if entry.has_metadata::<ReachesFavoredStateMetadata>() {
-            result *= 3.5;
+            result *= 5.0; // Same as favored in CorpusWeightTestcaseScore
         }
 
         Ok(result)
