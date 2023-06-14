@@ -34,6 +34,7 @@ use libafl::prelude::{
     Corpus,
     powersched::PowerSchedule,
     StdWeightedScheduler,
+    RandScheduler
 };
 use nix::sys::signal::Signal;
 use serde::{
@@ -452,10 +453,11 @@ fn main() -> Result<(), Error> {
 
     let mutational = StdPowerMutationalStage::new(mutator);
 
-    let scheduler = IndexesLenTimeMinimizerScheduler::new(
+    /*let scheduler = IndexesLenTimeMinimizerScheduler::new(
         /* StateAwareWeightedScheduler::new(&mut state, &edges_observer, Some(PowerSchedule::FAST), &state_observer) */
         StdWeightedScheduler::with_schedule(&mut state, &edges_observer, Some(PowerSchedule::FAST))
-    );
+    );*/
+    let scheduler = RandScheduler::new();
 
     let mut fuzzer = StdFuzzer::new(scheduler, feedback, objective);
 
