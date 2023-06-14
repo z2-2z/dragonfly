@@ -1,16 +1,22 @@
+use ahash::AHasher;
 use libafl::prelude::{
     BytesInput,
     HasBytesVec,
     HasLen,
     Input,
 };
-use serde::{Serialize, Deserialize};
-use std::hash::{Hash, Hasher};
-use ahash::AHasher;
+use serde::{
+    Deserialize,
+    Serialize,
+};
+use std::hash::{
+    Hash,
+    Hasher,
+};
 
 pub trait SerializeIntoBuffer {
     fn serialize_into_buffer(&self, buffer: &mut [u8]) -> Option<usize>;
-    
+
     fn get_connection(&self) -> usize {
         0
     }
@@ -71,11 +77,11 @@ where
     fn generate_name(&self, _idx: usize) -> String {
         let mut hasher = AHasher::default();
         hasher.write_usize(self.packets.len());
-        
+
         for packet in &self.packets {
             packet.hash(&mut hasher);
         }
-        
+
         let digest = hasher.finish();
         format!("dragonfly-{:016x}", digest)
     }

@@ -1,3 +1,4 @@
+use crate::input::HasPacketVector;
 use libafl::prelude::{
     Error,
     HasRand,
@@ -7,9 +8,8 @@ use libafl::prelude::{
     Named,
     Rand,
 };
-use crate::input::HasPacketVector;
 
-pub trait NewGenerated<S>{
+pub trait NewGenerated<S> {
     fn new_generated(state: &mut S) -> Self;
 }
 
@@ -29,17 +29,14 @@ where
     P: NewGenerated<S>,
 {
     fn mutate(&mut self, state: &mut S, input: &mut I, _stage_idx: i32) -> Result<MutationResult, Error> {
-        let n = std::cmp::max(
-            state.rand_mut().below(input.packets().len() as u64 / 8),
-            1
-        );
-        
+        let n = std::cmp::max(state.rand_mut().below(input.packets().len() as u64 / 8), 1);
+
         for _ in 0..n {
             let idx = state.rand_mut().below(input.packets().len() as u64 + 1) as usize;
             let new_packet = P::new_generated(state);
             input.packets_mut().insert(idx, new_packet);
         }
-        
+
         Ok(MutationResult::Mutated)
     }
 }

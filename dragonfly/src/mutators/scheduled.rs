@@ -1,9 +1,16 @@
-use std::marker::PhantomData;
-use libafl::prelude::{HasRand, Mutator, Rand, Named, MutationResult, Error};
 use crate::{
-    mutators::packet::PacketMutatorTuple,
     input::HasPacketVector,
+    mutators::packet::PacketMutatorTuple,
 };
+use libafl::prelude::{
+    Error,
+    HasRand,
+    MutationResult,
+    Mutator,
+    Named,
+    Rand,
+};
+use std::marker::PhantomData;
 
 pub struct ScheduledPacketMutator<I, P, S, M>
 where
@@ -22,17 +29,17 @@ where
 {
     pub fn new(mutators: M) -> Self {
         assert!(!mutators.is_empty());
-        
+
         Self {
             mutators,
             max_stack_pow: 7,
             phantom: PhantomData,
         }
     }
-    
+
     pub fn with_max_stack_pow(mutators: M, max_stack_pow: u64) -> Self {
         assert!(!mutators.is_empty());
-        
+
         Self {
             mutators,
             max_stack_pow,
@@ -61,27 +68,28 @@ where
     fn iterations(&self, state: &mut S) -> u64 {
         1 << (state.rand_mut().below(self.max_stack_pow) + 1)
     }
-    
+
     fn schedule_mutation(&self, state: &mut S) -> usize {
         state.rand_mut().below(self.mutators.len() as u64) as usize
     }
-    
+
     fn scheduled_mutate(&mut self, state: &mut S, packet: &mut P, stage_idx: i32) -> Result<MutationResult, Error> {
-        #[cfg(test)] 
+        #[cfg(test)]
         println!("--- NEW MUTATION RUN ---");
-        
+
         let mut result = MutationResult::Skipped;
         let num = self.iterations(state);
         for _ in 0..num {
             let mutation = self.schedule_mutation(state);
             let outcome = self.mutators.get_and_mutate(mutation, state, packet, stage_idx)?;
-            
-            #[cfg(test)] {
+
+            #[cfg(test)]
+            {
                 if outcome == MutationResult::Mutated {
                     println!("Ran mutation #{}", mutation);
                 }
             }
-            
+
             if outcome == MutationResult::Mutated {
                 result = MutationResult::Mutated;
             }

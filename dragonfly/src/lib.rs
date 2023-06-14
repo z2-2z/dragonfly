@@ -10,17 +10,17 @@ mod graph;
 mod input;
 mod mutators;
 mod observer;
-mod stats;
 mod scheduler;
+mod stats;
 
 pub mod prelude {
     pub use super::{
         executor::*,
         feedback::*,
+        graph::*,
         input::*,
         mutators::*,
         observer::*,
-        graph::*,
         scheduler::*,
     };
 }

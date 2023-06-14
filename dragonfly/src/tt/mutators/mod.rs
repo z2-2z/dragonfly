@@ -1,48 +1,48 @@
-mod random;
-mod split;
-mod interesting;
-mod duplicate;
+mod case;
+mod convert;
 mod copy;
-mod swap;
 mod delete;
+mod dicts;
+mod duplicate;
+mod interesting;
+mod random;
 mod repeat;
 mod rotate;
-mod special;
-mod case;
-mod dicts;
 mod scanner;
-mod convert;
+mod special;
+mod split;
+mod swap;
 
-pub use random::{
-    TokenReplaceRandomMutator,
-    TokenStreamInsertRandomMutator,
-    TokenValueInsertRandomMutator
+pub use case::TokenInvertCaseMutator;
+pub use convert::TokenConvertMutator;
+pub use copy::TokenStreamCopyMutator;
+pub use delete::{
+    TokenStreamDeleteMutator,
+    TokenValueDeleteMutator,
 };
-pub use split::TokenSplitMutator;
-pub use interesting::{
-    TokenReplaceInterestingMutator,
-    TokenStreamInsertInterestingMutator
+pub use dicts::{
+    TokenReplaceDictMutator,
+    TokenStreamDictInsertMutator,
 };
 pub use duplicate::{
     TokenStreamDuplicateMutator,
     TokenValueDuplicateMutator,
 };
-pub use copy::TokenStreamCopyMutator;
-pub use swap::TokenStreamSwapMutator;
-pub use delete::{
-    TokenStreamDeleteMutator,
-    TokenValueDeleteMutator,
+pub use interesting::{
+    TokenReplaceInterestingMutator,
+    TokenStreamInsertInterestingMutator,
+};
+pub use random::{
+    TokenReplaceRandomMutator,
+    TokenStreamInsertRandomMutator,
+    TokenValueInsertRandomMutator,
 };
 pub use repeat::TokenRepeatCharMutator;
 pub use rotate::TokenRotateCharMutator;
-pub use special::{
-    TokenReplaceSpecialCharMutator,
-    TokenInsertSpecialCharMutator,
-};
-pub use case::TokenInvertCaseMutator;
-pub use dicts::{
-    TokenStreamDictInsertMutator,
-    TokenReplaceDictMutator,
-};
 pub use scanner::TokenStreamScannerMutator;
-pub use convert::TokenConvertMutator;
+pub use special::{
+    TokenInsertSpecialCharMutator,
+    TokenReplaceSpecialCharMutator,
+};
+pub use split::TokenSplitMutator;
+pub use swap::TokenStreamSwapMutator;

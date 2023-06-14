@@ -71,40 +71,41 @@ use crate::{
     graph::HasStateGraph,
     input::DragonflyInput,
     mutators::{
-        NopMutator, NopPacketMutator,
+        InsertRandomPacketMutator,
+        NopMutator,
+        NopPacketMutator,
+        PacketCrossoverInsertMutator,
+        PacketCrossoverReplaceMutator,
         PacketDeleteMutator,
         PacketDuplicateMutator,
         PacketReorderMutator,
         ScheduledPacketMutator,
-        InsertRandomPacketMutator,
-        PacketCrossoverInsertMutator,
-        PacketCrossoverReplaceMutator,
     },
     observer::StateObserver,
+    scheduler::StateAwareWeightedScheduler,
     tt::{
-        TokenStream,
-        TokenStreamInsertRandomMutator,
-        TokenReplaceRandomMutator,
-        TokenSplitMutator,
-        TokenReplaceInterestingMutator,
-        TokenStreamInsertInterestingMutator,
-        TokenStreamDuplicateMutator,
-        TokenValueDuplicateMutator,
-        TokenValueInsertRandomMutator,
-        TokenStreamCopyMutator,
-        TokenStreamSwapMutator,
-        TokenStreamDeleteMutator,
-        TokenRepeatCharMutator,
-        TokenRotateCharMutator,
-        TokenValueDeleteMutator,
+        TokenConvertMutator,
         TokenInsertSpecialCharMutator,
         TokenInvertCaseMutator,
-        TokenStreamDictInsertMutator,
+        TokenRepeatCharMutator,
         TokenReplaceDictMutator,
+        TokenReplaceInterestingMutator,
+        TokenReplaceRandomMutator,
+        TokenRotateCharMutator,
+        TokenSplitMutator,
+        TokenStream,
+        TokenStreamCopyMutator,
+        TokenStreamDeleteMutator,
+        TokenStreamDictInsertMutator,
+        TokenStreamDuplicateMutator,
+        TokenStreamInsertInterestingMutator,
+        TokenStreamInsertRandomMutator,
         TokenStreamScannerMutator,
-        TokenConvertMutator,
+        TokenStreamSwapMutator,
+        TokenValueDeleteMutator,
+        TokenValueDuplicateMutator,
+        TokenValueInsertRandomMutator,
     },
-    scheduler::StateAwareWeightedScheduler,
 };
 
 #[test]
@@ -251,35 +252,33 @@ fn fuzz(
     )
     .unwrap();
     state.init_stategraph();
-    
+
     let max_tokens = 32;
     let max_packets = 32;
-    
-    let stateful = ScheduledPacketMutator::new(
-        tuple_list!(
-            NopPacketMutator::new(),
-            TokenStreamInsertRandomMutator::new(max_tokens),
-            TokenReplaceRandomMutator::new(),
-            TokenSplitMutator::new(max_tokens),
-            TokenStreamInsertInterestingMutator::new(max_tokens),
-            TokenReplaceInterestingMutator::new(),
-            TokenStreamDuplicateMutator::new(max_tokens),
-            TokenValueDuplicateMutator::new(),
-            TokenValueInsertRandomMutator::new(),
-            TokenStreamCopyMutator::new(max_tokens),
-            TokenStreamSwapMutator::new(),
-            TokenStreamDeleteMutator::new(1),
-            TokenRepeatCharMutator::new(),
-            TokenRotateCharMutator::new(),
-            TokenValueDeleteMutator::new(1),
-            TokenInsertSpecialCharMutator::new(),
-            TokenInvertCaseMutator::new(),
-            TokenStreamDictInsertMutator::new(max_tokens),
-            TokenReplaceDictMutator::new(),
-            TokenStreamScannerMutator::new(max_tokens),
-            TokenConvertMutator::new()
-        )
-    );
+
+    let stateful = ScheduledPacketMutator::new(tuple_list!(
+        NopPacketMutator::new(),
+        TokenStreamInsertRandomMutator::new(max_tokens),
+        TokenReplaceRandomMutator::new(),
+        TokenSplitMutator::new(max_tokens),
+        TokenStreamInsertInterestingMutator::new(max_tokens),
+        TokenReplaceInterestingMutator::new(),
+        TokenStreamDuplicateMutator::new(max_tokens),
+        TokenValueDuplicateMutator::new(),
+        TokenValueInsertRandomMutator::new(),
+        TokenStreamCopyMutator::new(max_tokens),
+        TokenStreamSwapMutator::new(),
+        TokenStreamDeleteMutator::new(1),
+        TokenRepeatCharMutator::new(),
+        TokenRotateCharMutator::new(),
+        TokenValueDeleteMutator::new(1),
+        TokenInsertSpecialCharMutator::new(),
+        TokenInvertCaseMutator::new(),
+        TokenStreamDictInsertMutator::new(max_tokens),
+        TokenReplaceDictMutator::new(),
+        TokenStreamScannerMutator::new(max_tokens),
+        TokenConvertMutator::new()
+    ));
 
     // Setup a MOPT mutator
     let mutator = StdMOptMutator::new(
@@ -293,17 +292,15 @@ fn fuzz(
             InsertRandomPacketMutator::new(),
             PacketCrossoverReplaceMutator::new(),
             PacketCrossoverInsertMutator::new()
-        ), 
-        7, 
-        5
+        ),
+        7,
+        5,
     )?;
 
     let power = StdPowerMutationalStage::new(mutator);
 
     // A minimization+queue policy to get testcasess from the corpus
-    let scheduler = IndexesLenTimeMinimizerScheduler::new(
-        StateAwareWeightedScheduler::new(&mut state, &edges_observer, Some(PowerSchedule::EXPLORE), &state_observer),
-    );
+    let scheduler = IndexesLenTimeMinimizerScheduler::new(StateAwareWeightedScheduler::new(&mut state, &edges_observer, Some(PowerSchedule::EXPLORE), &state_observer));
 
     // A fuzzer with feedbacks and a corpus scheduler
     let mut fuzzer = StdFuzzer::new(scheduler, feedback, objective);

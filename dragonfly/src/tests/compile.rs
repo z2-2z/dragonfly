@@ -35,9 +35,7 @@ use libafl::{
         Fuzzer,
         StdFuzzer,
     },
-    inputs::{
-        BytesInput,
-    },
+    inputs::BytesInput,
     monitors::SimpleMonitor,
     mutators::StdMOptMutator,
     observers::{
@@ -75,7 +73,8 @@ use crate::{
     graph::HasStateGraph,
     input::DragonflyInput,
     mutators::{
-        NopMutator, NopPacketMutator,
+        NopMutator,
+        NopPacketMutator,
         PacketDeleteMutator,
         PacketDuplicateMutator,
         PacketReorderMutator,
@@ -228,16 +227,16 @@ fn fuzz(
     )
     .unwrap();
     state.init_stategraph();
-    
-    let stateful = ScheduledPacketMutator::new(
-        tuple_list!(
-            NopPacketMutator::new()
-        )
-    );
+
+    let stateful = ScheduledPacketMutator::new(tuple_list!(NopPacketMutator::new()));
 
     // Setup a MOPT mutator
-    let mutator =
-        StdMOptMutator::new(&mut state, tuple_list!(stateful, PacketReorderMutator::new(), PacketDeleteMutator::new(0), NopMutator::new(), PacketDuplicateMutator::new(100)), 7, 5)?;
+    let mutator = StdMOptMutator::new(
+        &mut state,
+        tuple_list!(stateful, PacketReorderMutator::new(), PacketDeleteMutator::new(0), NopMutator::new(), PacketDuplicateMutator::new(100)),
+        7,
+        5,
+    )?;
 
     let power = StdPowerMutationalStage::new(mutator);
 

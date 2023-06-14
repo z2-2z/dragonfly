@@ -1,5 +1,9 @@
-pub(crate) mod token;
 pub(crate) mod mutators;
+pub(crate) mod token;
 
-pub use token::{TextToken, TokenStream, HasTokenStream};
 pub use mutators::*;
+pub use token::{
+    HasTokenStream,
+    TextToken,
+    TokenStream,
+};

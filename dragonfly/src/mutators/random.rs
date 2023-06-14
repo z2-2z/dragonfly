@@ -1,3 +1,4 @@
+use crate::input::HasPacketVector;
 use libafl::prelude::{
     Error,
     HasRand,
@@ -7,9 +8,8 @@ use libafl::prelude::{
     Named,
     Rand,
 };
-use crate::input::HasPacketVector;
 
-pub trait NewRandom<S>{
+pub trait NewRandom<S> {
     fn new_random(state: &mut S) -> Self;
 }
 

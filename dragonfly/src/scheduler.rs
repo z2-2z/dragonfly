@@ -1,14 +1,36 @@
-use libafl::prelude::{
-    Scheduler, UsesState, HasCorpus, UsesInput, Error,
-    ObserversTuple, CorpusId, Named, Corpus, HasMetadata,
-    impl_serdeany, TestcaseScore, Testcase,
-    testcase_score::CorpusWeightTestcaseScore,
-    MapObserver, HasRand, WeightedScheduler,
-    powersched::PowerSchedule, HasTestcase,
+use crate::observer::{
+    State,
+    StateObserver,
 };
-use ahash::{AHashMap, AHashSet};
-use crate::observer::{StateObserver, State};
-use serde::{Serialize, Deserialize};
+use ahash::{
+    AHashMap,
+    AHashSet,
+};
+use libafl::prelude::{
+    impl_serdeany,
+    powersched::PowerSchedule,
+    testcase_score::CorpusWeightTestcaseScore,
+    Corpus,
+    CorpusId,
+    Error,
+    HasCorpus,
+    HasMetadata,
+    HasRand,
+    HasTestcase,
+    MapObserver,
+    Named,
+    ObserversTuple,
+    Scheduler,
+    Testcase,
+    TestcaseScore,
+    UsesInput,
+    UsesState,
+    WeightedScheduler,
+};
+use serde::{
+    Deserialize,
+    Serialize,
+};
 use std::marker::PhantomData;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -69,58 +91,58 @@ where
             favorites: AHashSet::new(),
         }
     }
-    
+
     fn update_n_fuzz(&mut self) {
         for state in &self.current_sequence {
             let meta = self.metadata.entry(*state).or_insert_with(StateMetadata::default);
             meta.n_fuzz = meta.n_fuzz.saturating_add(1);
         }
     }
-    
+
     fn update_seeds(&mut self, seed: CorpusId) {
         for state in &self.current_sequence {
             let meta = self.metadata.entry(*state).or_insert_with(StateMetadata::default);
             meta.seeds.insert(seed);
         }
     }
-    
+
     fn get_least_fuzzed_state(&self) -> Option<State> {
         let mut ret = None;
         let mut current_score = Score::MAX;
-        
+
         for (state, metadata) in self.metadata.iter() {
             let score = metadata.score();
-            
+
             if score < current_score {
                 current_score = score;
                 ret = Some(state);
             }
         }
-        
+
         ret.copied()
     }
-    
+
     fn calculate_favorites(&mut self, fuzzer_state: &mut S) -> Result<(), Error> {
         if let Some(state) = self.get_least_fuzzed_state() {
             let meta = self.metadata.get_mut(&state).unwrap();
             let mut favorites = AHashSet::with_capacity(MAX_FAVORITE_COUNT);
-            
+
             for seed in meta.seeds.iter().take(MAX_FAVORITE_COUNT) {
                 fuzzer_state.corpus_mut().get(*seed)?.borrow_mut().add_metadata::<ReachesFavoredStateMetadata>(ReachesFavoredStateMetadata {});
                 favorites.insert(*seed);
-                
+
                 #[cfg(test)]
                 println!("mark {} as favorite", seed);
             }
-            
+
             for id in self.favorites.difference(&favorites) {
                 drop(fuzzer_state.corpus_mut().get(*id)?.borrow_mut().metadata_map_mut().remove::<ReachesFavoredStateMetadata>());
             }
-            
+
             self.favorites = favorites;
             meta.n_selected = meta.n_selected.saturating_add(1);
         }
-        
+
         Ok(())
     }
 }
@@ -142,7 +164,7 @@ where
         self.update_n_fuzz();
         self.base.on_evaluation(fuzzer_state, input, observers)
     }
-    
+
     fn on_add(&mut self, fuzzer_state: &mut Self::State, idx: CorpusId) -> Result<(), Error> {
         self.update_seeds(idx);
         self.calculate_favorites(fuzzer_state)?;
@@ -152,7 +174,7 @@ where
     fn next(&mut self, fuzzer_state: &mut Self::State) -> Result<CorpusId, Error> {
         self.base.next(fuzzer_state)
     }
-    
+
     fn set_current_scheduled(&mut self, state: &mut Self::State, next_id: Option<CorpusId>) -> Result<(), Error> {
         self.base.set_current_scheduled(state, next_id)
     }
@@ -170,11 +192,11 @@ where
 {
     fn compute(state: &S, entry: &mut Testcase<<S>::Input>) -> Result<f64, Error> {
         let mut result = F::compute(state, entry)?;
-        
+
         if entry.has_metadata::<ReachesFavoredStateMetadata>() {
             result *= 3.5;
         }
-        
+
         Ok(result)
     }
 }
@@ -182,15 +204,16 @@ where
 #[cfg(test)]
 mod metadata_tests {
     use super::*;
-    
+
     fn score(n_fuzz: usize, n_selected: usize) -> usize {
         StateMetadata {
             n_fuzz,
             n_selected,
             seeds: AHashSet::new(),
-        }.score()
+        }
+        .score()
     }
-    
+
     #[test]
     fn print_score() {
         assert!(score(2, 3) < score(2, 4));

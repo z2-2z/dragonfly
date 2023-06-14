@@ -1,21 +1,29 @@
-use std::marker::PhantomData;
 use crate::{
-    tt::token::{
-        HasTokenStream, TextToken, 
-        random_number_value, random_whitespace_value,
-        random_text_value, random_blob_value,
-        has_valid_sign,
-    },
     mutators::PacketMutator,
+    tt::token::{
+        has_valid_sign,
+        random_blob_value,
+        random_number_value,
+        random_text_value,
+        random_whitespace_value,
+        HasTokenStream,
+        TextToken,
+    },
 };
-use libafl::prelude::{MutationResult, Error, HasRand, Rand};
+use libafl::prelude::{
+    Error,
+    HasRand,
+    MutationResult,
+    Rand,
+};
+use std::marker::PhantomData;
 
 /// Replaces the value of one random TextToken with a purely random new one
 pub struct TokenReplaceRandomMutator<P, S>
 where
     P: HasTokenStream,
 {
-    phantom: PhantomData<(P,S)>,
+    phantom: PhantomData<(P, S)>,
 }
 
 impl<P, S> TokenReplaceRandomMutator<P, S>
@@ -38,13 +46,13 @@ where
     fn mutate_packet(&mut self, state: &mut S, packet: &mut P, _stage_idx: i32) -> Result<MutationResult, Error> {
         if let Some(token_stream) = packet.get_tokenstream() {
             let len = token_stream.tokens().len();
-            
+
             if len == 0 {
                 return Ok(MutationResult::Skipped);
             }
-            
+
             let idx = state.rand_mut().below(len as u64) as usize;
-            
+
             match &mut token_stream.tokens_mut()[idx] {
                 TextToken::Constant(_) => {},
                 TextToken::Number(data) => {
@@ -65,7 +73,7 @@ where
                 },
             }
         }
-        
+
         Ok(MutationResult::Skipped)
     }
 }
@@ -76,7 +84,7 @@ where
     P: HasTokenStream,
 {
     max_len: usize,
-    phantom: PhantomData<(P,S)>,
+    phantom: PhantomData<(P, S)>,
 }
 
 impl<P, S> TokenStreamInsertRandomMutator<P, S>
@@ -100,14 +108,14 @@ where
     fn mutate_packet(&mut self, state: &mut S, packet: &mut P, _stage_idx: i32) -> Result<MutationResult, Error> {
         if let Some(token_stream) = packet.get_tokenstream() {
             let len = token_stream.tokens().len();
-            
+
             if len >= self.max_len {
                 return Ok(MutationResult::Skipped);
             }
-            
+
             let idx = state.rand_mut().below(len as u64 + 1) as usize;
             let mut data = Vec::new();
-            
+
             let new_token = match state.rand_mut().below(4) {
                 0 => {
                     random_number_value(state.rand_mut(), &mut data, true);
@@ -125,13 +133,13 @@ where
                     random_blob_value(state.rand_mut(), &mut data);
                     TextToken::Blob(data)
                 },
-                _ => unreachable!()
+                _ => unreachable!(),
             };
-            
+
             token_stream.tokens_mut().insert(idx, new_token);
             return Ok(MutationResult::Mutated);
         }
-        
+
         Ok(MutationResult::Skipped)
     }
 }
@@ -141,7 +149,7 @@ pub struct TokenValueInsertRandomMutator<P, S>
 where
     P: HasTokenStream,
 {
-    phantom: PhantomData<(P,S)>,
+    phantom: PhantomData<(P, S)>,
 }
 
 impl<P, S> TokenValueInsertRandomMutator<P, S>
@@ -164,14 +172,14 @@ where
     fn mutate_packet(&mut self, state: &mut S, packet: &mut P, _stage_idx: i32) -> Result<MutationResult, Error> {
         if let Some(token_stream) = packet.get_tokenstream() {
             let len = token_stream.tokens().len();
-            
+
             if len == 0 {
                 return Ok(MutationResult::Skipped);
             }
-            
+
             let idx = state.rand_mut().below(len as u64) as usize;
             let mut new_data = Vec::new();
-            
+
             match &mut token_stream.tokens_mut()[idx] {
                 TextToken::Constant(_) => {},
                 TextToken::Number(data) => {
@@ -201,7 +209,7 @@ where
                 },
             }
         }
-        
+
         Ok(MutationResult::Skipped)
     }
 }

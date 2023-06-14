@@ -1,3 +1,4 @@
+use ahash::AHasher;
 use libafl::prelude::{
     impl_serdeany,
     Error,
@@ -12,7 +13,6 @@ use std::{
     collections::HashSet,
     hash::Hasher,
 };
-use ahash::AHasher;
 
 use crate::observer::State;
 
@@ -31,11 +31,11 @@ impl Edge {
             to,
         }
     }
-    
+
     pub fn from(&self) -> NodeId {
         self.from
     }
-    
+
     pub fn to(&self) -> NodeId {
         self.to
     }
@@ -74,45 +74,45 @@ impl StateGraph {
     pub fn edges(&self) -> &HashSet<Edge, ahash::RandomState> {
         &self.edges
     }
-    
+
     fn dump_node<S: std::io::Write>(&self, id: NodeId, stream: &mut S) -> std::io::Result<()> {
         if id == Self::ENTRYPOINT {
             writeln!(stream, "  {} [shape=\"point\"];", id)?;
         } else {
             writeln!(stream, "  {0} [shape=\"oval\"; label=\"{0:016x}\"];", id)?;
         }
-        
+
         Ok(())
     }
-    
+
     pub fn dump_dot<S: std::io::Write>(&self, stream: &mut S) -> std::io::Result<()> {
         let mut seen = HashSet::new();
-        
+
         writeln!(stream, "digraph ipsm {{")?;
         writeln!(stream, "  label = \"IPSM\";")?;
         writeln!(stream, "  center = true;")?;
         writeln!(stream)?;
-        
+
         /* First print all the nodes */
         for edge in &self.edges {
             if !seen.contains(&edge.from) {
                 self.dump_node(edge.from, stream)?;
                 seen.insert(edge.from);
             }
-            
+
             if !seen.contains(&edge.to) {
                 self.dump_node(edge.to, stream)?;
                 seen.insert(edge.to);
             }
         }
-        
+
         writeln!(stream)?;
-        
+
         /* Then print all the edges */
         for edge in &self.edges {
             writeln!(stream, "  {} -> {} [arrowhead=\"open\"];", edge.from, edge.to)?;
         }
-        
+
         writeln!(stream, "}}")?;
         Ok(())
     }

@@ -1,32 +1,31 @@
 use core::time::Duration;
 use libafl::{
     bolts::{
+        core_affinity::{
+            CoreId,
+            Cores,
+        },
         current_nanos,
+        launcher::Launcher,
         rands::StdRand,
         shmem::{
             ShMem,
             ShMemProvider,
-            UnixShMemProvider,
             StdShMemProvider,
+            UnixShMemProvider,
         },
         tuples::tuple_list,
         AsMutSlice,
         HasLen,
-        core_affinity::{Cores, CoreId},
-        launcher::Launcher,
     },
-    corpus::{
-        InMemoryCorpus,
-    },
+    corpus::InMemoryCorpus,
     feedback_or,
     feedbacks::{
         CrashFeedback,
         MaxMapFeedback,
         TimeFeedback,
     },
-    fuzzer::{
-        StdFuzzer,
-    },
+    fuzzer::StdFuzzer,
     inputs::Input,
     monitors::{
         OnDiskTOMLMonitor,
@@ -38,13 +37,17 @@ use libafl::{
         StdMapObserver,
         TimeObserver,
     },
-    stages::{
-        calibrate::CalibrationStage,
+    prelude::{
+        powersched::PowerSchedule,
+        EventConfig,
+        Fuzzer,
+        IndexesLenTimeMinimizerScheduler,
+        StdPowerMutationalStage,
     },
+    stages::calibrate::CalibrationStage,
     state::StdState,
     Error,
     Evaluator,
-    prelude::{StdPowerMutationalStage, powersched::PowerSchedule, Fuzzer, EventConfig, IndexesLenTimeMinimizerScheduler},
 };
 use nix::sys::signal::Signal;
 use serde::{
@@ -58,6 +61,8 @@ use std::{
 
 use crate::{
     executor::DragonflyExecutorBuilder,
+    feedback::StateFeedback,
+    graph::HasStateGraph,
     input::{
         HasPacketVector,
         SerializeIntoBuffer,
@@ -68,8 +73,6 @@ use crate::{
         PacketReorderMutator,
     },
     observer::StateObserver,
-    feedback::StateFeedback,
-    graph::HasStateGraph,
     scheduler::StateAwareWeightedScheduler,
 };
 
@@ -176,7 +179,7 @@ fn fuzz(_objective_dir: PathBuf, logfile: &PathBuf, timeout: Duration, executabl
     let mut client = |old_state: Option<_>, mut mgr, core: CoreId| {
         println!("Launch client @ {}", core.0);
         let mut shmem_provider = UnixShMemProvider::new()?;
-        
+
         // The coverage map shared between observer and executor
         const MAP_SIZE: usize = 65536;
         let mut shmem = shmem_provider.new_shmem(MAP_SIZE)?;
@@ -193,7 +196,7 @@ fn fuzz(_objective_dir: PathBuf, logfile: &PathBuf, timeout: Duration, executabl
 
         // Create an observation channel to keep track of the execution time
         let time_observer = TimeObserver::new("time");
-        
+
         let state_feedback = StateFeedback::new(&state_observer);
 
         let map_feedback = MaxMapFeedback::tracking(&edges_observer, true, false);
@@ -214,29 +217,30 @@ fn fuzz(_objective_dir: PathBuf, logfile: &PathBuf, timeout: Duration, executabl
         let mut objective = CrashFeedback::new();
 
         // create a State from scratch
-        let mut state = old_state.unwrap_or_else(|| StdState::new(
-            // RNG
-            StdRand::with_seed(current_nanos()),
-            // Corpus that will be evolved, we keep it in memory for performance
-            InMemoryCorpus::<ExampleInput>::new(),
-            // Corpus in which we store solutions (crashes in this example),
-            // on disk so the user can get them after stopping the fuzzer
-            InMemoryCorpus::new(),
-            // States of the feedbacks.
-            // The feedbacks can report the data that should persist in the State.
-            &mut feedback,
-            // Same for objective feedbacks
-            &mut objective,
-        ).unwrap());
+        let mut state = old_state.unwrap_or_else(|| {
+            StdState::new(
+                // RNG
+                StdRand::with_seed(current_nanos()),
+                // Corpus that will be evolved, we keep it in memory for performance
+                InMemoryCorpus::<ExampleInput>::new(),
+                // Corpus in which we store solutions (crashes in this example),
+                // on disk so the user can get them after stopping the fuzzer
+                InMemoryCorpus::new(),
+                // States of the feedbacks.
+                // The feedbacks can report the data that should persist in the State.
+                &mut feedback,
+                // Same for objective feedbacks
+                &mut objective,
+            )
+            .unwrap()
+        });
         state.init_stategraph();
 
         let mutator = StdScheduledMutator::new(tuple_list!(PacketDeleteMutator::new(1), PacketDuplicateMutator::new(16), PacketReorderMutator::new()));
 
         let mutational = StdPowerMutationalStage::new(mutator);
 
-        let scheduler = IndexesLenTimeMinimizerScheduler::new(
-            StateAwareWeightedScheduler::new(&mut state, &edges_observer, Some(PowerSchedule::FAST), &state_observer)
-        );
+        let scheduler = IndexesLenTimeMinimizerScheduler::new(StateAwareWeightedScheduler::new(&mut state, &edges_observer, Some(PowerSchedule::FAST), &state_observer));
 
         let mut fuzzer = StdFuzzer::new(scheduler, feedback, objective);
 
@@ -253,17 +257,14 @@ fn fuzz(_objective_dir: PathBuf, logfile: &PathBuf, timeout: Duration, executabl
             .build()?;
 
         // The order of the stages matter!
-        let mut stages = tuple_list!(
-            calibration, 
-            mutational
-        );
+        let mut stages = tuple_list!(calibration, mutational);
 
         // evaluate input
         let input = ExampleInput {
             packets: vec![Packet::Add4, Packet::Sep, Packet::Sub1, Packet::Sep, Packet::NegS, Packet::Sep],
         };
         fuzzer.add_input(&mut state, &mut executor, &mut mgr, input)?;
-        
+
         println!("Start fuzzing @ {}", core.0);
 
         fuzzer.fuzz_loop(&mut stages, &mut executor, &mut state, &mut mgr)?;
@@ -286,7 +287,7 @@ fn fuzz(_objective_dir: PathBuf, logfile: &PathBuf, timeout: Duration, executabl
     match launcher.launch() {
         Ok(_) => {},
         Err(Error::ShuttingDown) => {},
-        err => panic!("Failed to lauch instances: {:?}", err)
+        err => panic!("Failed to lauch instances: {:?}", err),
     };
 
     Ok(())

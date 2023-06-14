@@ -1,3 +1,4 @@
+use crate::mutators::packet::PacketMutator;
 use libafl::prelude::{
     Error,
     Input,
@@ -5,7 +6,6 @@ use libafl::prelude::{
     Mutator,
     Named,
 };
-use crate::mutators::packet::PacketMutator;
 
 pub struct NopMutator;
 
