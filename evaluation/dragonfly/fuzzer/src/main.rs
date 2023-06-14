@@ -16,9 +16,9 @@ use libafl::prelude::{
     HitcountsMapObserver,
     StdMapObserver,
     TimeObserver,
-    RandScheduler,
+    IndexesLenTimeMinimizerScheduler,
     CalibrationStage,
-    StdMutationalStage,
+    StdPowerMutationalStage,
     StdState,
     Error,
     Evaluator,
@@ -32,6 +32,7 @@ use libafl::prelude::{
     CoreId,
     HasSolutions,
     Corpus,
+    powersched::PowerSchedule,
 };
 use nix::sys::signal::Signal;
 use serde::{
@@ -60,6 +61,7 @@ use dragonfly::{
         HasPacketVector,
         InsertGeneratedPacketMutator, NewGenerated,
         HasCrossover, PacketCrossoverInsertMutator, PacketCrossoverReplaceMutator,
+        StateAwareWeightedScheduler,
     },
     tt::{
         TokenStream,
@@ -447,9 +449,11 @@ fn main() -> Result<(), Error> {
         2
     );
 
-    let mutational = StdMutationalStage::new(mutator);
+    let mutational = StdPowerMutationalStage::new(mutator);
 
-    let scheduler = RandScheduler::new();
+    let scheduler = IndexesLenTimeMinimizerScheduler::new(
+        StateAwareWeightedScheduler::new(&mut state, &edges_observer, Some(PowerSchedule::FAST), &state_observer)
+    );
 
     let mut fuzzer = StdFuzzer::new(scheduler, feedback, objective);
 
