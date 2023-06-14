@@ -1,11 +1,15 @@
 use libafl::prelude::{
     Scheduler, UsesState, HasCorpus, UsesInput, Error,
     ObserversTuple, CorpusId, Named, Corpus, HasMetadata,
-    impl_serdeany,
+    impl_serdeany, TestcaseScore, Testcase,
+    testcase_score::CorpusWeightTestcaseScore,
+    MapObserver, HasRand, WeightedScheduler,
+    powersched::PowerSchedule, HasTestcase,
 };
 use ahash::{AHashMap, AHashSet};
 use crate::observer::{StateObserver, State};
 use serde::{Serialize, Deserialize};
+use std::marker::PhantomData;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ReachesFavoredStateMetadata;
@@ -31,29 +35,34 @@ impl StateMetadata {
     }
 }
 
-pub struct StateSelectionScheduler<CS> {
-    base: CS,
+pub struct StateAwareWeightedScheduler<O, S>
+where
+    O: MapObserver,
+    S: HasCorpus + HasMetadata + HasRand + HasTestcase,
+{
+    base: WeightedScheduler<FavoredStateTestcaseWeight<S, CorpusWeightTestcaseScore<S>>, O, S>,
     observer_name: String,
     current_sequence: Vec<State>,
     metadata: AHashMap<State, StateMetadata>,
     favorites: AHashSet<CorpusId>,
 }
 
-impl<CS> UsesState for StateSelectionScheduler<CS>
+impl<O, S> UsesState for StateAwareWeightedScheduler<O, S>
 where
-    CS: UsesState,
+    O: MapObserver,
+    S: HasCorpus + HasMetadata + HasRand + HasTestcase,
 {
-    type State = CS::State;
+    type State = S;
 }
 
-impl<CS> StateSelectionScheduler<CS>
+impl<O, S> StateAwareWeightedScheduler<O, S>
 where
-    CS: Scheduler,
-    CS::State: HasCorpus + HasMetadata,
+    O: MapObserver,
+    S: HasCorpus + HasMetadata + HasRand + HasTestcase,
 {
-    pub fn new(base: CS, state_observer: &StateObserver) -> Self {
+    pub fn new(state: &mut S, map_observer: &O, strat: Option<PowerSchedule>, state_observer: &StateObserver) -> Self {
         Self {
-            base,
+            base: WeightedScheduler::with_schedule(state, map_observer, strat),
             observer_name: state_observer.name().to_string(),
             current_sequence: Vec::with_capacity(256),
             metadata: AHashMap::new(),
@@ -91,7 +100,7 @@ where
         ret.copied()
     }
     
-    fn calculate_favorites(&mut self, fuzzer_state: &mut CS::State) -> Result<(), Error> {
+    fn calculate_favorites(&mut self, fuzzer_state: &mut S) -> Result<(), Error> {
         if let Some(state) = self.get_least_fuzzed_state() {
             let meta = self.metadata.get_mut(&state).unwrap();
             let mut favorites = AHashSet::with_capacity(MAX_FAVORITE_COUNT);
@@ -100,6 +109,7 @@ where
                 fuzzer_state.corpus_mut().get(*seed)?.borrow_mut().add_metadata::<ReachesFavoredStateMetadata>(ReachesFavoredStateMetadata {});
                 favorites.insert(*seed);
                 
+                #[cfg(test)]
                 println!("mark {} as favorite", seed);
             }
             
@@ -115,14 +125,14 @@ where
     }
 }
 
-impl<CS> Scheduler for StateSelectionScheduler<CS>
+impl<O, S> Scheduler for StateAwareWeightedScheduler<O, S>
 where
-    CS: Scheduler,
-    CS::State: HasCorpus + HasMetadata,
+    O: MapObserver,
+    S: HasCorpus + HasMetadata + HasRand + HasTestcase,
 {
-    fn on_evaluation<OT>(&mut self, fuzzer_state: &mut Self::State, input: &<Self::State as UsesInput>::Input, observers: &OT) -> Result<(), Error>
+    fn on_evaluation<OT>(&mut self, fuzzer_state: &mut S, input: &<S as UsesInput>::Input, observers: &OT) -> Result<(), Error>
     where
-        OT: ObserversTuple<Self::State>,
+        OT: ObserversTuple<S>,
     {
         let state_observer = observers.match_name::<StateObserver>(&self.observer_name).expect("no state observer found");
         let states = state_observer.get_all_states();
@@ -145,6 +155,27 @@ where
     
     fn set_current_scheduled(&mut self, state: &mut Self::State, next_id: Option<CorpusId>) -> Result<(), Error> {
         self.base.set_current_scheduled(state, next_id)
+    }
+}
+
+#[derive(Debug, Clone)]
+struct FavoredStateTestcaseWeight<S, F> {
+    phantom: PhantomData<(S, F)>,
+}
+
+impl<S, F> TestcaseScore<S> for FavoredStateTestcaseWeight<S, F>
+where
+    S: HasCorpus + HasMetadata,
+    F: TestcaseScore<S>,
+{
+    fn compute(state: &S, entry: &mut Testcase<<S>::Input>) -> Result<f64, Error> {
+        let mut result = F::compute(state, entry)?;
+        
+        if entry.has_metadata::<ReachesFavoredStateMetadata>() {
+            result *= 3.5;
+        }
+        
+        Ok(result)
     }
 }
 

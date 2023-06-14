@@ -44,7 +44,7 @@ use libafl::{
     state::StdState,
     Error,
     Evaluator,
-    prelude::{StdPowerMutationalStage, StdWeightedScheduler, powersched::PowerSchedule, Fuzzer, EventConfig},
+    prelude::{StdPowerMutationalStage, powersched::PowerSchedule, Fuzzer, EventConfig, IndexesLenTimeMinimizerScheduler},
 };
 use nix::sys::signal::Signal;
 use serde::{
@@ -70,7 +70,7 @@ use crate::{
     observer::StateObserver,
     feedback::StateFeedback,
     graph::HasStateGraph,
-    scheduler::StateSelectionScheduler,
+    scheduler::StateAwareWeightedScheduler,
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -234,9 +234,8 @@ fn fuzz(_objective_dir: PathBuf, logfile: &PathBuf, timeout: Duration, executabl
 
         let mutational = StdPowerMutationalStage::new(mutator);
 
-        let scheduler = StateSelectionScheduler::new(
-            StdWeightedScheduler::with_schedule(&mut state, &edges_observer, Some(PowerSchedule::FAST)),
-            &state_observer,
+        let scheduler = IndexesLenTimeMinimizerScheduler::new(
+            StateAwareWeightedScheduler::new(&mut state, &edges_observer, Some(PowerSchedule::FAST), &state_observer)
         );
 
         let mut fuzzer = StdFuzzer::new(scheduler, feedback, objective);
