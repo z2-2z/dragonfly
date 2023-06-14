@@ -11,7 +11,7 @@ The campaign is run for 24h and after that, the _statement_ coverage, obtained v
 cd dragonfly
 docker build --pull -t evaluation-dragonfly -f Dockerfile-fuzz .
 mkdir output
-docker run -v "$PWD/output":/output evaluation-dragonfly
+docker run --security-opt seccomp:unconfined -v "$PWD/output":/output evaluation-dragonfly
 ```
 
 The container must be stopped with `docker stop <container-id>`, Ctrl+C will not work.
@@ -34,7 +34,7 @@ echo core | sudo tee /proc/sys/kernel/core_pattern
 pushd /sys/devices/system/cpu
 echo performance | sudo tee cpu*/cpufreq/scaling_governor
 popd
-docker run -v "$PWD/output":/output evaluation-aflnet
+docker run --security-opt seccomp:unconfined -v "$PWD/output":/output evaluation-aflnet
 ```
 
 The container must be stopped with `docker stop <container-id>`, Ctrl+C will not work.
