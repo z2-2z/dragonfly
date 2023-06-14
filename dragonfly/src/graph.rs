@@ -12,7 +12,7 @@ use std::{
     collections::HashSet,
     hash::Hasher,
 };
-use fnv::{FnvHasher, FnvHashSet};
+use ahash::AHasher;
 
 use crate::observer::State;
 
@@ -43,7 +43,7 @@ impl Edge {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct StateGraph {
-    edges: FnvHashSet<Edge>,
+    edges: HashSet<Edge, ahash::RandomState>,
 }
 
 impl StateGraph {
@@ -56,7 +56,7 @@ impl StateGraph {
     }
 
     pub fn add_node(&mut self, state: &State) -> NodeId {
-        let mut hasher = FnvHasher::default();
+        let mut hasher = AHasher::default();
         hasher.write(state);
         let id = hasher.finish();
 
@@ -71,7 +71,7 @@ impl StateGraph {
         self.edges.insert(Edge::new(from, to))
     }
 
-    pub fn edges(&self) -> &FnvHashSet<Edge> {
+    pub fn edges(&self) -> &HashSet<Edge, ahash::RandomState> {
         &self.edges
     }
     

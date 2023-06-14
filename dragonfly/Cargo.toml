@@ -16,7 +16,6 @@ nix = "0.26"
 libc = "0.2"
 serde = "1.0"
 ahash = { version = "0.8.3", features = ["compile-time-rng"] }
-fnv = "1.0.7"
 
 [dev-dependencies]
 clap = "4.2.7"
