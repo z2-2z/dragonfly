@@ -29,7 +29,7 @@ where
     P: NewRandom<S>,
 {
     fn mutate(&mut self, state: &mut S, input: &mut I, _stage_idx: i32) -> Result<MutationResult, Error> {
-        let idx = state.rand_mut().below(input.packets().len() as u64) as usize;
+        let idx = state.rand_mut().below(input.packets().len() as u64 + 1) as usize;
         let new_packet = P::new_random(state);
         input.packets_mut().insert(idx, new_packet);
         Ok(MutationResult::Mutated)

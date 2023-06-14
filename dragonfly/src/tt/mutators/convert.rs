@@ -43,10 +43,6 @@ where
             
             let idx = state.rand_mut().below(len as u64) as usize;
             let dst_type = state.rand_mut().below(4);
-            const TYPE_NUMBER: u64 = 0;
-            const TYPE_WHITESPACE: u64 = 1;
-            const TYPE_TEXT: u64 = 2;
-            const TYPE_BLOB: u64 = 3;
             
             let new_token = match &token_stream.tokens()[idx] {
                 TextToken::Number(data) |
@@ -55,28 +51,28 @@ where
                 TextToken::Blob(data) |
                 TextToken::Constant(data) => {
                     match dst_type {
-                        TYPE_NUMBER => {
+                        0 => {
                             if !is_number(data) {
                                 return Ok(MutationResult::Skipped);
                             }
                             
                             TextToken::Number(data.clone())
                         },
-                        TYPE_WHITESPACE => {
+                        1 => {
                             if !is_whitespace(data) {
                                 return Ok(MutationResult::Skipped);
                             }
                             
                             TextToken::Whitespace(data.clone())
                         },
-                        TYPE_TEXT => {
+                        2 => {
                             if !is_text(data) {
                                 return Ok(MutationResult::Skipped);
                             }
                             
                             TextToken::Text(data.clone())
                         },
-                        TYPE_BLOB => TextToken::Blob(data.clone()),
+                        3 => TextToken::Blob(data.clone()),
                         _ => unreachable!()
                     }
                 },

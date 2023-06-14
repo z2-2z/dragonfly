@@ -36,11 +36,6 @@ where
         } else {
             let from = state.rand_mut().below(len as u64) as usize;
             let to = state.rand_mut().below(len as u64 + 1) as usize;
-
-            if from == to {
-                return Ok(MutationResult::Skipped);
-            }
-
             let copy = input.packets()[from].clone();
             input.packets_mut().insert(to, copy);
             Ok(MutationResult::Mutated)

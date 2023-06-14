@@ -168,19 +168,22 @@ pub(crate) fn is_number<S: AsRef<[u8]>>(s: S) -> bool {
     is_decimal(&s[i..])
 }
 
+#[inline]
 pub(crate) fn is_ascii(b: u8) -> bool {
     b <= 127
 }
 
 pub(crate) fn is_text<S: AsRef<[u8]>>(s: S) -> bool {
     let s = s.as_ref();
-    let mut result = true;
     
     for byte in s {
-        result &= is_ascii(*byte);
+        if !is_ascii(*byte) {
+            return false;
+        }
     }
     
-    result
+    // Allow empty text tokens
+    true
 }
 
 const WHITESPACE: [u8; 6] = [
@@ -194,13 +197,15 @@ const WHITESPACE: [u8; 6] = [
 
 pub(crate) fn is_whitespace<S: AsRef<[u8]>>(s: S) -> bool {
     let s = s.as_ref();
-    let mut result = true;
     
     for byte in s {
-        result &= WHITESPACE.contains(byte);
+        if !WHITESPACE.contains(byte) {
+            return false;
+        }
     }
     
-    result
+    // Allow empty whitespace tokens
+    true
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug, Hash)]
