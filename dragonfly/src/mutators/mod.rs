@@ -6,6 +6,7 @@ mod nop;
 mod packet;
 mod random;
 mod reorder;
+mod repeat;
 mod scheduled;
 
 pub use crossover::{
@@ -29,4 +30,5 @@ pub use random::{
     NewRandom,
 };
 pub use reorder::PacketReorderMutator;
+pub use repeat::PacketRepeatMutator;
 pub use scheduled::ScheduledPacketMutator;

@@ -79,6 +79,7 @@ use crate::{
         PacketDeleteMutator,
         PacketDuplicateMutator,
         PacketReorderMutator,
+        PacketRepeatMutator,
         ScheduledPacketMutator,
     },
     observer::StateObserver,
@@ -291,7 +292,8 @@ fn fuzz(
             PacketDuplicateMutator::new(max_packets),
             InsertRandomPacketMutator::new(),
             PacketCrossoverReplaceMutator::new(),
-            PacketCrossoverInsertMutator::new()
+            PacketCrossoverInsertMutator::new(),
+            PacketRepeatMutator::new(16, 16)
         ),
         7,
         5,

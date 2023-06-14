@@ -65,6 +65,7 @@ use dragonfly::{
         InsertGeneratedPacketMutator, NewGenerated,
         HasCrossover, PacketCrossoverInsertMutator, PacketCrossoverReplaceMutator,
         StateAwareWeightedScheduler,
+        PacketRepeatMutator,
     },
     tt::{
         TokenStream,
@@ -447,7 +448,8 @@ fn main() -> Result<(), Error> {
             InsertRandomPacketMutator::new(),
             InsertGeneratedPacketMutator::new(),
             PacketCrossoverInsertMutator::new(),
-            PacketCrossoverReplaceMutator::new()
+            PacketCrossoverReplaceMutator::new(),
+            PacketRepeatMutator::new(16, 16)
         ),
         2
     );
