@@ -62,17 +62,28 @@ impl<'a> StateObserver<'a> {
     }
 
     pub fn get_total_states(&self) -> u64 {
-        u64::from_ne_bytes(self.state_channel.as_slice()[0..8].try_into().unwrap())
+        let slice = &self.state_channel.as_slice();
+        debug_assert!(slice.len() >= 8);
+        unsafe {
+            *std::mem::transmute::<*const u8, *const u64>(slice.as_ptr())
+        }
     }
 
     fn set_total_states(&mut self, total_states: u64) {
-        self.state_channel.as_mut_slice()[0..8].copy_from_slice(&total_states.to_ne_bytes());
+        let slice = self.state_channel.as_mut_slice();
+        debug_assert!(slice.len() >= 8);
+        unsafe {
+            *std::mem::transmute::<*mut u8, *mut u64>(slice.as_mut_ptr()) = total_states;
+        }
     }
 
     pub fn get_state(&self, idx: usize) -> &State {
+        assert!(idx < NUM_STATES);
         let offset = 8 + idx * size_of::<State>();
-        let state = &self.state_channel.as_slice()[offset..offset + size_of::<State>()];
-        state.try_into().unwrap()
+        let slice = self.state_channel.as_slice();
+        unsafe {
+            &*std::mem::transmute::<*const u8, *const State>(slice.as_ptr().add(offset))
+        }
     }
     
     pub fn get_all_states(&self) -> &[State] {
