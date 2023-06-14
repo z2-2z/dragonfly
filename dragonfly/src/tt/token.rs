@@ -65,8 +65,7 @@ pub(crate) fn random_number_value<R: Rand>(rand: &mut R, output: &mut Vec<u8>, g
     }
     
     let start_text = i.wrapping_add(1);
-    let new_len = MAX_NUMBER_LEN - start_text;
-    output.resize(new_len, 0);
+    output.resize(MAX_NUMBER_LEN - start_text, 0);
     output[..].copy_from_slice(&text[start_text..MAX_NUMBER_LEN]);
     debug_assert!(is_number(output));
 }
@@ -150,7 +149,7 @@ pub(crate) fn is_decimal<S: AsRef<[u8]>>(s: S) -> bool {
     let s = s.as_ref();
     
     for byte in s {
-        if byte.is_ascii_digit() {
+        if !byte.is_ascii_digit() {
             return false;
         }
     }
@@ -514,6 +513,18 @@ mod tests {
         for _ in 0..10 {
             random_number_value(&mut rand, &mut result, true);
             println!("{:?}", std::str::from_utf8(&result).unwrap());
+        }
+    }
+    
+    #[test]
+    fn roundtrip_random_number() {
+        let mut rand = RomuDuoJrRand::with_seed(current_nanos());
+        let mut result = Vec::with_capacity(MAX_NUMBER_LEN);
+        
+        loop {
+            random_number_value(&mut rand, &mut result, true);
+            println!("{:?}", std::str::from_utf8(&result).unwrap());
+            TokenStream::builder().number(&result).build();
         }
     }
     

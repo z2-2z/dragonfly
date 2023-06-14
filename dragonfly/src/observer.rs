@@ -121,8 +121,6 @@ where
     }
 
     fn post_exec(&mut self, state: &mut S, _input: &S::Input, _exit_kind: &ExitKind) -> Result<(), Error> {
-        //let current_testcase = state.corpus().current();
-
         let state_graph = state.get_stategraph_mut()?;
         let total_states = self.get_total_states() as usize;
         let mut old_node = StateGraph::ENTRYPOINT;
