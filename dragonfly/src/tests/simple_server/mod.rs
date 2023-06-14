@@ -25,7 +25,6 @@ use libafl::{
         TimeFeedback,
     },
     fuzzer::{
-        Fuzzer,
         StdFuzzer,
     },
     inputs::Input,
@@ -39,15 +38,13 @@ use libafl::{
         StdMapObserver,
         TimeObserver,
     },
-    schedulers::RandScheduler,
     stages::{
         calibrate::CalibrationStage,
-        mutational::StdMutationalStage,
     },
     state::StdState,
     Error,
     Evaluator,
-    events::EventConfig,
+    prelude::{StdPowerMutationalStage, StdWeightedScheduler, powersched::PowerSchedule, Fuzzer, EventConfig},
 };
 use nix::sys::signal::Signal;
 use serde::{
@@ -73,6 +70,7 @@ use crate::{
     observer::StateObserver,
     feedback::StateFeedback,
     graph::HasStateGraph,
+    scheduler::StateSelectionScheduler,
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -161,7 +159,7 @@ fn simple_server() {
 
     let timeout = Duration::from_millis(5000);
 
-    let executable = format!("src/tests/simple_server/{}", args[args.len() - 1]);
+    let executable = "src/tests/simple_server/test";
 
     let debug_child = true;
 
@@ -169,7 +167,7 @@ fn simple_server() {
 
     let arguments = Vec::new();
 
-    fuzz(crashes, &logfile, timeout, &executable, debug_child, signal, &arguments).expect("An error occurred while fuzzing");
+    fuzz(crashes, &logfile, timeout, executable, debug_child, signal, &arguments).expect("An error occurred while fuzzing");
 }
 
 /// The actual fuzzer
@@ -234,9 +232,12 @@ fn fuzz(_objective_dir: PathBuf, logfile: &PathBuf, timeout: Duration, executabl
 
         let mutator = StdScheduledMutator::new(tuple_list!(PacketDeleteMutator::new(1), PacketDuplicateMutator::new(16), PacketReorderMutator::new()));
 
-        let mutational = StdMutationalStage::new(mutator);
+        let mutational = StdPowerMutationalStage::new(mutator);
 
-        let scheduler = RandScheduler::new();
+        let scheduler = StateSelectionScheduler::new(
+            StdWeightedScheduler::with_schedule(&mut state, &edges_observer, Some(PowerSchedule::FAST)),
+            &state_observer,
+        );
 
         let mut fuzzer = StdFuzzer::new(scheduler, feedback, objective);
 

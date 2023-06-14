@@ -12,3 +12,7 @@ all: test baseline
 
 $(AFL)/afl-clang-lto: $(AFL)
 	$(MAKE) -C $(AFL) source-only
+
+.PHONY: clean
+clean:
+	@rm -rfv ./build baseline test

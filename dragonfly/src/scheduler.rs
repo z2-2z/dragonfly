@@ -1,13 +1,20 @@
 use libafl::prelude::{
     Scheduler, UsesState, HasCorpus, UsesInput, Error,
-    ObserversTuple, CorpusId, Named, Corpus,
-    minimizer::IsFavoredMetadata, HasMetadata,
+    ObserversTuple, CorpusId, Named, Corpus, HasMetadata,
+    impl_serdeany,
 };
 use ahash::{AHashMap, AHashSet};
 use crate::observer::{StateObserver, State};
-use itertools::Itertools;
+use serde::{Serialize, Deserialize};
 
-const FAVORITE_STATES_COUNT: usize = 1;
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ReachesFavoredStateMetadata;
+
+impl_serdeany!(ReachesFavoredStateMetadata);
+
+const MAX_FAVORITE_COUNT: usize = 8;
+
+type Score = usize;
 
 #[derive(Default)]
 struct StateMetadata {
@@ -17,14 +24,14 @@ struct StateMetadata {
 }
 
 impl StateMetadata {
-    fn score(&self) -> usize {
+    fn score(&self) -> Score {
         let capped_n_fuzz = 1.0 + (1.0 + self.n_fuzz as f64).log2();
         let capped_n_selected = 1.0 + (1.0 + self.n_selected as f64).log10();
         (2.0f64.powf(capped_n_fuzz) * (capped_n_selected)).ceil() as usize
     }
 }
 
-pub struct StateScheduler<CS> {
+pub struct StateSelectionScheduler<CS> {
     base: CS,
     observer_name: String,
     current_sequence: Vec<State>,
@@ -32,17 +39,17 @@ pub struct StateScheduler<CS> {
     favorites: AHashSet<CorpusId>,
 }
 
-impl<CS> UsesState for StateScheduler<CS>
+impl<CS> UsesState for StateSelectionScheduler<CS>
 where
     CS: UsesState,
 {
     type State = CS::State;
 }
 
-impl<CS> StateScheduler<CS>
+impl<CS> StateSelectionScheduler<CS>
 where
     CS: Scheduler,
-    CS::State: HasCorpus,
+    CS::State: HasCorpus + HasMetadata,
 {
     pub fn new(base: CS, state_observer: &StateObserver) -> Self {
         Self {
@@ -54,44 +61,64 @@ where
         }
     }
     
-    fn update_n_fuzz(&mut self, state: State) {
-        let meta = self.metadata.entry(state).or_insert_with(StateMetadata::default);
-        meta.n_fuzz = meta.n_fuzz.saturating_add(1);
-    }
-    
-    fn update_n_selected(&mut self, seed: CorpusId) {
+    fn update_n_fuzz(&mut self) {
         for state in &self.current_sequence {
-            let meta = self.metadata.get_mut(state).unwrap();
-            
-            if meta.seeds.contains(&seed) {
-                meta.n_selected = meta.n_selected.saturating_add(1);
-            }
+            let meta = self.metadata.entry(*state).or_insert_with(StateMetadata::default);
+            meta.n_fuzz = meta.n_fuzz.saturating_add(1);
         }
     }
     
-    fn add_seed(&mut self, seed: CorpusId) {
+    fn update_seeds(&mut self, seed: CorpusId) {
         for state in &self.current_sequence {
             let meta = self.metadata.entry(*state).or_insert_with(StateMetadata::default);
             meta.seeds.insert(seed);
         }
     }
     
-    fn get_least_fuzzed_states(&self, result: &mut [State; FAVORITE_STATES_COUNT]) -> usize {
-        let mut ret = 0;
+    fn get_least_fuzzed_state(&self) -> Option<State> {
+        let mut ret = None;
+        let mut current_score = Score::MAX;
         
-        for (key, _) in self.metadata.iter().sorted_by(|(_, l), (_, r)| l.score().cmp(&r.score())).take(result.len()) {
-            result[ret].copy_from_slice(key);
-            ret += 1;
+        for (state, metadata) in self.metadata.iter() {
+            let score = metadata.score();
+            
+            if score < current_score {
+                current_score = score;
+                ret = Some(state);
+            }
         }
         
-        ret
+        ret.copied()
+    }
+    
+    fn calculate_favorites(&mut self, fuzzer_state: &mut CS::State) -> Result<(), Error> {
+        if let Some(state) = self.get_least_fuzzed_state() {
+            let meta = self.metadata.get_mut(&state).unwrap();
+            let mut favorites = AHashSet::with_capacity(MAX_FAVORITE_COUNT);
+            
+            for seed in meta.seeds.iter().take(MAX_FAVORITE_COUNT) {
+                fuzzer_state.corpus_mut().get(*seed)?.borrow_mut().add_metadata::<ReachesFavoredStateMetadata>(ReachesFavoredStateMetadata {});
+                favorites.insert(*seed);
+                
+                println!("mark {} as favorite", seed);
+            }
+            
+            for id in self.favorites.difference(&favorites) {
+                drop(fuzzer_state.corpus_mut().get(*id)?.borrow_mut().metadata_map_mut().remove::<ReachesFavoredStateMetadata>());
+            }
+            
+            self.favorites = favorites;
+            meta.n_selected = meta.n_selected.saturating_add(1);
+        }
+        
+        Ok(())
     }
 }
 
-impl<CS> Scheduler for StateScheduler<CS>
+impl<CS> Scheduler for StateSelectionScheduler<CS>
 where
     CS: Scheduler,
-    CS::State: HasCorpus,
+    CS::State: HasCorpus + HasMetadata,
 {
     fn on_evaluation<OT>(&mut self, fuzzer_state: &mut Self::State, input: &<Self::State as UsesInput>::Input, observers: &OT) -> Result<(), Error>
     where
@@ -100,51 +127,23 @@ where
         let state_observer = observers.match_name::<StateObserver>(&self.observer_name).expect("no state observer found");
         let states = state_observer.get_all_states();
         let states_len = states.len();
-        
-        println!("on_evaluation: total_states = {}", states_len);
-        
         self.current_sequence.resize(states_len, State::default());
         self.current_sequence[0..states_len].copy_from_slice(states);
-        
-        for state in states {
-            self.update_n_fuzz(*state);
-        }
-        
+        self.update_n_fuzz();
         self.base.on_evaluation(fuzzer_state, input, observers)
     }
     
     fn on_add(&mut self, fuzzer_state: &mut Self::State, idx: CorpusId) -> Result<(), Error> {
-        self.add_seed(idx);
+        self.update_seeds(idx);
+        self.calculate_favorites(fuzzer_state)?;
         self.base.on_add(fuzzer_state, idx)
     }
 
     fn next(&mut self, fuzzer_state: &mut Self::State) -> Result<CorpusId, Error> {
-        /* clear favorites from previous run */
-        for id in self.favorites.drain() {
-            let _ = fuzzer_state.corpus_mut().get(id)?.borrow_mut().metadata_map_mut().remove::<IsFavoredMetadata>();
-        }
-        
-        /* Select up to FAVORITE_STATES_COUNT states */
-        let mut selected_states = [State::default(); FAVORITE_STATES_COUNT];
-        let selected_states_size = self.get_least_fuzzed_states(&mut selected_states);
-        
-        for state in &selected_states[..selected_states_size] {
-            for seed in &self.metadata.get(state).unwrap().seeds {
-                fuzzer_state.corpus_mut().get(*seed)?.borrow_mut().add_metadata::<IsFavoredMetadata>(IsFavoredMetadata {});
-                self.favorites.insert(*seed);
-                println!("next: mark {} as favorite", seed);
-            }
-        }
-        
         self.base.next(fuzzer_state)
     }
     
     fn set_current_scheduled(&mut self, state: &mut Self::State, next_id: Option<CorpusId>) -> Result<(), Error> {
-        if let Some(id) = next_id {
-            println!("set_current_scheduled: Selecting {}", id);
-            self.update_n_selected(id);
-        }
-        
         self.base.set_current_scheduled(state, next_id)
     }
 }

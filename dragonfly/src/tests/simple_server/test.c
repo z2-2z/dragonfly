@@ -23,7 +23,7 @@ int main (void) {
         char buf[32];
         
         long state = sum % 8;
-        dragonfly_feed_state(&state, sizeof(state));
+        dragonfly_feed_state_raw(&state, sizeof(state));
         dragonfly_push_state();
         
         ssize_t n = read(conn, buf, sizeof(buf));

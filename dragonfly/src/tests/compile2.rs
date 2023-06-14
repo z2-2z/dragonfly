@@ -104,7 +104,7 @@ use crate::{
         TokenStreamScannerMutator,
         TokenConvertMutator,
     },
-    scheduler::StateScheduler,
+    scheduler::StateSelectionScheduler,
 };
 
 #[test]
@@ -301,7 +301,7 @@ fn fuzz(
     let power = StdPowerMutationalStage::new(mutator);
 
     // A minimization+queue policy to get testcasess from the corpus
-    let scheduler = StateScheduler::new(
+    let scheduler = StateSelectionScheduler::new(
         StdWeightedScheduler::with_schedule(&mut state, &edges_observer, Some(PowerSchedule::EXPLORE)),
         &state_observer,
     );
