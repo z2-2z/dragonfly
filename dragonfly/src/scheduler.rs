@@ -8,8 +8,8 @@ use ahash::{
 };
 use libafl::prelude::{
     impl_serdeany,
+    minimizer::IsFavoredMetadata,
     powersched::PowerSchedule,
-    testcase_score::CorpusWeightTestcaseScore,
     Corpus,
     CorpusId,
     Error,
@@ -62,7 +62,7 @@ where
     O: MapObserver,
     S: HasCorpus + HasMetadata + HasRand + HasTestcase,
 {
-    base: WeightedScheduler<FavoredStateTestcaseWeight<S, CorpusWeightTestcaseScore<S>>, O, S>,
+    base: WeightedScheduler<FavoredStateTestcaseWeight<S>, O, S>,
     observer_name: String,
     current_sequence: Vec<State>,
     metadata: AHashMap<State, StateMetadata>,
@@ -181,20 +181,23 @@ where
 }
 
 #[derive(Debug, Clone)]
-struct FavoredStateTestcaseWeight<S, F> {
-    phantom: PhantomData<(S, F)>,
+struct FavoredStateTestcaseWeight<S> {
+    phantom: PhantomData<S>,
 }
 
-impl<S, F> TestcaseScore<S> for FavoredStateTestcaseWeight<S, F>
+impl<S> TestcaseScore<S> for FavoredStateTestcaseWeight<S>
 where
     S: HasCorpus + HasMetadata,
-    F: TestcaseScore<S>,
 {
-    fn compute(state: &S, entry: &mut Testcase<<S>::Input>) -> Result<f64, Error> {
-        let mut result = F::compute(state, entry)?;
+    fn compute(_state: &S, entry: &mut Testcase<<S>::Input>) -> Result<f64, Error> {
+        let mut result = 1.0;
+
+        if entry.has_metadata::<IsFavoredMetadata>() {
+            result *= 2.0;
+        }
 
         if entry.has_metadata::<ReachesFavoredStateMetadata>() {
-            result *= 5.0; // Same as favored in CorpusWeightTestcaseScore
+            result *= 2.0;
         }
 
         Ok(result)
