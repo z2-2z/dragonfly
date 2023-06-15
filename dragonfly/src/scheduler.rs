@@ -20,6 +20,7 @@ use libafl::prelude::{
     MapObserver,
     Named,
     ObserversTuple,
+    Rand,
     Scheduler,
     Testcase,
     TestcaseScore,
@@ -127,7 +128,10 @@ where
             let meta = self.metadata.get_mut(&state).unwrap();
             let mut favorites = AHashSet::with_capacity(MAX_FAVORITE_COUNT);
 
-            for seed in meta.seeds.iter().take(MAX_FAVORITE_COUNT) {
+            let skip_limit = meta.seeds.len().saturating_sub(MAX_FAVORITE_COUNT);
+            let skip_amount = fuzzer_state.rand_mut().below(skip_limit as u64 + 1) as usize;
+
+            for seed in meta.seeds.iter().skip(skip_amount).take(MAX_FAVORITE_COUNT) {
                 fuzzer_state.corpus_mut().get(*seed)?.borrow_mut().add_metadata::<ReachesFavoredStateMetadata>(ReachesFavoredStateMetadata {});
                 favorites.insert(*seed);
 
