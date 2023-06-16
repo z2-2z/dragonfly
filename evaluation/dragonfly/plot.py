@@ -19,6 +19,7 @@ def extract(data, key):
         if key == "exec_sec":
             x.append(elem["run_time"]["secs"])
         else:
+            #x.append(elem["run_time"]["secs"])
             x.append(elem["executions"])
         y.append(elem[key])
         

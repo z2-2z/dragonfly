@@ -485,11 +485,13 @@ fn main() -> Result<(), Error> {
         let replay = Path::new(replay);
         
         if replay.is_dir() {
-            for entry in std::fs::read_dir(replay)? {
+            let num_entries = std::fs::read_dir(replay)?.count();
+            
+            for (i, entry) in std::fs::read_dir(replay)?.enumerate() {
                 let entry = entry?.path();
                 
                 if entry.is_file() && entry.file_name().unwrap().to_str().unwrap().starts_with("dragonfly-") {
-                    println!("Replaying {}...", entry.display());
+                    println!("Replaying {}... ({}/{})", entry.display(), i + 1, num_entries);
                     
                     let input = DragonflyInput::<FTPPacket>::from_file(entry)?;
                     fuzzer.evaluate_input(&mut state, &mut executor, &mut mgr, input)?;
