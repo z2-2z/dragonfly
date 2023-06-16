@@ -2,6 +2,7 @@ mod crossover;
 mod delete;
 mod duplicate;
 mod generate;
+mod mopt;
 mod nop;
 mod packet;
 mod random;
@@ -20,6 +21,7 @@ pub use generate::{
     InsertGeneratedPacketMutator,
     NewGenerated,
 };
+pub use mopt::MOptPacketMutator;
 pub use nop::{
     NopMutator,
     NopPacketMutator,

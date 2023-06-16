@@ -80,7 +80,7 @@ use crate::{
         PacketDuplicateMutator,
         PacketReorderMutator,
         PacketRepeatMutator,
-        ScheduledPacketMutator,
+        MOptPacketMutator,
     },
     observer::StateObserver,
     scheduler::StateAwareWeightedScheduler,
@@ -257,29 +257,34 @@ fn fuzz(
     let max_tokens = 32;
     let max_packets = 32;
 
-    let stateful = ScheduledPacketMutator::new(tuple_list!(
-        NopPacketMutator::new(),
-        TokenStreamInsertRandomMutator::new(max_tokens),
-        TokenReplaceRandomMutator::new(),
-        TokenSplitMutator::new(max_tokens),
-        TokenStreamInsertInterestingMutator::new(max_tokens),
-        TokenReplaceInterestingMutator::new(),
-        TokenStreamDuplicateMutator::new(max_tokens),
-        TokenValueDuplicateMutator::new(),
-        TokenValueInsertRandomMutator::new(),
-        TokenStreamCopyMutator::new(max_tokens),
-        TokenStreamSwapMutator::new(),
-        TokenStreamDeleteMutator::new(1),
-        TokenRepeatCharMutator::new(),
-        TokenRotateCharMutator::new(),
-        TokenValueDeleteMutator::new(1),
-        TokenInsertSpecialCharMutator::new(),
-        TokenInvertCaseMutator::new(),
-        TokenStreamDictInsertMutator::new(max_tokens),
-        TokenReplaceDictMutator::new(),
-        TokenStreamScannerMutator::new(max_tokens),
-        TokenConvertMutator::new()
-    ));
+    let stateful = MOptPacketMutator::new(
+        &mut state,
+        tuple_list!(
+            NopPacketMutator::new(),
+            TokenStreamInsertRandomMutator::new(max_tokens),
+            TokenReplaceRandomMutator::new(),
+            TokenSplitMutator::new(max_tokens),
+            TokenStreamInsertInterestingMutator::new(max_tokens),
+            TokenReplaceInterestingMutator::new(),
+            TokenStreamDuplicateMutator::new(max_tokens),
+            TokenValueDuplicateMutator::new(),
+            TokenValueInsertRandomMutator::new(),
+            TokenStreamCopyMutator::new(max_tokens),
+            TokenStreamSwapMutator::new(),
+            TokenStreamDeleteMutator::new(1),
+            TokenRepeatCharMutator::new(),
+            TokenRotateCharMutator::new(),
+            TokenValueDeleteMutator::new(1),
+            TokenInsertSpecialCharMutator::new(),
+            TokenInvertCaseMutator::new(),
+            TokenStreamDictInsertMutator::new(max_tokens),
+            TokenReplaceDictMutator::new(),
+            TokenStreamScannerMutator::new(max_tokens),
+            TokenConvertMutator::new()
+        ),
+        7,
+        5,
+    )?;
 
     // Setup a MOPT mutator
     let mutator = StdMOptMutator::new(
