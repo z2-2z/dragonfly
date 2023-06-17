@@ -7,7 +7,8 @@ import matplotlib.pyplot as plt
 def extract(data, key):
     x = []
     y = []
-    xlabel = "total executions"
+    xlabel = "seconds passed"
+    #xlabel = "total executions"
     ylabel = "#queue entries"
     
     if key == "exec_sec":
@@ -19,8 +20,8 @@ def extract(data, key):
         if key == "exec_sec":
             x.append(elem["run_time"]["secs"])
         else:
-            #x.append(elem["run_time"]["secs"])
-            x.append(elem["executions"])
+            x.append(elem["run_time"]["secs"])
+            #x.append(elem["executions"])
         y.append(elem[key])
         
     return x, y, xlabel, ylabel

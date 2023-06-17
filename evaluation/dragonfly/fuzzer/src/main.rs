@@ -66,6 +66,7 @@ use dragonfly::{
         HasCrossover, PacketCrossoverInsertMutator, PacketCrossoverReplaceMutator,
         StateAwareWeightedScheduler,
         PacketRepeatMutator,
+        MOptPacketMutator,
     },
     tt::{
         TokenStream,
@@ -412,7 +413,8 @@ fn main() -> Result<(), Error> {
     state.add_metadata(dictionary);
     
     let max_tokens = 256;
-    let packet_mutator = ScheduledPacketMutator::with_max_stack_pow(
+    let packet_mutator = MOptPacketMutator::new(
+        &mut state,
         tuple_list!(
             TokenStreamInsertRandomMutator::new(max_tokens),
             TokenReplaceRandomMutator::new(),
@@ -436,8 +438,9 @@ fn main() -> Result<(), Error> {
             TokenConvertMutator::new(),
             TokenReplaceSpecialCharMutator::new()
         ),
-        2
-    );
+        2,
+        5
+    )?;
 
     let mutator = StdScheduledMutator::with_max_stack_pow(
         tuple_list!(
