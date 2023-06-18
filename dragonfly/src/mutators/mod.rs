@@ -2,13 +2,13 @@ mod crossover;
 mod delete;
 mod duplicate;
 mod generate;
-mod mopt;
 mod nop;
 mod packet;
 mod random;
 mod reorder;
 mod repeat;
-mod scheduled;
+mod selected;
+mod selector;
 
 pub use crossover::{
     HasCrossover,
@@ -21,7 +21,6 @@ pub use generate::{
     InsertGeneratedPacketMutator,
     NewGenerated,
 };
-pub use mopt::MOptPacketMutator;
 pub use nop::{
     NopMutator,
     NopPacketMutator,
@@ -33,4 +32,5 @@ pub use random::{
 };
 pub use reorder::PacketReorderMutator;
 pub use repeat::PacketRepeatMutator;
-pub use scheduled::ScheduledPacketMutator;
+pub use selected::SelectedPacketMutator;
+pub use selector::{SelectedPacketMetadata, PacketSelectorMutator};

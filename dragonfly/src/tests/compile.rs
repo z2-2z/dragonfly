@@ -35,7 +35,6 @@ use libafl::{
         Fuzzer,
         StdFuzzer,
     },
-    inputs::BytesInput,
     monitors::SimpleMonitor,
     mutators::StdMOptMutator,
     observers::{
@@ -46,7 +45,6 @@ use libafl::{
     schedulers::{
         powersched::PowerSchedule,
         IndexesLenTimeMinimizerScheduler,
-        StdWeightedScheduler,
     },
     stages::{
         calibrate::CalibrationStage,
@@ -73,14 +71,43 @@ use crate::{
     graph::HasStateGraph,
     input::DragonflyInput,
     mutators::{
+        InsertRandomPacketMutator,
         NopMutator,
         NopPacketMutator,
+        PacketCrossoverInsertMutator,
+        PacketCrossoverReplaceMutator,
         PacketDeleteMutator,
         PacketDuplicateMutator,
         PacketReorderMutator,
-        ScheduledPacketMutator,
+        PacketRepeatMutator,
+        PacketSelectorMutator,
+        SelectedPacketMutator,
     },
     observer::StateObserver,
+    scheduler::StateAwareWeightedScheduler,
+    tt::{
+        TokenConvertMutator,
+        TokenInsertSpecialCharMutator,
+        TokenInvertCaseMutator,
+        TokenRepeatCharMutator,
+        TokenReplaceDictMutator,
+        TokenReplaceInterestingMutator,
+        TokenReplaceRandomMutator,
+        TokenRotateCharMutator,
+        TokenSplitMutator,
+        TokenStream,
+        TokenStreamCopyMutator,
+        TokenStreamDeleteMutator,
+        TokenStreamDictInsertMutator,
+        TokenStreamDuplicateMutator,
+        TokenStreamInsertInterestingMutator,
+        TokenStreamInsertRandomMutator,
+        TokenStreamScannerMutator,
+        TokenStreamSwapMutator,
+        TokenValueDeleteMutator,
+        TokenValueDuplicateMutator,
+        TokenValueInsertRandomMutator,
+    },
 };
 
 #[test]
@@ -215,7 +242,7 @@ fn fuzz(
         // RNG
         StdRand::with_seed(current_nanos()),
         // Corpus that will be evolved, we keep it in memory for performance
-        InMemoryOnDiskCorpus::<DragonflyInput<BytesInput>>::new(corpus_dir).unwrap(),
+        InMemoryOnDiskCorpus::<DragonflyInput<TokenStream>>::new(corpus_dir).unwrap(),
         // Corpus in which we store solutions (crashes in this example),
         // on disk so the user can get them after stopping the fuzzer
         OnDiskCorpus::new(objective_dir).unwrap(),
@@ -228,20 +255,50 @@ fn fuzz(
     .unwrap();
     state.init_stategraph();
 
-    let stateful = ScheduledPacketMutator::new(tuple_list!(NopPacketMutator::new()));
-
+    let max_tokens = 32;
+    let max_packets = 32;
     // Setup a MOPT mutator
-    let mutator = StdMOptMutator::new(
+    let mutator = PacketSelectorMutator::new(StdMOptMutator::new(
         &mut state,
-        tuple_list!(stateful, PacketReorderMutator::new(), PacketDeleteMutator::new(0), NopMutator::new(), PacketDuplicateMutator::new(100)),
+        tuple_list!(
+            SelectedPacketMutator::new(NopPacketMutator::new()),
+            SelectedPacketMutator::new(TokenStreamInsertRandomMutator::new(max_tokens)),
+            SelectedPacketMutator::new(TokenReplaceRandomMutator::new()),
+            SelectedPacketMutator::new(TokenSplitMutator::new(max_tokens)),
+            SelectedPacketMutator::new(TokenStreamInsertInterestingMutator::new(max_tokens)),
+            SelectedPacketMutator::new(TokenReplaceInterestingMutator::new()),
+            SelectedPacketMutator::new(TokenStreamDuplicateMutator::new(max_tokens)),
+            SelectedPacketMutator::new(TokenValueDuplicateMutator::new()),
+            SelectedPacketMutator::new(TokenValueInsertRandomMutator::new()),
+            SelectedPacketMutator::new(TokenStreamCopyMutator::new(max_tokens)),
+            SelectedPacketMutator::new(TokenStreamSwapMutator::new()),
+            SelectedPacketMutator::new(TokenStreamDeleteMutator::new(1)),
+            SelectedPacketMutator::new(TokenRepeatCharMutator::new()),
+            SelectedPacketMutator::new(TokenRotateCharMutator::new()),
+            SelectedPacketMutator::new(TokenValueDeleteMutator::new(1)),
+            SelectedPacketMutator::new(TokenInsertSpecialCharMutator::new()),
+            SelectedPacketMutator::new(TokenInvertCaseMutator::new()),
+            SelectedPacketMutator::new(TokenStreamDictInsertMutator::new(max_tokens)),
+            SelectedPacketMutator::new(TokenReplaceDictMutator::new()),
+            SelectedPacketMutator::new(TokenStreamScannerMutator::new(max_tokens)),
+            SelectedPacketMutator::new(TokenConvertMutator::new()),
+            PacketReorderMutator::new(),
+            PacketDeleteMutator::new(0),
+            NopMutator::new(),
+            PacketDuplicateMutator::new(max_packets),
+            InsertRandomPacketMutator::new(),
+            PacketCrossoverReplaceMutator::new(),
+            PacketCrossoverInsertMutator::new(),
+            PacketRepeatMutator::new(16, 16)
+        ),
         7,
         5,
-    )?;
+    )?);
 
     let power = StdPowerMutationalStage::new(mutator);
 
     // A minimization+queue policy to get testcasess from the corpus
-    let scheduler = IndexesLenTimeMinimizerScheduler::new(StdWeightedScheduler::with_schedule(&mut state, &edges_observer, Some(PowerSchedule::EXPLORE)));
+    let scheduler = IndexesLenTimeMinimizerScheduler::new(StateAwareWeightedScheduler::new(&mut state, &edges_observer, Some(PowerSchedule::EXPLORE), &state_observer));
 
     // A fuzzer with feedbacks and a corpus scheduler
     let mut fuzzer = StdFuzzer::new(scheduler, feedback, objective);
