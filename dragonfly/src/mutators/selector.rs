@@ -10,6 +10,7 @@ use libafl::prelude::{
     Rand,
     impl_serdeany,
     HasMetadata,
+    CorpusId,
 };
 use std::marker::PhantomData;
 use serde::{Serialize, Deserialize};
@@ -22,6 +23,10 @@ impl_serdeany!(SelectedPacketMetadata);
 impl SelectedPacketMetadata {
     pub fn inner(&self) -> Option<&usize> {
         self.0.as_ref()
+    }
+    
+    pub fn inner_mut(&mut self) -> Option<&mut usize> {
+        self.0.as_mut()
     }
 }
 
@@ -44,6 +49,14 @@ where
             mutator,
             phantom: PhantomData,
         }
+    }
+    
+    pub fn inner(&self) -> &M {
+        &self.mutator
+    }
+    
+    pub fn inner_mut(&mut self) -> &mut M {
+        &mut self.mutator
     }
 }
 
@@ -74,6 +87,10 @@ where
         let packet = self.schedule_packet(state, input);
         state.add_metadata(SelectedPacketMetadata(packet));
         self.mutator.mutate(state, input, stage_idx)
+    }
+    
+    fn post_exec(&mut self, state: &mut S, stage_idx: i32, corpus_idx: Option<CorpusId>) -> Result<(), Error> {
+        self.mutator.post_exec(state, stage_idx, corpus_idx)
     }
 }
 

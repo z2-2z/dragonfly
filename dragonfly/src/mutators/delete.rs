@@ -6,7 +6,9 @@ use libafl::prelude::{
     Mutator,
     Named,
     Rand,
+    HasMetadata,
 };
+use crate::mutators::selector::SelectedPacketMetadata;
 
 use crate::input::HasPacketVector;
 
@@ -26,18 +28,36 @@ impl PacketDeleteMutator {
 impl<I, S> Mutator<I, S> for PacketDeleteMutator
 where
     I: Input + HasPacketVector,
-    S: HasRand,
+    S: HasRand + HasMetadata,
 {
     fn mutate(&mut self, state: &mut S, input: &mut I, _stage_idx: i32) -> Result<MutationResult, Error> {
         let len = input.packets().len();
 
-        if len <= self.min_length {
-            Ok(MutationResult::Skipped)
-        } else {
-            let idx = state.rand_mut().below(len as u64) as usize;
-            input.packets_mut().remove(idx);
-            Ok(MutationResult::Mutated)
+        if len >= self.min_length && len > 0 {
+            let selected_idx = if let Some(selected_packet) = state.metadata_map().get::<SelectedPacketMetadata>() {
+                selected_packet.inner().copied() 
+            } else {
+                None
+            };
+            
+            let rem_idx = state.rand_mut().below(len as u64) as usize;
+            
+            if Some(rem_idx) != selected_idx {
+                input.packets_mut().remove(rem_idx);
+                
+                /* Adjust the selected packet index after modifying the array */
+                if let Some(selected_idx) = selected_idx {
+                    if rem_idx < selected_idx {
+                        *state.metadata_map_mut().get_mut::<SelectedPacketMetadata>().unwrap().inner_mut().unwrap() = selected_idx - 1;
+                        assert!(selected_idx - 1 < input.packets().len());
+                    }
+                }
+                
+                return Ok(MutationResult::Mutated);
+            }
         }
+        
+        Ok(MutationResult::Skipped)
     }
 }
 

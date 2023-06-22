@@ -35,6 +35,14 @@ where
             phantom: PhantomData,
         }
     }
+    
+    pub fn inner(&self) -> &M {
+        &self.mutator
+    }
+    
+    pub fn inner_mut(&mut self) -> &mut M {
+        &mut self.mutator
+    }
 }
 
 impl<I, P, S, M> Mutator<I, S> for SelectedPacketMutator<I, P, S, M>
