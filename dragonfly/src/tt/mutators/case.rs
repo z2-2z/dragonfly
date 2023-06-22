@@ -14,29 +14,19 @@ use libafl::prelude::{
 use std::marker::PhantomData;
 
 fn invert_case<R: Rand>(rand: &mut R, data: &mut [u8]) -> Result<MutationResult, Error> {
-    let n = rand.below(data.len() as u64 / 2);
-    let mut changed = false;
-
-    for _ in 0..n {
-        let idx = rand.below(data.len() as u64) as usize;
-        let mut byte = data[idx];
-
+    let idx = rand.below(data.len() as u64) as usize;
+    
+    if let Some(byte) = data.get_mut(idx) {
         if byte.is_ascii_lowercase() {
-            byte -= 32;
-            changed = true;
+            *byte -= 32;
+            return Ok(MutationResult::Mutated);
         } else if byte.is_ascii_uppercase() {
-            byte += 32;
-            changed = true;
+            *byte += 32;
+            return Ok(MutationResult::Mutated);
         }
-
-        data[idx] = byte;
     }
 
-    if changed {
-        Ok(MutationResult::Mutated)
-    } else {
-        Ok(MutationResult::Skipped)
-    }
+    Ok(MutationResult::Skipped)
 }
 
 /// Inverts the case of a random subset of chars inside a single, random token

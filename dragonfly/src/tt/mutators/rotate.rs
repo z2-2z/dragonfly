@@ -14,37 +14,25 @@ use libafl::prelude::{
 use std::marker::PhantomData;
 
 fn rotate_char<R: Rand>(rand: &mut R, data: &mut Vec<u8>) -> Result<MutationResult, Error> {
-    if data.is_empty() {
-        return Ok(MutationResult::Skipped);
-    }
+    let idx = rand.below(data.len() as u64) as usize;
 
-    let n = rand.below(data.len() as u64 / 2);
-    let mut changed = false;
-
-    for _ in 0..n {
-        let idx = rand.below(data.len() as u64) as usize;
-        let byte = data[idx];
-
+    if let Some(byte) = data.get_mut(idx) {
         if byte.is_ascii_digit() {
             let amount = 1 + rand.below(9) as u8;
-            data[idx] = (((byte - b'0') + amount) % 10) + b'0';
-            changed = true;
+            *byte = (((*byte - b'0') + amount) % 10) + b'0';
+            return Ok(MutationResult::Mutated);
         } else if byte.is_ascii_lowercase() {
             let amount = 1 + rand.below(25) as u8;
-            data[idx] = (((byte - b'a') + amount) % 26) + b'a';
-            changed = true;
+            *byte = (((*byte - b'a') + amount) % 26) + b'a';
+            return Ok(MutationResult::Mutated);
         } else if byte.is_ascii_uppercase() {
             let amount = 1 + rand.below(25) as u8;
-            data[idx] = (((byte - b'A') + amount) % 26) + b'A';
-            changed = true;
+            *byte = (((*byte - b'A') + amount) % 26) + b'A';
+            return Ok(MutationResult::Mutated);
         }
     }
 
-    if changed {
-        Ok(MutationResult::Mutated)
-    } else {
-        Ok(MutationResult::Skipped)
-    }
+    Ok(MutationResult::Skipped)
 }
 
 /// Rotates random chars of a random token in a Caesar-cipher like manner
