@@ -36,23 +36,26 @@ where
     fn mutate(&mut self, state: &mut S, input: &mut I, _stage_idx: i32) -> Result<MutationResult, Error> {
         let packets_len = input.packets().len();
 
-        if let Some(selected_packet) = state.metadata_map().get::<SelectedPacketMetadata>() {
-            if let Some(dst_idx) = selected_packet.inner().copied() {
-                let src_idx = state.rand_mut().below(packets_len as u64) as usize;
-                let other = input.packets()[src_idx].clone();
-                input.packets_mut()[dst_idx].crossover_insert(state, other);
-                return Ok(MutationResult::Mutated);
+        let dst_idx = if let Some(selected_packet) = state.metadata_map().get::<SelectedPacketMetadata>() {
+            let Some(dst_idx) = selected_packet.inner() else {
+                return Ok(MutationResult::Skipped);
+            };
+            
+            *dst_idx
+        } else {
+            if packets_len == 0 {
+                return Ok(MutationResult::Skipped);
             }
-        } else if packets_len > 0 {
-            /* Fall back to random selection of destination packet */
-            let src_idx = state.rand_mut().below(packets_len as u64) as usize;
-            let dst_idx = state.rand_mut().below(packets_len as u64) as usize;
-            let other = input.packets()[src_idx].clone();
-            input.packets_mut()[dst_idx].crossover_insert(state, other);
-            return Ok(MutationResult::Mutated);
-        }
+            
+            state.rand_mut().below(packets_len as u64) as usize
+        };
+        
+        let src_idx = state.rand_mut().below(packets_len as u64) as usize;
+        let other = input.packets()[src_idx].clone();
+        
+        input.packets_mut()[dst_idx].crossover_insert(state, other);
 
-        Ok(MutationResult::Skipped)
+        Ok(MutationResult::Mutated)
     }
 }
 
@@ -80,23 +83,26 @@ where
     fn mutate(&mut self, state: &mut S, input: &mut I, _stage_idx: i32) -> Result<MutationResult, Error> {
         let packets_len = input.packets().len();
 
-        if let Some(selected_packet) = state.metadata_map().get::<SelectedPacketMetadata>() {
-            if let Some(dst_idx) = selected_packet.inner().copied() {
-                let src_idx = state.rand_mut().below(packets_len as u64) as usize;
-                let other = input.packets()[src_idx].clone();
-                input.packets_mut()[dst_idx].crossover_replace(state, other);
-                return Ok(MutationResult::Mutated);
+        let dst_idx = if let Some(selected_packet) = state.metadata_map().get::<SelectedPacketMetadata>() {
+            let Some(dst_idx) = selected_packet.inner() else {
+                return Ok(MutationResult::Skipped);
+            };
+            
+            *dst_idx
+        } else {
+            if packets_len == 0 {
+                return Ok(MutationResult::Skipped);
             }
-        } else if packets_len > 0 {
-            /* Fall back to random selection of destination packet */
-            let src_idx = state.rand_mut().below(packets_len as u64) as usize;
-            let dst_idx = state.rand_mut().below(packets_len as u64) as usize;
-            let other = input.packets()[src_idx].clone();
-            input.packets_mut()[dst_idx].crossover_replace(state, other);
-            return Ok(MutationResult::Mutated);
-        }
+            
+            state.rand_mut().below(packets_len as u64) as usize
+        };
+        
+        let src_idx = state.rand_mut().below(packets_len as u64) as usize;
+        let other = input.packets()[src_idx].clone();
+        
+        input.packets_mut()[dst_idx].crossover_replace(state, other);
 
-        Ok(MutationResult::Skipped)
+        Ok(MutationResult::Mutated)
     }
 }
 

@@ -32,31 +32,34 @@ where
 {
     fn mutate(&mut self, state: &mut S, input: &mut I, _stage_idx: i32) -> Result<MutationResult, Error> {
         let len = input.packets().len();
-        let rem_idx = state.rand_mut().below(len as u64) as usize;
 
-        if len >= self.min_length && len > 0 {
-            let selected_idx = if let Some(selected_packet) = state.metadata_map_mut().get_mut::<SelectedPacketMetadata>() {
-                selected_packet.inner_mut()
-            } else {
-                None
-            };
-            
-            if selected_idx.as_ref().map_or(true, |x| **x != rem_idx) {
-                input.packets_mut().remove(rem_idx);
-                
-                /* Adjust the selected packet index after modifying the array */
-                if let Some(selected_idx) = selected_idx {
-                    if rem_idx < *selected_idx {
-                        *selected_idx -= 1;
-                        debug_assert!(*selected_idx < input.packets().len());
-                    }
-                }
-                
-                return Ok(MutationResult::Mutated);
-            }
+        if len <= self.min_length || len == 0 {
+            return Ok(MutationResult::Skipped);
         }
         
-        Ok(MutationResult::Skipped)
+        let rem_idx = state.rand_mut().below(len as u64) as usize;
+
+        let selected_idx = if let Some(selected_idx) = state.metadata_map_mut().get_mut::<SelectedPacketMetadata>() {
+            selected_idx.inner_mut().map(|x| {
+                let tmp = *x;
+                
+                if rem_idx < tmp {
+                    *x -= 1;
+                }
+                
+                tmp
+            })
+        } else {
+            None
+        };
+        
+        if selected_idx.as_ref().map_or(false, |x| *x == rem_idx) {
+            return Ok(MutationResult::Skipped);
+        }
+        
+        input.packets_mut().remove(rem_idx);
+        
+        Ok(MutationResult::Mutated)
     }
 }
 

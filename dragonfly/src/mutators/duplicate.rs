@@ -31,32 +31,36 @@ where
 {
     fn mutate(&mut self, state: &mut S, input: &mut I, _stage_idx: i32) -> Result<MutationResult, Error> {
         let len = input.packets().len();
-        let to = state.rand_mut().below(len as u64 + 1) as usize;
-
-        if len < self.max_length {
-            if let Some(selected_idx) = state.metadata_map_mut().get_mut::<SelectedPacketMetadata>() {
-                if let Some(from) = selected_idx.inner_mut() {
-                    let copy = input.packets()[*from].clone();
-                    input.packets_mut().insert(to, copy);
-                    
-                    /* Adjust the selected packet index after modifying the array */
-                    if to <= *from {
-                        *from += 1;
-                        debug_assert!(*from < input.packets().len());
-                    }
-                    
-                    return Ok(MutationResult::Mutated);
-                }
-            } else if len > 0 {
-                /* Fall back to random selection of target packet */
-                let from = state.rand_mut().below(len as u64) as usize;
-                let copy = input.packets()[from].clone();
-                input.packets_mut().insert(to, copy);
-                return Ok(MutationResult::Mutated);
-            }    
+        
+        if len >= self.max_length {
+            return Ok(MutationResult::Skipped);
         }
         
-        Ok(MutationResult::Skipped)
+        let to = state.rand_mut().below(len as u64 + 1) as usize;
+
+        let from = if let Some(selected_idx) = state.metadata_map_mut().get_mut::<SelectedPacketMetadata>() {
+            let Some(selected_idx) = selected_idx.inner_mut() else {
+                return Ok(MutationResult::Skipped);
+            };
+            
+            let tmp = *selected_idx;
+            
+            if to <= tmp {
+                *selected_idx += 1;
+            }
+            
+            tmp
+        } else {
+            if len == 0 {
+                return Ok(MutationResult::Skipped);
+            }
+            
+            state.rand_mut().below(len as u64) as usize
+        };
+        
+        let copy = input.packets()[from].clone();
+        input.packets_mut().insert(to, copy);
+        Ok(MutationResult::Mutated)
     }
 }
 
