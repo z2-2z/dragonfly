@@ -12,11 +12,9 @@ use libafl::prelude::{
     TimeFeedback,
     Fuzzer, StdFuzzer,
     OnDiskJSONMonitor,
-    StdScheduledMutator,
     HitcountsMapObserver,
     StdMapObserver,
     TimeObserver,
-    IndexesLenTimeMinimizerScheduler,
     CalibrationStage,
     StdPowerMutationalStage,
     StdState,
@@ -33,9 +31,7 @@ use libafl::prelude::{
     HasSolutions,
     Corpus,
     powersched::PowerSchedule,
-    StdWeightedScheduler,
-    RandScheduler,
-    StdMutationalStage,
+    StdMOptMutator,
 };
 use nix::sys::signal::Signal;
 use serde::{
@@ -55,7 +51,7 @@ use dragonfly::{
         PacketDeleteMutator,
         PacketDuplicateMutator,
         PacketReorderMutator,
-        ScheduledPacketMutator,
+        SelectedPacketMutator,
         StateObserver,
         StateFeedback,
         HasStateGraph,
@@ -66,7 +62,7 @@ use dragonfly::{
         HasCrossover, PacketCrossoverInsertMutator, PacketCrossoverReplaceMutator,
         StateAwareWeightedScheduler,
         PacketRepeatMutator,
-        MOptPacketMutator,
+        PacketSelectorMutator,
     },
     tt::{
         TokenStream,
@@ -413,58 +409,47 @@ fn main() -> Result<(), Error> {
     state.add_metadata(dictionary);
     
     let max_tokens = 256;
-    let packet_mutator = MOptPacketMutator::new(
+    let max_packets = 16;
+    let mutator = PacketSelectorMutator::new(StdMOptMutator::new(
         &mut state,
         tuple_list!(
-            TokenStreamInsertRandomMutator::new(max_tokens),
-            TokenReplaceRandomMutator::new(),
-            TokenSplitMutator::new(max_tokens),
-            TokenStreamInsertInterestingMutator::new(max_tokens),
-            TokenReplaceInterestingMutator::new(),
-            TokenStreamDuplicateMutator::new(max_tokens),
-            TokenValueDuplicateMutator::new(),
-            TokenValueInsertRandomMutator::new(),
-            TokenStreamCopyMutator::new(max_tokens),
-            TokenStreamSwapMutator::new(),
-            TokenStreamDeleteMutator::new(1),
-            TokenRepeatCharMutator::new(),
-            TokenRotateCharMutator::new(),
-            TokenValueDeleteMutator::new(1),
-            TokenInsertSpecialCharMutator::new(),
-            TokenInvertCaseMutator::new(),
-            TokenStreamDictInsertMutator::new(max_tokens),
-            TokenReplaceDictMutator::new(),
-            TokenStreamScannerMutator::new(max_tokens),
-            TokenConvertMutator::new(),
-            TokenReplaceSpecialCharMutator::new()
-        ),
-        2,
-        5
-    )?;
-
-    let mutator = StdScheduledMutator::with_max_stack_pow(
-        tuple_list!(
-            PacketDeleteMutator::new(1),
-            PacketDuplicateMutator::new(16),
+            SelectedPacketMutator::new(TokenStreamInsertRandomMutator::new(max_tokens)),
+            SelectedPacketMutator::new(TokenReplaceRandomMutator::new()),
+            SelectedPacketMutator::new(TokenSplitMutator::new(max_tokens)),
+            SelectedPacketMutator::new(TokenStreamInsertInterestingMutator::new(max_tokens)),
+            SelectedPacketMutator::new(TokenReplaceInterestingMutator::new()),
+            SelectedPacketMutator::new(TokenStreamDuplicateMutator::new(max_tokens)),
+            SelectedPacketMutator::new(TokenValueDuplicateMutator::new()),
+            SelectedPacketMutator::new(TokenValueInsertRandomMutator::new()),
+            SelectedPacketMutator::new(TokenStreamCopyMutator::new(max_tokens)),
+            SelectedPacketMutator::new(TokenStreamSwapMutator::new()),
+            SelectedPacketMutator::new(TokenStreamDeleteMutator::new(1)),
+            SelectedPacketMutator::new(TokenRepeatCharMutator::new()),
+            SelectedPacketMutator::new(TokenRotateCharMutator::new()),
+            SelectedPacketMutator::new(TokenValueDeleteMutator::new(1)),
+            SelectedPacketMutator::new(TokenInsertSpecialCharMutator::new()),
+            SelectedPacketMutator::new(TokenInvertCaseMutator::new()),
+            SelectedPacketMutator::new(TokenStreamDictInsertMutator::new(max_tokens)),
+            SelectedPacketMutator::new(TokenReplaceDictMutator::new()),
+            SelectedPacketMutator::new(TokenStreamScannerMutator::new(max_tokens)),
+            SelectedPacketMutator::new(TokenConvertMutator::new()),
+            SelectedPacketMutator::new(TokenReplaceSpecialCharMutator::new()),
             PacketReorderMutator::new(),
-            packet_mutator,
+            PacketDeleteMutator::new(1),
+            PacketDuplicateMutator::new(max_packets),
             InsertRandomPacketMutator::new(),
             InsertGeneratedPacketMutator::new(),
-            PacketCrossoverInsertMutator::new(),
             PacketCrossoverReplaceMutator::new(),
-            PacketRepeatMutator::new(16, 16)
+            PacketCrossoverInsertMutator::new(),
+            PacketRepeatMutator::new(max_packets, max_packets)
         ),
-        2
-    );
+        7,
+        5,
+    )?);
 
     let mutational = StdPowerMutationalStage::new(mutator);
-    //let mutational = StdMutationalStage::new(mutator);
 
-    let scheduler = 
-        StateAwareWeightedScheduler::new(&mut state, &edges_observer, Some(PowerSchedule::FAST), &state_observer)
-        /* StdWeightedScheduler::with_schedule(&mut state, &edges_observer, Some(PowerSchedule::FAST)) */
-    ;
-    //let scheduler = RandScheduler::new();
+    let scheduler = StateAwareWeightedScheduler::new(&mut state, &edges_observer, Some(PowerSchedule::FAST), &state_observer);
 
     let mut fuzzer = StdFuzzer::new(scheduler, feedback, objective);
 
