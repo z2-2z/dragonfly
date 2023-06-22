@@ -13,7 +13,7 @@ use libafl::prelude::{
 };
 use std::marker::PhantomData;
 
-const INTERESTING: [&[u8]; 34] = [
+const INTERESTING: [&[u8]; 33] = [
     b"0",
     b"-1",
     // 0x7F
@@ -52,15 +52,14 @@ const INTERESTING: [&[u8]; 34] = [
     b"512",
     b"1024",
     b"4096",
+    b"65536",
     // random bullshit go
+    b"1",
     b"100",
     b"-129",
     b"1000",
-    b"32767",
     b"-100663046",
     b"-32769",
-    b"32768",
-    b"65536",
     b"100663045",
 ];
 
@@ -172,5 +171,16 @@ mod tests {
             let number = std::str::from_utf8(number).unwrap();
             TokenStream::builder().number(number).build();
         }
+    }
+    
+    #[test]
+    fn test_interesting_duplicates() {
+        let mut set = std::collections::HashSet::new();
+        
+        for number in INTERESTING {
+            set.insert(number);
+        }
+        
+        assert_eq!(set.len(), INTERESTING.len());
     }
 }
