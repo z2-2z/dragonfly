@@ -85,6 +85,10 @@ where
 {
     fn mutate(&mut self, state: &mut S, input: &mut I, stage_idx: i32) -> Result<MutationResult, Error> {
         let packet = self.schedule_packet(state, input);
+        
+        #[cfg(test)]
+        println!("Selecting packet {:?}", packet);
+        
         state.add_metadata(SelectedPacketMetadata(packet));
         self.mutator.mutate(state, input, stage_idx)
     }
