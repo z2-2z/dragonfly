@@ -32,6 +32,8 @@ use libafl::prelude::{
     Corpus,
     powersched::PowerSchedule,
     StdScheduledMutator,
+    StdWeightedScheduler,
+    IndexesLenTimeMinimizerScheduler,
 };
 use nix::sys::signal::Signal;
 use serde::{
@@ -58,7 +60,6 @@ use dragonfly::{
         HasPacketVector,
         InsertGeneratedPacketMutator, NewGenerated,
         HasCrossover, PacketCrossoverInsertMutator, PacketCrossoverReplaceMutator,
-        StateAwareWeightedScheduler,
         PacketRepeatMutator,
         PacketSelectorMutator,
         ScheduledPacketMutator,
@@ -375,7 +376,7 @@ fn main() -> Result<(), Error> {
     let shmem_buf = shmem.as_mut_slice();
     std::env::set_var("AFL_MAP_SIZE", format!("{}", MAP_SIZE));
 
-    let state_observer = StateObserver::new(&mut shmem_provider, "StateObserver")?;
+    StateObserver::new(&mut shmem_provider, "StateObserver")?;
     let edges_observer = HitcountsMapObserver::new(unsafe { StdMapObserver::new("shared_mem", shmem_buf) });
     let time_observer = TimeObserver::new("time");
     
@@ -451,12 +452,15 @@ fn main() -> Result<(), Error> {
 
     let mutational = StdPowerMutationalStage::new(mutator);
 
-    let scheduler = StateAwareWeightedScheduler::new(&mut state, &edges_observer, Some(PowerSchedule::FAST), &state_observer);
+    //let scheduler = StateAwareWeightedScheduler::new(&mut state, &edges_observer, Some(PowerSchedule::FAST), &state_observer);
+    let scheduler = IndexesLenTimeMinimizerScheduler::new(
+        StdWeightedScheduler::with_schedule(&mut state, &edges_observer, Some(PowerSchedule::FAST))
+    );
 
     let mut fuzzer = StdFuzzer::new(scheduler, feedback, objective);
 
     let mut executor = DragonflyExecutorBuilder::new()
-        .observers(tuple_list!(state_observer, edges_observer, time_observer))
+        .observers(tuple_list!(/*state_observer,*/ edges_observer, time_observer))
         .shmem_provider(&mut shmem_provider)
         .timeout(timeout)
         .signal(signal)
