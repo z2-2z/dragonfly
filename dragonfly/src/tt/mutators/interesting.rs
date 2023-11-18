@@ -162,9 +162,11 @@ where
 
             let idx = state.rand_mut().below(len as u64 + 1) as usize;
             
-            token_stream.tokens_mut().insert(idx, left_whitespace);
-            token_stream.tokens_mut().insert(idx, new_token);
-            token_stream.tokens_mut().insert(idx, right_whitespace);
+            token_stream.tokens_mut().splice(idx..idx, [
+                left_whitespace,
+                new_token,
+                right_whitespace
+            ]);
             
             return Ok(MutationResult::Mutated);
         }
