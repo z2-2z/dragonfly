@@ -1,14 +1,16 @@
 use crate::{
     input::HasPacketVector,
 };
+use libafl_bolts::{
+    Named,
+    rands::Rand,
+    impl_serdeany,
+};
 use libafl::prelude::{
     Error,
     HasRand,
     MutationResult,
     Mutator,
-    Named,
-    Rand,
-    impl_serdeany,
     HasMetadata,
     CorpusId,
 };

@@ -2,11 +2,13 @@ use crate::{
     mutators::PacketMutator,
     tt::token::HasTokenStream,
 };
+use libafl_bolts::{
+    rands::Rand,
+};
 use libafl::prelude::{
     Error,
     HasRand,
     MutationResult,
-    Rand,
 };
 use std::marker::PhantomData;
 

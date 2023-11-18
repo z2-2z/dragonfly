@@ -1,5 +1,8 @@
-use libafl::prelude::{
+use libafl_bolts::{
     AsMutSlice,
+    shmem::{ShMem, ShMemProvider},
+};
+use libafl::prelude::{
     Error,
     Executor,
     ExitKind,
@@ -7,8 +10,6 @@ use libafl::prelude::{
     HasObservers,
     Input,
     ObserversTuple,
-    ShMem,
-    ShMemProvider,
     UsesInput,
     UsesObservers,
     UsesState,

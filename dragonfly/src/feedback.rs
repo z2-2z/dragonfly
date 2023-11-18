@@ -1,3 +1,4 @@
+use libafl_bolts::Named;
 use libafl::prelude::{
     Error,
     Event,
@@ -5,7 +6,6 @@ use libafl::prelude::{
     ExitKind,
     Feedback,
     HasClientPerfMonitor,
-    Named,
     ObserversTuple,
     UserStats,
     UsesInput,

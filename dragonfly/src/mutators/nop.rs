@@ -1,10 +1,12 @@
 use crate::mutators::packet::PacketMutator;
+use libafl_bolts::{
+    Named,
+};
 use libafl::prelude::{
     Error,
     Input,
     MutationResult,
     Mutator,
-    Named,
 };
 
 pub struct NopMutator;

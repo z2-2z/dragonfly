@@ -1,8 +1,8 @@
 use ahash::AHasher;
+use libafl_bolts::HasLen;
 use libafl::prelude::{
     BytesInput,
     HasBytesVec,
-    HasLen,
     Input,
 };
 use serde::{

@@ -5,10 +5,10 @@ use crate::{
         NewRandom,
     },
 };
+use libafl_bolts::rands::Rand;
 use libafl::prelude::{
     HasMetadata,
     HasRand,
-    Rand,
     Tokens,
 };
 use serde::{
@@ -544,9 +544,9 @@ mod tests {
     extern crate test;
 
     use super::*;
-    use libafl::prelude::{
+    use libafl_bolts::{
         current_nanos,
-        RomuDuoJrRand,
+        rands::RomuDuoJrRand,
     };
     use test::{
         black_box,

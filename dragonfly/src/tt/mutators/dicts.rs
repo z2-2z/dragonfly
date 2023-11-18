@@ -5,12 +5,14 @@ use crate::{
         TextToken,
     },
 };
+use libafl_bolts::{
+    rands::Rand,
+};
 use libafl::prelude::{
     Error,
     HasMetadata,
     HasRand,
     MutationResult,
-    Rand,
     Tokens,
 };
 use std::marker::PhantomData;

@@ -2,9 +2,12 @@ use crate::{
     prelude::*,
     tt::*,
 };
-use libafl::prelude::{
+use libafl_bolts::prelude::{
     current_nanos,
     tuple_list,
+    StdRand,
+};
+use libafl::prelude::{
     CrashFeedback,
     Error,
     Evaluator,
@@ -18,7 +21,6 @@ use libafl::prelude::{
     SimpleEventManager,
     StdFuzzer,
     StdMutationalStage,
-    StdRand,
     StdState,
     TimeFeedback,
     TimeObserver,

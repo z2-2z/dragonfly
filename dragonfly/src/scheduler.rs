@@ -6,8 +6,12 @@ use ahash::{
     AHashMap,
     AHashSet,
 };
-use libafl::prelude::{
+use libafl_bolts::{
     impl_serdeany,
+    Named,
+    rands::Rand,
+};
+use libafl::prelude::{
     minimizer::IsFavoredMetadata,
     powersched::PowerSchedule,
     Corpus,
@@ -18,9 +22,7 @@ use libafl::prelude::{
     HasRand,
     HasTestcase,
     MapObserver,
-    Named,
     ObserversTuple,
-    Rand,
     Scheduler,
     Testcase,
     TestcaseScore,

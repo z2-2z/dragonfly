@@ -5,12 +5,14 @@ use crate::{
         selector::SelectedPacketMetadata,
     },
 };
+use libafl_bolts::{
+    Named,
+};
 use libafl::prelude::{
     Error,
     HasRand,
     MutationResult,
     Mutator,
-    Named,
     HasMetadata,
 };
 use std::marker::PhantomData;

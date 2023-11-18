@@ -1,6 +1,8 @@
 use ahash::AHasher;
-use libafl::prelude::{
+use libafl_bolts::{
     impl_serdeany,
+};
+use libafl::prelude::{
     Error,
     HasMetadata,
     StdState,

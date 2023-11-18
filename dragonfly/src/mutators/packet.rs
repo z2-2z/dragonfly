@@ -1,7 +1,9 @@
+use libafl_bolts::{
+    tuples::HasConstLen,
+};
 use libafl::prelude::{
     Error,
     MutationResult,
-    HasConstLen,
 };
 
 pub trait PacketMutator<P, S> {

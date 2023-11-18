@@ -3,13 +3,15 @@ use crate::{
     mutators::packet::PacketMutatorTuple,
     mutators::selector::SelectedPacketMetadata,
 };
+use libafl_bolts::{
+    Named,
+    rands::Rand,
+};
 use libafl::prelude::{
     Error,
     HasRand,
     MutationResult,
     Mutator,
-    Named,
-    Rand,
     HasMetadata,
 };
 use std::marker::PhantomData;

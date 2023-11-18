@@ -1,11 +1,13 @@
+use libafl_bolts::{
+    Named,
+    rands::Rand,
+};
 use libafl::prelude::{
     Error,
     HasRand,
     Input,
     MutationResult,
     Mutator,
-    Named,
-    Rand,
     HasMetadata,
 };
 use crate::mutators::selector::SelectedPacketMetadata;

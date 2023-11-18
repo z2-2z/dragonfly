@@ -1,3 +1,7 @@
+use libafl_bolts::{
+    Named,
+    rands::Rand,
+};
 use crate::{
     input::HasPacketVector,
     mutators::selector::SelectedPacketMetadata,
@@ -8,8 +12,6 @@ use libafl::prelude::{
     Input,
     MutationResult,
     Mutator,
-    Named,
-    Rand,
     HasMetadata,
 };
 

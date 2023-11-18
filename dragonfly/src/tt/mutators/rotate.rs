@@ -5,11 +5,13 @@ use crate::{
         TextToken,
     },
 };
+use libafl_bolts::{
+    rands::Rand,
+};
 use libafl::prelude::{
     Error,
     HasRand,
     MutationResult,
-    Rand,
 };
 use std::marker::PhantomData;
 
@@ -83,9 +85,9 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use libafl::prelude::{
+    use libafl_bolts::{
+        rands::RomuDuoJrRand,
         current_nanos,
-        RomuDuoJrRand,
     };
 
     #[test]

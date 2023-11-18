@@ -2,11 +2,13 @@ use crate::{
     mutators::PacketMutator,
     tt::token::{HasTokenStream, TextToken, has_valid_sign},
 };
+use libafl_bolts::{
+    rands::Rand,
+};
 use libafl::prelude::{
     Error,
     HasRand,
     MutationResult,
-    Rand,
 };
 use std::marker::PhantomData;
 
@@ -132,9 +134,9 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use libafl::prelude::{
-        current_nanos,
-        RomuDuoJrRand,
+    use libafl_bolts::{
+        rands::RomuDuoJrRand,
+        current_nanos
     };
 
     #[test]

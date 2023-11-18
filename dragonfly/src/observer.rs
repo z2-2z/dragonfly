@@ -1,14 +1,15 @@
-use libafl::prelude::{
+use libafl_bolts::{
     AsMutSlice,
     AsSlice,
+    Named,
+    ownedref::OwnedMutSlice,
+    shmem::{ShMem, ShMemProvider},
+};
+use libafl::prelude::{
     Error,
     ExitKind,
     HasCorpus,
-    Named,
     Observer,
-    OwnedMutSlice,
-    ShMem,
-    ShMemProvider,
     UsesInput,
 };
 use serde::{

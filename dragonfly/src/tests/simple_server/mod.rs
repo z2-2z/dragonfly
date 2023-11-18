@@ -1,23 +1,15 @@
 use core::time::Duration;
-use libafl::{
-    bolts::{
-        core_affinity::{
-            CoreId,
+use libafl_bolts::prelude::{
+    HasLen,AsMutSlice,tuple_list,ShMem,
+    ShMemProvider,
+    StdShMemProvider,
+    UnixShMemProvider,StdRand,
+    current_nanos,
+    CoreId,
             Cores,
-        },
-        current_nanos,
-        launcher::Launcher,
-        rands::StdRand,
-        shmem::{
-            ShMem,
-            ShMemProvider,
-            StdShMemProvider,
-            UnixShMemProvider,
-        },
-        tuples::tuple_list,
-        AsMutSlice,
-        HasLen,
-    },
+};
+use libafl::{
+    events::launcher::Launcher,
     corpus::InMemoryCorpus,
     feedback_or,
     feedbacks::{

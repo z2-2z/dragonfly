@@ -10,11 +10,13 @@ use crate::{
         TextToken,
     },
 };
+use libafl_bolts::{
+    rands::Rand,
+};
 use libafl::prelude::{
     Error,
     HasRand,
     MutationResult,
-    Rand,
 };
 use std::marker::PhantomData;
 

@@ -7,19 +7,17 @@ use core::{
     cell::RefCell,
     time::Duration,
 };
+use libafl_bolts::prelude::{
+    current_nanos,
+    current_time,
+    ShMem,
+    ShMemProvider,
+    UnixShMemProvider,
+    tuple_list,
+    AsMutSlice,
+    StdRand,
+};
 use libafl::{
-    bolts::{
-        current_nanos,
-        current_time,
-        rands::StdRand,
-        shmem::{
-            ShMem,
-            ShMemProvider,
-            UnixShMemProvider,
-        },
-        tuples::tuple_list,
-        AsMutSlice,
-    },
     corpus::{
         InMemoryOnDiskCorpus,
         OnDiskCorpus,

@@ -4,13 +4,13 @@
 #[cfg(test)]
 mod tests;
 
-mod executor;
-mod feedback;
-mod graph;
-mod input;
 mod mutators;
-mod observer;
+mod feedback;
+mod executor;
+mod input;
+mod graph;
 mod scheduler;
+mod observer;
 mod stats;
 
 pub mod prelude {
@@ -24,4 +24,5 @@ pub mod prelude {
         scheduler::*,
     };
 }
+
 pub mod tt;

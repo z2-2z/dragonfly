@@ -6,11 +6,13 @@ use crate::{
         random_whitespace_value,
     },
 };
+use libafl_bolts::{
+    rands::Rand,
+};
 use libafl::prelude::{
     Error,
     HasRand,
     MutationResult,
-    Rand,
 };
 use std::marker::PhantomData;
 
