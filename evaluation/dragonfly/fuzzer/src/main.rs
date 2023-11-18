@@ -31,7 +31,7 @@ use libafl::prelude::{
     HasSolutions,
     Corpus,
     powersched::PowerSchedule,
-    StdMOptMutator,
+    StdScheduledMutator,
 };
 use nix::sys::signal::Signal;
 use serde::{
@@ -51,9 +51,7 @@ use dragonfly::{
         PacketDeleteMutator,
         PacketDuplicateMutator,
         PacketReorderMutator,
-        SelectedPacketMutator,
         StateObserver,
-        StateFeedback,
         HasStateGraph,
         DragonflyInput,
         InsertRandomPacketMutator, NewRandom,
@@ -63,6 +61,7 @@ use dragonfly::{
         StateAwareWeightedScheduler,
         PacketRepeatMutator,
         PacketSelectorMutator,
+        ScheduledPacketMutator,
     },
     tt::{
         TokenStream,
@@ -311,13 +310,13 @@ fn main() -> Result<(), Error> {
         fs::canonicalize("./fuzz.conf").unwrap().to_str().unwrap().to_string(),
         "-n".to_string(),
     ];
-    const SUDO_ARGUMENTS: [&str; 6] = [
+    /*const SUDO_ARGUMENTS: [&str; 6] = [
         "-C", "256",
         "-E",
         "-n",
         "-P",
         "--",
-    ];
+    ];*/
     
     if args.debug {
         arguments.splice(0..0, [
@@ -380,13 +379,13 @@ fn main() -> Result<(), Error> {
     let edges_observer = HitcountsMapObserver::new(unsafe { StdMapObserver::new("shared_mem", shmem_buf) });
     let time_observer = TimeObserver::new("time");
     
-    let state_feedback = StateFeedback::new(&state_observer);
+    //let state_feedback = StateFeedback::new(&state_observer);
     let map_feedback = MaxMapFeedback::tracking(&edges_observer, true, false);
 
     let calibration = CalibrationStage::new(&map_feedback);
 
     let mut feedback = feedback_or!(
-        state_feedback,
+        //state_feedback,
         map_feedback,
         TimeFeedback::with_observer(&time_observer)
     );
@@ -407,42 +406,48 @@ fn main() -> Result<(), Error> {
     
     let max_tokens = 256;
     let max_packets = 16;
-    let mutator = PacketSelectorMutator::new(StdMOptMutator::new(
-        &mut state,
+    let packet_mutator = ScheduledPacketMutator::with_max_stack_pow(
         tuple_list!(
-            SelectedPacketMutator::new(TokenStreamInsertRandomMutator::new(max_tokens)),
-            SelectedPacketMutator::new(TokenReplaceRandomMutator::new()),
-            SelectedPacketMutator::new(TokenSplitMutator::new(max_tokens)),
-            SelectedPacketMutator::new(TokenStreamInsertInterestingMutator::new(max_tokens)),
-            SelectedPacketMutator::new(TokenReplaceInterestingMutator::new()),
-            SelectedPacketMutator::new(TokenStreamDuplicateMutator::new(max_tokens)),
-            SelectedPacketMutator::new(TokenValueDuplicateMutator::new()),
-            SelectedPacketMutator::new(TokenValueInsertRandomMutator::new()),
-            SelectedPacketMutator::new(TokenStreamCopyMutator::new(max_tokens)),
-            SelectedPacketMutator::new(TokenStreamSwapMutator::new()),
-            SelectedPacketMutator::new(TokenStreamDeleteMutator::new(1)),
-            SelectedPacketMutator::new(TokenRepeatCharMutator::new()),
-            SelectedPacketMutator::new(TokenRotateCharMutator::new()),
-            SelectedPacketMutator::new(TokenValueDeleteMutator::new(1)),
-            SelectedPacketMutator::new(TokenInsertSpecialCharMutator::new()),
-            SelectedPacketMutator::new(TokenInvertCaseMutator::new()),
-            SelectedPacketMutator::new(TokenStreamDictInsertMutator::new(max_tokens)),
-            SelectedPacketMutator::new(TokenReplaceDictMutator::new()),
-            SelectedPacketMutator::new(TokenStreamScannerMutator::new(max_tokens)),
-            SelectedPacketMutator::new(TokenConvertMutator::new()),
-            SelectedPacketMutator::new(TokenReplaceSpecialCharMutator::new()),
-            PacketReorderMutator::new(),
-            PacketDeleteMutator::new(1),
-            PacketDuplicateMutator::new(max_packets),
-            InsertRandomPacketMutator::new(),
-            InsertGeneratedPacketMutator::new(),
-            PacketCrossoverReplaceMutator::new(),
-            PacketCrossoverInsertMutator::new(),
-            PacketRepeatMutator::new(max_packets, max_packets)
+            TokenStreamInsertRandomMutator::new(max_tokens),
+            TokenReplaceRandomMutator::new(),
+            TokenSplitMutator::new(max_tokens),
+            TokenStreamInsertInterestingMutator::new(max_tokens),
+            TokenReplaceInterestingMutator::new(),
+            TokenStreamDuplicateMutator::new(max_tokens),
+            TokenValueDuplicateMutator::new(),
+            TokenValueInsertRandomMutator::new(),
+            TokenStreamCopyMutator::new(max_tokens),
+            TokenStreamSwapMutator::new(),
+            TokenStreamDeleteMutator::new(1),
+            TokenRepeatCharMutator::new(),
+            TokenRotateCharMutator::new(),
+            TokenValueDeleteMutator::new(1),
+            TokenInsertSpecialCharMutator::new(),
+            TokenInvertCaseMutator::new(),
+            TokenStreamDictInsertMutator::new(max_tokens),
+            TokenReplaceDictMutator::new(),
+            TokenStreamScannerMutator::new(max_tokens),
+            TokenConvertMutator::new(),
+            TokenReplaceSpecialCharMutator::new()
         ),
-        7,
-        5,
-    )?);
+        2,
+    );
+    let mutator = PacketSelectorMutator::new(
+        StdScheduledMutator::with_max_stack_pow(
+            tuple_list!(
+                PacketDeleteMutator::new(1),
+                PacketDuplicateMutator::new(max_packets),
+                PacketReorderMutator::new(),
+                packet_mutator,
+                InsertRandomPacketMutator::new(),
+                InsertGeneratedPacketMutator::new(),
+                PacketCrossoverInsertMutator::new(),
+                PacketCrossoverReplaceMutator::new(),
+                PacketRepeatMutator::new(max_packets, max_packets)
+            ),
+            1
+        )
+    );
 
     let mutational = StdPowerMutationalStage::new(mutator);
 
@@ -495,6 +500,7 @@ fn main() -> Result<(), Error> {
     } else {
         assert!(!args.debug && !args.trace);
         
+        /*
         /* Start with a single interaction */
         let input = DragonflyInput::new(
             vec![
@@ -514,15 +520,16 @@ fn main() -> Result<(), Error> {
                 FTPPacket::Sep, 
             ]
         );
+        */
        
-        /*
+        
         /* Start with an empty corpus */
         let input = DragonflyInput::new(
             vec![
                 FTPPacket::Ctrl(TokenStream::builder().build()),
             ]
         );
-        */
+        
         
         fuzzer.evaluate_input(&mut state, &mut executor, &mut mgr, input)?;
 

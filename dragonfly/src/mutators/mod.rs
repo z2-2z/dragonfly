@@ -9,6 +9,7 @@ mod reorder;
 mod repeat;
 mod selected;
 mod selector;
+mod scheduled;
 
 pub use crossover::{
     HasCrossover,
@@ -25,7 +26,10 @@ pub use nop::{
     NopMutator,
     NopPacketMutator,
 };
-pub use packet::PacketMutator;
+pub use packet::{
+    PacketMutator,
+    PacketMutatorTuple,
+};
 pub use random::{
     InsertRandomPacketMutator,
     NewRandom,
@@ -34,3 +38,4 @@ pub use reorder::PacketReorderMutator;
 pub use repeat::PacketRepeatMutator;
 pub use selected::SelectedPacketMutator;
 pub use selector::{SelectedPacketMetadata, PacketSelectorMutator};
+pub use scheduled::ScheduledPacketMutator;
