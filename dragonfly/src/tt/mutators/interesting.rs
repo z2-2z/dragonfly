@@ -3,6 +3,7 @@ use crate::{
     tt::token::{
         HasTokenStream,
         TextToken,
+        random_whitespace_value,
     },
 };
 use libafl::prelude::{
@@ -150,9 +151,21 @@ where
 
             let idx = state.rand_mut().below(INTERESTING.len() as u64) as usize;
             let new_token = TextToken::Number(INTERESTING[idx].to_vec());
+            
+            let mut buf = Vec::new();
+            random_whitespace_value(state.rand_mut(), &mut buf);
+            let left_whitespace = TextToken::Whitespace(buf);
+            
+            let mut buf = Vec::new();
+            random_whitespace_value(state.rand_mut(), &mut buf);
+            let right_whitespace = TextToken::Whitespace(buf);
 
             let idx = state.rand_mut().below(len as u64 + 1) as usize;
+            
+            token_stream.tokens_mut().insert(idx, left_whitespace);
             token_stream.tokens_mut().insert(idx, new_token);
+            token_stream.tokens_mut().insert(idx, right_whitespace);
+            
             return Ok(MutationResult::Mutated);
         }
 
