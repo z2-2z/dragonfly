@@ -1,9 +1,17 @@
 use core::time::Duration;
-use libafl::prelude::{
-    current_nanos, StdRand, ShMem,
-    ShMemProvider, UnixShMemProvider,
+use libafl_bolts::prelude::{
+    current_nanos,
+    StdRand,
+    ShMem,
+    ShMemProvider,
+    UnixShMemProvider,
     tuple_list,
     AsMutSlice,
+    Rand,
+    current_time,
+    CoreId,
+};
+use libafl::prelude::{
     CachedOnDiskCorpus,
     OnDiskCorpus,
     feedback_or,
@@ -22,12 +30,9 @@ use libafl::prelude::{
     Evaluator,
     SimpleEventManager,
     HasRand,
-    Rand,
     HasMetadata,
     Tokens,
-    current_time,
     Input,
-    CoreId,
     HasSolutions,
     Corpus,
     powersched::PowerSchedule,
