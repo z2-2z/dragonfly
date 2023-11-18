@@ -119,35 +119,65 @@ static const unsigned char string_7115538435105230547[6] = {0x43, 0x44, 0x55, 0x
 static const unsigned char string_7750727661420411684[6] = {0x53, 0x59, 0x53, 0x54, 0xd, 0xa};
 static const unsigned char string_8853320453514720409[10] = {0x52, 0x4e, 0x46, 0x52, 0x20, 0x61, 0x62, 0x63, 0xd, 0xa};
 static const unsigned char string_9866723023257838052[13] = {0x52, 0x45, 0x53, 0x54, 0x20, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x72, 0xd, 0xa};
+static const unsigned char string_9904133961878437268[1] = {0x2c};
 static const unsigned char string_10273663291660329175[10] = {0x53, 0x54, 0x4f, 0x52, 0x20, 0x61, 0x62, 0x63, 0xd, 0xa};
 static const unsigned char string_10882850770906693452[6] = {0x4e, 0x4f, 0x4f, 0x50, 0xd, 0xa};
 static const unsigned char string_11229452647410007184[8] = {0x53, 0x54, 0x52, 0x55, 0x20, 0x46, 0xd, 0xa};
 static const unsigned char string_11337447964492719760[6] = {0x52, 0x45, 0x49, 0x4e, 0xd, 0xa};
+static const unsigned char string_12038618858247955279[5] = {0x50, 0x4f, 0x52, 0x54, 0x20};
+static const unsigned char string_13389084240346253293[2] = {0xd, 0xa};
 static const unsigned char string_13522589807571429534[6] = {0x53, 0x54, 0x4f, 0x55, 0xd, 0xa};
 static const unsigned char string_14143458678229299797[6] = {0x41, 0x42, 0x4f, 0x52, 0xd, 0xa};
 static const unsigned char string_14490114064326997348[8] = {0x4d, 0x4f, 0x44, 0x45, 0x20, 0x53, 0xd, 0xa};
 static const unsigned char string_14735348259973616835[10] = {0x53, 0x49, 0x54, 0x45, 0x20, 0x3f, 0x3f, 0x3f, 0xd, 0xa};
-static const unsigned char string_15511907849683514462[22] = {0x50, 0x4f, 0x52, 0x54, 0x20, 0x31, 0x32, 0x37, 0x2c, 0x30, 0x2c, 0x30, 0x2c, 0x31, 0x2c, 0x31, 0x32, 0x2c, 0x33, 0x34, 0xd, 0xa};
 static const unsigned char string_17397722986415283233[10] = {0x4e, 0x4c, 0x53, 0x54, 0x20, 0x61, 0x62, 0x63, 0xd, 0xa};
 static const unsigned char string_17621312972018287284[6] = {0x51, 0x55, 0x49, 0x54, 0xd, 0xa};
 static const unsigned char string_17675720925268162070[10] = {0x41, 0x43, 0x43, 0x54, 0x20, 0x66, 0x74, 0x70, 0xd, 0xa};
 static const unsigned char string_18269505720688649869[5] = {0x50, 0x57, 0x44, 0xd, 0xa};
 
+// Numbersets from grammar
+static uint32_t numberset_7633009975498440499() {
+    uint64_t range_selector = rand();
+    return (((uint32_t) range_selector) % 8U) + 1U;
+}
+static uint8_t numberset_11185474807884195476() {
+    uint64_t range_selector = rand();
+    return (((uint8_t) range_selector) % 10U) + 48U;
+}
+
 // Forward declarations of containers
 static size_t container_0(unsigned char*, size_t);
 static size_t container_1(unsigned char*, size_t);
+static size_t container_2(unsigned char*, size_t);
+static size_t container_3(unsigned char*, size_t);
 
 // Definition of containers
 static size_t container_0(unsigned char* buf, size_t len) {
+    // This container is struct Decimal
+    size_t original_len = len;
+    {
+        uint32_t repeats_i = numberset_7633009975498440499();
+        while (repeats_i--) {
+            if (UNLIKELY(len < 1)) {
+                goto container_end;
+            }
+            *buf = (unsigned char) numberset_11185474807884195476();
+            buf += 1; len -= 1;
+        }
+    }
+    container_end:
+    return original_len - len;
+}
+static size_t container_1(unsigned char* buf, size_t len) {
     // This container is struct Root
     size_t original_len = len;
     {
-        size_t container_len = container_1(buf, len);
+        size_t container_len = container_2(buf, len);
         buf += container_len; len -= container_len;
     }
     return original_len - len;
 }
-static size_t container_1(unsigned char* buf, size_t len) {
+static size_t container_2(unsigned char* buf, size_t len) {
     size_t original_len = len;
     uint64_t oneof_selector = rand() % 33;
     switch(oneof_selector) {
@@ -168,11 +198,8 @@ static size_t container_1(unsigned char* buf, size_t len) {
             break;
         }
         case 2: {
-            if (UNLIKELY(len < sizeof(string_15511907849683514462))) {
-                goto container_end;
-            }
-            __builtin_memcpy_inline(buf, string_15511907849683514462, sizeof(string_15511907849683514462));
-            buf += sizeof(string_15511907849683514462); len -= sizeof(string_15511907849683514462);
+            size_t container_len = container_3(buf, len);
+            buf += container_len; len -= container_len;
             break;
         }
         case 3: {
@@ -422,6 +449,85 @@ static size_t container_1(unsigned char* buf, size_t len) {
     container_end:
     return original_len - len;
 }
+static size_t container_3(unsigned char* buf, size_t len) {
+    // This container is the anonymous struct in line 17 column 9
+    size_t original_len = len;
+    {
+        if (UNLIKELY(len < sizeof(string_12038618858247955279))) {
+            goto container_end;
+        }
+        __builtin_memcpy_inline(buf, string_12038618858247955279, sizeof(string_12038618858247955279));
+        buf += sizeof(string_12038618858247955279); len -= sizeof(string_12038618858247955279);
+    }
+    {
+        size_t container_len = container_0(buf, len);
+        buf += container_len; len -= container_len;
+    }
+    {
+        if (UNLIKELY(len < sizeof(string_9904133961878437268))) {
+            goto container_end;
+        }
+        __builtin_memcpy_inline(buf, string_9904133961878437268, sizeof(string_9904133961878437268));
+        buf += sizeof(string_9904133961878437268); len -= sizeof(string_9904133961878437268);
+    }
+    {
+        size_t container_len = container_0(buf, len);
+        buf += container_len; len -= container_len;
+    }
+    {
+        if (UNLIKELY(len < sizeof(string_9904133961878437268))) {
+            goto container_end;
+        }
+        __builtin_memcpy_inline(buf, string_9904133961878437268, sizeof(string_9904133961878437268));
+        buf += sizeof(string_9904133961878437268); len -= sizeof(string_9904133961878437268);
+    }
+    {
+        size_t container_len = container_0(buf, len);
+        buf += container_len; len -= container_len;
+    }
+    {
+        if (UNLIKELY(len < sizeof(string_9904133961878437268))) {
+            goto container_end;
+        }
+        __builtin_memcpy_inline(buf, string_9904133961878437268, sizeof(string_9904133961878437268));
+        buf += sizeof(string_9904133961878437268); len -= sizeof(string_9904133961878437268);
+    }
+    {
+        size_t container_len = container_0(buf, len);
+        buf += container_len; len -= container_len;
+    }
+    {
+        if (UNLIKELY(len < sizeof(string_9904133961878437268))) {
+            goto container_end;
+        }
+        __builtin_memcpy_inline(buf, string_9904133961878437268, sizeof(string_9904133961878437268));
+        buf += sizeof(string_9904133961878437268); len -= sizeof(string_9904133961878437268);
+    }
+    {
+        size_t container_len = container_0(buf, len);
+        buf += container_len; len -= container_len;
+    }
+    {
+        if (UNLIKELY(len < sizeof(string_9904133961878437268))) {
+            goto container_end;
+        }
+        __builtin_memcpy_inline(buf, string_9904133961878437268, sizeof(string_9904133961878437268));
+        buf += sizeof(string_9904133961878437268); len -= sizeof(string_9904133961878437268);
+    }
+    {
+        size_t container_len = container_0(buf, len);
+        buf += container_len; len -= container_len;
+    }
+    {
+        if (UNLIKELY(len < sizeof(string_13389084240346253293))) {
+            goto container_end;
+        }
+        __builtin_memcpy_inline(buf, string_13389084240346253293, sizeof(string_13389084240346253293));
+        buf += sizeof(string_13389084240346253293); len -= sizeof(string_13389084240346253293);
+    }
+    container_end:
+    return original_len - len;
+}
 
 // Entrypoint for the generator
 size_t ftp_generator_generate(unsigned char* buf, size_t len) {
@@ -429,5 +535,5 @@ size_t ftp_generator_generate(unsigned char* buf, size_t len) {
         return 0;
     }
     
-    return container_0(buf, len);
+    return container_1(buf, len);
 }

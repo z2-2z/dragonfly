@@ -321,30 +321,27 @@ fn main() -> Result<(), Error> {
     
     if args.debug {
         arguments.splice(0..0, [
-            "gdbserver".to_string(),
             "0.0.0.0:6666".to_string(),
             executable,
         ]);
-        arguments.splice(0..0, SUDO_ARGUMENTS.iter().map(|x| x.to_string()));
-        executable = "sudo".to_string();
+        //arguments.splice(0..0, SUDO_ARGUMENTS.iter().map(|x| x.to_string()));
+        executable = "gdbserver".to_string();
     } else if args.trace {
         arguments.splice(0..0, [
-            "strace".to_string(),
             "-f".to_string(),
             "--signal=!SIGCHLD".to_string(),
             "--trace=all".to_string(),
             "--".to_string(),
             executable,
         ]);
-        arguments.splice(0..0, SUDO_ARGUMENTS.iter().map(|x| x.to_string()));
-        executable = "sudo".to_string();
+        //arguments.splice(0..0, SUDO_ARGUMENTS.iter().map(|x| x.to_string()));
+        executable = "strace".to_string();
     }
     
     #[cfg(debug_assertions)]
     let debug_child = true;
     #[cfg(not(debug_assertions))]
     let debug_child = false;
-    
     let signal = str::parse::<Signal>("SIGKILL").unwrap();
     
     let seed = current_nanos();

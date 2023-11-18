@@ -36,8 +36,9 @@ def main():
                 line = json.loads(line.strip())
                 data.append(line)
         
-        #x, y, xlabel, ylabel = plot_data = extract(data, "exec_sec")
-        x, y, xlabel, ylabel = extract(data, "corpus")
+        #x, y, xlabel, ylabel = extract(data, "exec_sec")
+        #x, y, xlabel, ylabel = extract(data, "corpus")
+        x, y, xlabel, ylabel = extract(data, "objectives")
         
         ax.plot(x, y, label=logfile)
         ax.set_xlabel(xlabel)

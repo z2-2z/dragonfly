@@ -5,12 +5,30 @@ chameleon -o generator.c --prefix ftp_generator --print-stats grammar.chm
 
 option scheduling = random;
 
+struct Decimal {
+    repeats 1..8 digit: char = '0'..'9';
+}
+
 struct Root {
     ftp_command: oneof {
         /* From RFC 959 */
         user: string = "USER ftp\r\n";
         pass: string = "PASS\r\n";
-        port: string = "PORT 127,0,0,1,12,34\r\n";
+        port: struct {
+            cmd: string = "PORT ";
+            h1: Decimal;
+            _: string = ",";
+            h2: Decimal;
+            _: string = ",";
+            h3: Decimal;
+            _: string = ",";
+            h4: Decimal;
+            _: string = ",";
+            p1: Decimal;
+            _: string = ",";
+            p2: Decimal;
+            _: string = "\r\n";
+        };
         acct: string = "ACCT ftp\r\n";
         cwd: string = "CWD uploads\r\n";
         cdup: string = "CDUP\r\n";

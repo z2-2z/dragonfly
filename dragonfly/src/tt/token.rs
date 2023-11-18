@@ -273,9 +273,8 @@ impl TokenStream {
 
             match token {
                 TextToken::Number(data) | TextToken::Constant(data) | TextToken::Whitespace(data) | TextToken::Text(data) | TextToken::Blob(data) => {
-                    let rem_buf = &mut buf[written..];
-                    let size = std::cmp::min(rem_buf.len(), data.len());
-                    rem_buf[..size].copy_from_slice(&data[..size]);
+                    let size = std::cmp::min(buf.len() - written, data.len());
+                    buf[written..written + size].copy_from_slice(&data[..size]);
                     written += size;
                 },
             }

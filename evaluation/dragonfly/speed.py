@@ -19,6 +19,11 @@ def main():
             data
         )
     )
+
+    # Skip the first line since it is printed before the
+    # actual fuzzing starts
+    execs = execs[1:]
+
     left = min(execs)
     mean = statistics.fmean(execs)
     right = max(execs)

@@ -33,7 +33,8 @@ RUN meson setup ./build && \
 
 # Build ProFTPD
 WORKDIR ../evaluation/proftpd
-RUN git apply ../dragonfly/patch
+RUN git apply ../dragonfly/patch && \
+    git apply ../dragonfly/patch-dbg
 RUN export LIBDRAGONFLY="$(realpath ../../libdragonfly/build)" && \
     CC="$(realpath ../../AFLplusplus/afl-clang-lto)" \
     CFLAGS="-I$LIBDRAGONFLY/include -O0 -ggdb" \
@@ -43,9 +44,8 @@ RUN export LIBDRAGONFLY="$(realpath ../../libdragonfly/build)" && \
     make
 
 # Setup FTP root
-RUN mkdir -p /tmp/ftproot/uploads
-RUN echo content > /tmp/ftproot/file
-RUN chmod -R 777 /tmp/ftproot
+RUN mkdir -p /uploads
+RUN echo content > /file
 
 # Build the fuzzer
 WORKDIR ../dragonfly/fuzzer
@@ -65,9 +65,9 @@ RUN echo >> /etc/sudoers && \
     echo 'Defaults closefrom_override' >> /etc/sudoers
 
 # Setup GEF
-RUN curl -L -o /home/user/gef.py https://gef.blah.cat/py && \
-    echo "source ~/gef.py" >> /home/user/.gdbinit
+RUN curl -L -o /gef.py https://gef.blah.cat/py && \
+    echo "source /gef.py" | tee -a /home/user/.gdbinit /root/.gdbinit
 
 # The debugger has to be launched manually
 VOLUME ["/output"]
-ENTRYPOINT ["su", "user", "-c", "/bin/bash -i"]
+ENTRYPOINT ["/bin/bash -i"]

@@ -110,3 +110,15 @@ Scheduler::on_add() gets called with corpus id of mutant that was interesting
 Crashes:
 1: NULL deref in mod_auth.c:2883: path == NULL
 2: NULL deref in mod_ls.c:1127: tail == NULL
+
+Todo:
+crash deduplication in fuzzer
+load initial inputs
+MOpt in packet scheduler mutators
+return error codes in desocked functions like in https://github.com/guidovranken/network-emulator
+test without prioritizing states, only favorites
+test without stategraph feedback, just coverage
+
+Prepare for finding bugs:
+padding between metadata and data that has to be manually poisoned
+assertion checks that we are authenticated in authenticated functions
