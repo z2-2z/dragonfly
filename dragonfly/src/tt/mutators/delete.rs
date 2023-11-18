@@ -13,7 +13,7 @@ use libafl::prelude::{
 };
 use std::marker::PhantomData;
 
-/// Deletes a random token
+/// Deletes a random slice of tokens
 pub struct TokenStreamDeleteMutator<P, S>
 where
     P: HasTokenStream,
@@ -49,7 +49,14 @@ where
             }
 
             let idx = state.rand_mut().below(len as u64) as usize;
-            token_stream.tokens_mut().remove(idx);
+            let mut slice_len = 1 + state.rand_mut().below((len - idx) as u64) as usize;
+            
+            let new_len = len - slice_len;
+            if new_len < self.min_length {
+                slice_len -= self.min_length - new_len;
+            }
+            
+            token_stream.tokens_mut().drain(idx..idx + slice_len);
             return Ok(MutationResult::Mutated);
         }
 
@@ -101,7 +108,7 @@ where
             }
 
             let start = state.rand_mut().below(token_len as u64) as usize;
-            let len = state.rand_mut().below(token_len as u64 - start as u64) as usize;
+            let len = 1 + state.rand_mut().below(token_len as u64 - start as u64) as usize;
 
             let min_length = match token {
                 TextToken::Number(_) => std::cmp::max(self.min_length, 2),
