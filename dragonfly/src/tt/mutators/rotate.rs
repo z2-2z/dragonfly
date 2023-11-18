@@ -91,11 +91,12 @@ mod tests {
     #[test]
     fn test_rotate_char() {
         let mut r = RomuDuoJrRand::with_seed(current_nanos());
+        let mut d = b"Hello World!".to_vec();
 
         for _ in 0..10 {
-            let mut d = b"Hello World!".to_vec();
             rotate_char(&mut r, &mut d).unwrap();
-            println!("{}", std::str::from_utf8(&d).unwrap());
         }
+        
+        println!("{}", std::str::from_utf8(&d).unwrap());
     }
 }
