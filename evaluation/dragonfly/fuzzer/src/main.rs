@@ -63,6 +63,7 @@ use dragonfly::{
         PacketRepeatMutator,
         PacketSelectorMutator,
         ScheduledPacketMutator,
+        StateFeedback,
     },
     tt::{
         TokenStream,
@@ -72,22 +73,18 @@ use dragonfly::{
         TokenSplitMutator,
         TokenReplaceInterestingMutator,
         TokenStreamInsertInterestingMutator,
-        TokenStreamDuplicateMutator,
-        TokenValueDuplicateMutator,
         TokenValueInsertRandomMutator,
         TokenStreamCopyMutator,
         TokenStreamSwapMutator,
         TokenStreamDeleteMutator,
-        TokenRepeatCharMutator,
         TokenRotateCharMutator,
         TokenValueDeleteMutator,
         TokenInsertSpecialCharMutator,
-        TokenInvertCaseMutator,
         TokenStreamDictInsertMutator,
         TokenReplaceDictMutator,
         TokenStreamScannerMutator,
-        TokenConvertMutator,
         TokenReplaceSpecialCharMutator,
+        TokenValueCopyMutator,
     },
 };
 use clap::{Parser, CommandFactory};
@@ -184,15 +181,13 @@ where
             ftp_generator_seed(seed);
         }
         
-        let mut buf = [0; 32];
+        let mut buf = [0; 128];
         
         let len = unsafe {
             ftp_generator_generate(buf.as_mut_ptr(), buf.len())
         };
         
-        assert!(len <= buf.len());
-        
-        let stream = TokenStream::builder().text(&buf[..len]).build();
+        let stream = TokenStream::parse(&buf[..len]);
         FTPPacket::Ctrl(stream)
     }
 }
@@ -376,17 +371,17 @@ fn main() -> Result<(), Error> {
     let shmem_buf = shmem.as_mut_slice();
     std::env::set_var("AFL_MAP_SIZE", format!("{}", MAP_SIZE));
 
-    StateObserver::new(&mut shmem_provider, "StateObserver")?;
+    let _state_observer = StateObserver::new(&mut shmem_provider, "StateObserver")?;
     let edges_observer = HitcountsMapObserver::new(unsafe { StdMapObserver::new("shared_mem", shmem_buf) });
     let time_observer = TimeObserver::new("time");
     
-    //let state_feedback = StateFeedback::new(&state_observer);
+    let state_feedback = StateFeedback::new(&_state_observer);
     let map_feedback = MaxMapFeedback::tracking(&edges_observer, true, false);
 
     let calibration = CalibrationStage::new(&map_feedback);
 
     let mut feedback = feedback_or!(
-        //state_feedback,
+        state_feedback,
         map_feedback,
         TimeFeedback::with_observer(&time_observer)
     );
@@ -414,21 +409,17 @@ fn main() -> Result<(), Error> {
             TokenSplitMutator::new(max_tokens),
             TokenStreamInsertInterestingMutator::new(max_tokens),
             TokenReplaceInterestingMutator::new(),
-            TokenStreamDuplicateMutator::new(max_tokens),
-            TokenValueDuplicateMutator::new(),
+            TokenValueCopyMutator::new(),
             TokenValueInsertRandomMutator::new(),
             TokenStreamCopyMutator::new(max_tokens),
             TokenStreamSwapMutator::new(),
             TokenStreamDeleteMutator::new(1),
-            TokenRepeatCharMutator::new(),
             TokenRotateCharMutator::new(),
             TokenValueDeleteMutator::new(1),
             TokenInsertSpecialCharMutator::new(),
-            TokenInvertCaseMutator::new(),
             TokenStreamDictInsertMutator::new(max_tokens),
             TokenReplaceDictMutator::new(),
             TokenStreamScannerMutator::new(max_tokens),
-            TokenConvertMutator::new(),
             TokenReplaceSpecialCharMutator::new()
         ),
         2,
@@ -452,7 +443,6 @@ fn main() -> Result<(), Error> {
 
     let mutational = StdPowerMutationalStage::new(mutator);
 
-    //let scheduler = StateAwareWeightedScheduler::new(&mut state, &edges_observer, Some(PowerSchedule::FAST), &state_observer);
     let scheduler = IndexesLenTimeMinimizerScheduler::new(
         StdWeightedScheduler::with_schedule(&mut state, &edges_observer, Some(PowerSchedule::FAST))
     );
@@ -460,7 +450,7 @@ fn main() -> Result<(), Error> {
     let mut fuzzer = StdFuzzer::new(scheduler, feedback, objective);
 
     let mut executor = DragonflyExecutorBuilder::new()
-        .observers(tuple_list!(/*state_observer,*/ edges_observer, time_observer))
+        .observers(tuple_list!(_state_observer, edges_observer, time_observer))
         .shmem_provider(&mut shmem_provider)
         .timeout(timeout)
         .signal(signal)

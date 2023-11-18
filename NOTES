@@ -135,3 +135,8 @@ stack=2 <TOKEN> 1241885547847!,0,0,+0000000001127277303618800107,655,35
 stack=4 PORT, TOKEN1-A,35,0,1,6550000000042958350137728201040,35
 stack=4 PORT 127<TOKEN><TOKEN>,655,,LnSe~7o£
 stack=4 0,PORT <TOKEN>,0,1,655,65535
+
+exec speed:
+without state observer + state feedback: 600
+with state observer but without feedback: 600
+with both: 600

@@ -43,14 +43,14 @@ impl Display for TextToken {
         match self {
             TextToken::Constant(data) => {
                 if is_text(data) {
-                    write!(f, "Constant(\"{}\")", std::str::from_utf8(data).unwrap())
+                    write!(f, "Constant({})", std::str::from_utf8(data).unwrap())
                 } else {
                     write!(f, "Constant({:?})", data)
                 }
             },
-            TextToken::Number(data) => write!(f, "Number(\"{}\")", std::str::from_utf8(data).unwrap()),
-            TextToken::Whitespace(data) => write!(f, "Whitespace({:?})", data),
-            TextToken::Text(data) => write!(f, "Text(\"{:?}\")", std::str::from_utf8(data).unwrap()),
+            TextToken::Number(data) => write!(f, "Number({})", std::str::from_utf8(data).unwrap()),
+            TextToken::Whitespace(data) => write!(f, "Whitespace({:?})", std::str::from_utf8(data).unwrap()),
+            TextToken::Text(data) => write!(f, "Text({:?})", std::str::from_utf8(data).unwrap()),
             TextToken::Blob(data) => write!(f, "Blob({:?})", data),
         }
     }
@@ -95,6 +95,58 @@ impl TokenStream {
     pub fn tokens_mut(&mut self) -> &mut Vec<TextToken> {
         &mut self.tokens
     }
+    
+    pub fn parse<D: AsRef<[u8]>>(data: D) -> Self {
+        let data = data.as_ref();
+        let mut builder = Self::builder();
+        let mut cursor = 0;
+        
+        while cursor < data.len() {
+            let slice = &data[cursor..];
+            
+            /* Check if number */
+            let len = number_length(slice);
+            
+            if len > 0 {
+                builder = builder.number(&slice[..len]);
+                cursor += len;
+                continue;
+            }
+            
+            /* Check if whitespace */
+            let len = whitespace_length(slice);
+            
+            if len > 0 {
+                builder = builder.whitespace(&slice[..len]);
+                cursor += len;
+                continue;
+            }
+            
+            /* Otherwise its text/blob */
+            let mut is_text = true;
+            let mut len = 0;
+            
+            while len < slice.len() {
+                let slice = &slice[len..];
+                
+                if number_length(slice) > 0 || whitespace_length(slice) > 0 {
+                    break;
+                } else {
+                    is_text &= is_ascii(slice[0]);
+                    len += 1;
+                }
+            }
+            
+            if is_text {
+                builder = builder.text(&slice[..len]);
+            } else {
+                builder = builder.blob(&slice[..len]);
+            }
+            cursor += len;
+        }
+        
+        builder.build()
+    }
 }
 
 pub(crate) fn has_valid_sign<S: AsRef<[u8]>>(s: S) -> bool {
@@ -123,6 +175,30 @@ pub(crate) fn is_number<S: AsRef<[u8]>>(s: S) -> bool {
     }
 
     is_decimal(&s[i..])
+}
+
+fn number_length(data: &[u8]) -> usize {
+    let mut cursor = 0;
+    let mut has_digits = false;
+    
+    if has_valid_sign(data) {
+        cursor += 1;
+    }
+    
+    while let Some(byte) = data.get(cursor) {
+        if !byte.is_ascii_digit() {
+            break;
+        } else {
+            has_digits = true;
+            cursor += 1;
+        }
+    }
+    
+    if !has_digits {
+        0
+    } else {
+        cursor
+    }
 }
 
 #[inline]
@@ -156,6 +232,20 @@ pub(crate) fn is_whitespace<S: AsRef<[u8]>>(s: S) -> bool {
 
     // Allow empty whitespace tokens
     true
+}
+
+fn whitespace_length(data: &[u8]) -> usize {
+    let mut cursor = 0;
+    
+    while let Some(byte) = data.get(cursor) {
+        if !WHITESPACE.contains(byte) {
+            break;
+        } else {
+            cursor += 1;
+        }
+    }
+    
+    cursor
 }
 
 pub struct TokenStreamBuilder {
@@ -593,5 +683,11 @@ mod tests {
         loop {
             ts.crossover_replace(&mut state, ts.clone());
         }
+    }
+    
+    #[test]
+    fn test_parser() {
+        let stream = TokenStream::parse("PORT ö 127,0,0,1\r\n");
+        println!("{}", stream);
     }
 }
