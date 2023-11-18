@@ -122,3 +122,16 @@ test without stategraph feedback, just coverage
 Prepare for finding bugs:
 padding between metadata and data that has to be manually poisoned
 assertion checks that we are authenticated in authenticated functions
+
+Interesting mutations:
+orignal: PORT 127,0,0,1,655,35
+
+stack=2 PORT 127,+38560,0+000000000010797490950588788103,1,655,35
+stack=2 PORT 127,655,,,655,35
+stack=2 PORT ,,,350,0,2147483648127655,,35
+stack=2 PORT -127,2147483647,0,1,655,35
+stack=2 <TOKEN> 1241885547847!,0,0,+0000000001127277303618800107,655,35
+
+stack=4 PORT, TOKEN1-A,35,0,1,6550000000042958350137728201040,35
+stack=4 PORT 127<TOKEN><TOKEN>,655,,LnSe~7o£
+stack=4 0,PORT <TOKEN>,0,1,655,65535
