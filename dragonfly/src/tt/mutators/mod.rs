@@ -1,21 +1,18 @@
-mod case;
-mod convert;
 mod copy;
 mod delete;
 mod dicts;
-mod duplicate;
 mod interesting;
 mod random;
-mod repeat;
 mod rotate;
 mod scanner;
 mod special;
 mod split;
 mod swap;
 
-pub use case::TokenInvertCaseMutator;
-pub use convert::TokenConvertMutator;
-pub use copy::TokenStreamCopyMutator;
+pub use copy::{
+    TokenStreamCopyMutator,
+    TokenValueCopyMutator,
+};
 pub use delete::{
     TokenStreamDeleteMutator,
     TokenValueDeleteMutator,
@@ -23,10 +20,6 @@ pub use delete::{
 pub use dicts::{
     TokenReplaceDictMutator,
     TokenStreamDictInsertMutator,
-};
-pub use duplicate::{
-    TokenStreamDuplicateMutator,
-    TokenValueDuplicateMutator,
 };
 pub use interesting::{
     TokenReplaceInterestingMutator,
@@ -37,7 +30,6 @@ pub use random::{
     TokenStreamInsertRandomMutator,
     TokenValueInsertRandomMutator,
 };
-pub use repeat::TokenRepeatCharMutator;
 pub use rotate::TokenRotateCharMutator;
 pub use scanner::TokenStreamScannerMutator;
 pub use special::{
