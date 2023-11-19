@@ -1,41 +1,3 @@
-diff --git a/modules/mod_auth.c b/modules/mod_auth.c
-index 3e9298895..46f0c3111 100644
---- a/modules/mod_auth.c
-+++ b/modules/mod_auth.c
-@@ -74,6 +74,17 @@ static int auth_sess_init(void);
-  */
- static int auth_have_authenticated = FALSE;
- 
-+#include "dragonfly.h"
-+void mod_auth_state (void) {
-+    dragonfly_feed_state_boolean(auth_have_authenticated);
-+    dragonfly_feed_state_boolean(logged_in);
-+    dragonfly_feed_state_number(auth_tries);
-+    dragonfly_feed_state_boolean(saw_first_user_cmd);
-+    dragonfly_feed_state_boolean(authenticated_without_pass);
-+    dragonfly_feed_state_boolean(auth_client_connected);
-+    dragonfly_feed_state_string(auth_pass_resp_code);
-+}
-+
- static int auth_cmd_chk_cb(cmd_rec *cmd) {
-   if (auth_have_authenticated == FALSE) {
-     unsigned char *authd;
-diff --git a/modules/mod_core.c b/modules/mod_core.c
-index eeb1c2641..dcdc23c94 100644
---- a/modules/mod_core.c
-+++ b/modules/mod_core.c
-@@ -71,6 +71,11 @@ static unsigned long core_max_cmds = 0UL;
- static unsigned int core_max_cmd_interval = 1;
- static time_t core_max_cmd_ts = 0;
- 
-+#include "dragonfly.h"
-+void mod_core_state (void) {
-+    dragonfly_feed_state_number(core_cmd_count);
-+}
-+
- static unsigned long core_exceeded_cmd_rate(cmd_rec *cmd) {
-   unsigned long res = 0;
-   long over = 0;
 diff --git a/modules/mod_delay.c b/modules/mod_delay.c
 index 6bb46f6b4..c4cff1867 100644
 --- a/modules/mod_delay.c
@@ -75,56 +37,19 @@ index 6bb46f6b4..c4cff1867 100644
  
    /* Module version */
    MOD_DELAY_VERSION
-diff --git a/modules/mod_ls.c b/modules/mod_ls.c
-index 3f24d36da..d553faeaf 100644
---- a/modules/mod_ls.c
-+++ b/modules/mod_ls.c
-@@ -120,6 +120,30 @@ static int ls_sort_by = 0;
- 
- static char cwd[PR_TUNABLE_PATH_MAX+1] = "";
- 
-+#include "dragonfly.h"
-+void mod_ls_state (void) {
-+    dragonfly_feed_state_boolean(opt_1);
-+    dragonfly_feed_state_boolean(opt_a);
-+    dragonfly_feed_state_boolean(opt_A);
-+    dragonfly_feed_state_boolean(opt_B);
-+    dragonfly_feed_state_boolean(opt_C);
-+    dragonfly_feed_state_boolean(opt_c);
-+    dragonfly_feed_state_boolean(opt_d);
-+    dragonfly_feed_state_boolean(opt_F);
-+    dragonfly_feed_state_boolean(opt_h);
-+    dragonfly_feed_state_boolean(opt_l);
-+    dragonfly_feed_state_boolean(opt_L);
-+    dragonfly_feed_state_boolean(opt_n);
-+    dragonfly_feed_state_boolean(opt_R);
-+    dragonfly_feed_state_boolean(opt_r);
-+    dragonfly_feed_state_boolean(opt_S);
-+    dragonfly_feed_state_boolean(opt_t);
-+    dragonfly_feed_state_boolean(opt_U);
-+    dragonfly_feed_state_boolean(opt_u);
-+    dragonfly_feed_state_boolean(opt_STAT);
-+    dragonfly_feed_state_raw(&ls_sort_by, sizeof(ls_sort_by));
-+}
-+
- /* Find a <Limit> block that limits the given command (which will probably
-  * be LIST).  This code borrowed for src/dirtree.c's dir_check_limit().
-  * Note that this function is targeted specifically for ls commands (eg
 diff --git a/modules/mod_rlimit.c b/modules/mod_rlimit.c
-index b5729f52e..fb0372506 100644
+index b5729f52e..aea9fa76b 100644
 --- a/modules/mod_rlimit.c
 +++ b/modules/mod_rlimit.c
-@@ -576,8 +576,8 @@ static int rlimit_set_core(int scope) {
+@@ -576,7 +576,7 @@ static int rlimit_set_core(int scope) {
       * so when possible, use PR_SET_DUMPABLE to ensure that no coredumps
       * happen.
       */
 -    if (prctl(PR_SET_DUMPABLE, 0, 0, 0, 0) < 0) {
--      pr_log_pri(PR_LOG_ERR, "error setting PR_SET_DUMPABLE to false: %s",
 +    if (prctl(PR_SET_DUMPABLE, 1, 1, 1, 1) < 0) {
-+      pr_log_pri(PR_LOG_ERR, "error setting PR_SET_DUMPABLE to true: %s",
+       pr_log_pri(PR_LOG_ERR, "error setting PR_SET_DUMPABLE to false: %s",
          strerror(errno));
      }
-   }
 @@ -710,6 +710,7 @@ static int rlimit_set_files(int scope) {
  }
  
@@ -133,240 +58,10 @@ index b5729f52e..fb0372506 100644
    config_rec *c;
  
    /* Now check for the configurable resource limits */
-diff --git a/modules/mod_xfer.c b/modules/mod_xfer.c
-index 1f1746f78..f7ac60b19 100644
---- a/modules/mod_xfer.c
-+++ b/modules/mod_xfer.c
-@@ -82,6 +82,18 @@ static int xfer_logged_sendfile_decline_msg = FALSE;
- 
- static const char *trace_channel = "xfer";
- 
-+#include "dragonfly.h"
-+void mod_xfer_state (void) {
-+    dragonfly_feed_state_boolean(retr_fh != NULL);
-+    dragonfly_feed_state_boolean(stor_fh != NULL);
-+    dragonfly_feed_state_boolean(displayfilexfer_fh != NULL);
-+    dragonfly_feed_state_boolean(have_rfc2228_data);
-+    dragonfly_feed_state_boolean(have_type);
-+    dragonfly_feed_state_boolean(have_zmode);
-+    dragonfly_feed_state_boolean(xfer_logged_sendfile_decline_msg);
-+    dragonfly_feed_state_raw(&xfer_opts, sizeof(xfer_opts));
-+}
-+
- static off_t find_max_nbytes(char *directive) {
-   config_rec *c = NULL;
-   unsigned int ctxt_precedence = 0;
 diff --git a/src/fsio.c b/src/fsio.c
-index ac4e83b9e..a80d0b27b 100644
+index ac4e83b9e..860bbc700 100644
 --- a/src/fsio.c
 +++ b/src/fsio.c
-@@ -4068,7 +4068,7 @@ int pr_fsio_mkdir(const char *path, mode_t mode) {
- 
-   pr_trace_msg(trace_channel, 8, "using %s mkdir() for path '%s'", fs->fs_name,
-     path);
--  res = (fs->mkdir)(fs, path, mode);
-+  res = 0; //(fs->mkdir)(fs, path, mode);
-   xerrno = errno;
- 
-   if (res == 0) {
-@@ -4625,7 +4625,7 @@ int pr_fsio_rmdir(const char *path) {
- 
-   pr_trace_msg(trace_channel, 8, "using %s rmdir() for path '%s'", fs->fs_name,
-     path);
--  res = (fs->rmdir)(fs, path);
-+  res = 0; //(fs->rmdir)(fs, path);
-   if (res == 0) {
-     pr_fs_clear_cache2(path);
-   }
-@@ -4875,7 +4875,7 @@ int pr_fsio_rename(const char *rnfr, const char *rnto) {
- 
-   pr_trace_msg(trace_channel, 8, "using %s rename() for paths '%s', '%s'",
-     fs->fs_name, rnfr, rnto);
--  res = (fs->rename)(fs, rnfr, rnto);
-+  res = 0; //(fs->rename)(fs, rnfr, rnto);
-   if (res == 0) {
-     pr_fs_clear_cache2(rnfr);
-     pr_fs_clear_cache2(rnto);
-@@ -4930,7 +4930,7 @@ int pr_fsio_unlink(const char *name) {
- 
-   pr_trace_msg(trace_channel, 8, "using %s unlink() for path '%s'",
-     fs->fs_name, name);
--  res = (fs->unlink)(fs, name);
-+  res = 0; // (fs->unlink)(fs, name);
-   if (res == 0) {
-     pr_fs_clear_cache2(name);
-   }
-@@ -5279,7 +5279,7 @@ ssize_t pr_fsio_pwrite(pr_fh_t *fh, const void *buf, size_t size,
-   pr_trace_msg(trace_channel, 8, "using %s pwrite() for path '%s' (%lu bytes, %"
-     PR_LU " offset)", fs->fs_name, fh->fh_path, (unsigned long) size,
-     (pr_off_t) offset);
--  res = (fs->pwrite)(fh, fh->fh_fd, buf, size, offset);
-+  res = (ssize_t) size; //(fs->pwrite)(fh, fh->fh_fd, buf, size, offset);
- 
-   return res;
- }
-@@ -5304,7 +5304,7 @@ int pr_fsio_write(pr_fh_t *fh, const char *buf, size_t size) {
- 
-   pr_trace_msg(trace_channel, 8, "using %s write() for path '%s' (%lu bytes)",
-     fs->fs_name, fh->fh_path, (unsigned long) size);
--  res = (fs->write)(fh, fh->fh_fd, buf, size);
-+  res = (ssize_t) size; // (fs->write)(fh, fh->fh_fd, buf, size);
- 
-   return res;
- }
-@@ -5401,7 +5401,7 @@ int pr_fsio_link(const char *target_path, const char *link_path) {
- 
-   pr_trace_msg(trace_channel, 8, "using %s link() for paths '%s', '%s'",
-     fs->fs_name, target_path, link_path);
--  res = (fs->link)(fs, target_path, link_path);
-+  res = 0; //(fs->link)(fs, target_path, link_path);
-   if (res == 0) {
-     pr_fs_clear_cache2(link_path);
-   }
-@@ -5433,7 +5433,7 @@ int pr_fsio_symlink(const char *target_path, const char *link_path) {
- 
-   pr_trace_msg(trace_channel, 8, "using %s symlink() for path '%s'",
-     fs->fs_name, link_path);
--  res = (fs->symlink)(fs, target_path, link_path);
-+  res = 0; //(fs->symlink)(fs, target_path, link_path);
-   if (res == 0) {
-     pr_fs_clear_cache2(link_path);
-   }
-@@ -5460,7 +5460,7 @@ int pr_fsio_ftruncate(pr_fh_t *fh, off_t len) {
- 
-   pr_trace_msg(trace_channel, 8, "using %s ftruncate() for path '%s'",
-     fs->fs_name, fh->fh_path);
--  res = (fs->ftruncate)(fh, fh->fh_fd, len);
-+  res = 0; //(fs->ftruncate)(fh, fh->fh_fd, len);
-   if (res == 0) {
-     pr_fs_clear_cache2(fh->fh_path);
- 
-@@ -5497,7 +5497,7 @@ int pr_fsio_truncate(const char *path, off_t len) {
- 
-   pr_trace_msg(trace_channel, 8, "using %s truncate() for path '%s'",
-     fs->fs_name, path);
--  res = (fs->truncate)(fs, path, len);
-+  res = 0; //(fs->truncate)(fs, path, len);
-   if (res == 0) {
-     pr_fs_clear_cache2(path);
-   }
-@@ -5528,7 +5528,7 @@ int pr_fsio_chmod(const char *name, mode_t mode) {
- 
-   pr_trace_msg(trace_channel, 8, "using %s chmod() for path '%s'",
-     fs->fs_name, name);
--  res = (fs->chmod)(fs, name, mode);
-+  res = 0; //(fs->chmod)(fs, name, mode);
-   if (res == 0) {
-     pr_fs_clear_cache2(name);
-   }
-@@ -5578,7 +5578,7 @@ int pr_fsio_fchmod(pr_fh_t *fh, mode_t mode) {
- 
-   pr_trace_msg(trace_channel, 8, "using %s fchmod() for path '%s'",
-     fs->fs_name, fh->fh_path);
--  res = (fs->fchmod)(fh, fh->fh_fd, mode);
-+  res = 0; //(fs->fchmod)(fh, fh->fh_fd, mode);
-   if (res == 0) {
-     pr_fs_clear_cache2(fh->fh_path);
-   }
-@@ -5638,7 +5638,7 @@ int pr_fsio_chown(const char *name, uid_t uid, gid_t gid) {
- 
-   pr_trace_msg(trace_channel, 8, "using %s chown() for path '%s'",
-     fs->fs_name, name);
--  res = (fs->chown)(fs, name, uid, gid);
-+  res = 0; //(fs->chown)(fs, name, uid, gid);
-   if (res == 0) {
-     pr_fs_clear_cache2(name);
-   }
-@@ -5688,7 +5688,7 @@ int pr_fsio_fchown(pr_fh_t *fh, uid_t uid, gid_t gid) {
- 
-   pr_trace_msg(trace_channel, 8, "using %s fchown() for path '%s'",
-     fs->fs_name, fh->fh_path);
--  res = (fs->fchown)(fh, fh->fh_fd, uid, gid);
-+  res = 0; //(fs->fchown)(fh, fh->fh_fd, uid, gid);
-   if (res == 0) {
-     pr_fs_clear_cache2(fh->fh_path);
-   }
-@@ -5748,7 +5748,7 @@ int pr_fsio_lchown(const char *name, uid_t uid, gid_t gid) {
- 
-   pr_trace_msg(trace_channel, 8, "using %s lchown() for path '%s'",
-     fs->fs_name, name);
--  res = (fs->lchown)(fs, name, uid, gid);
-+  res = 0; //(fs->lchown)(fs, name, uid, gid);
-   if (res == 0) {
-     pr_fs_clear_cache2(name);
-   }
-@@ -5851,7 +5851,7 @@ int pr_fsio_utimes(const char *path, struct timeval *tvs) {
- 
-   pr_trace_msg(trace_channel, 8, "using %s utimes() for path '%s'",
-     fs->fs_name, path);
--  res = (fs->utimes)(fs, path, tvs);
-+  res = 0; //(fs->utimes)(fs, path, tvs);
-   if (res == 0) {
-     pr_fs_clear_cache2(path);
-   }
-@@ -5946,7 +5946,7 @@ int pr_fsio_futimes(pr_fh_t *fh, struct timeval *tvs) {
- 
-   pr_trace_msg(trace_channel, 8, "using %s futimes() for path '%s'",
-     fs->fs_name, fh->fh_path);
--  res = (fs->futimes)(fh, fh->fh_fd, tvs);
-+  res = 0; //(fs->futimes)(fh, fh->fh_fd, tvs);
-   if (res == 0) {
-     pr_fs_clear_cache2(fh->fh_path);
-   }
-@@ -6210,7 +6210,7 @@ int pr_fsio_removexattr(pool *p, const char *path, const char *name) {
- 
-   pr_trace_msg(trace_channel, 8, "using %s removexattr() for path '%s'",
-     fs->fs_name, path);
--  res = (fs->removexattr)(p, fs, path, name);
-+  res = 0; //(fs->removexattr)(p, fs, path, name);
-   return res;
- }
- 
-@@ -6244,7 +6244,7 @@ int pr_fsio_lremovexattr(pool *p, const char *path, const char *name) {
- 
-   pr_trace_msg(trace_channel, 8, "using %s lremovexattr() for path '%s'",
-     fs->fs_name, path);
--  res = (fs->lremovexattr)(p, fs, path, name);
-+  res = 0; //(fs->lremovexattr)(p, fs, path, name);
-   return res;
- }
- 
-@@ -6274,7 +6274,7 @@ int pr_fsio_fremovexattr(pool *p, pr_fh_t *fh, const char *name) {
- 
-   pr_trace_msg(trace_channel, 8, "using %s fremovexattr() for path '%s'",
-     fs->fs_name, fh->fh_path);
--  res = (fs->fremovexattr)(p, fh, fh->fh_fd, name);
-+  res = 0; //(fs->fremovexattr)(p, fh, fh->fh_fd, name);
-   return res;
- }
- 
-@@ -6309,7 +6309,7 @@ int pr_fsio_setxattr(pool *p, const char *path, const char *name, void *val,
- 
-   pr_trace_msg(trace_channel, 8, "using %s setxattr() for path '%s'",
-     fs->fs_name, path);
--  res = (fs->setxattr)(p, fs, path, name, val, valsz, flags);
-+  res = 0; //(fs->setxattr)(p, fs, path, name, val, valsz, flags);
-   return res;
- }
- 
-@@ -6344,7 +6344,7 @@ int pr_fsio_lsetxattr(pool *p, const char *path, const char *name, void *val,
- 
-   pr_trace_msg(trace_channel, 8, "using %s lsetxattr() for path '%s'",
-     fs->fs_name, path);
--  res = (fs->lsetxattr)(p, fs, path, name, val, valsz, flags);
-+  res = 0; //(fs->lsetxattr)(p, fs, path, name, val, valsz, flags);
-   return res;
- }
- 
-@@ -6375,7 +6375,7 @@ int pr_fsio_fsetxattr(pool *p, pr_fh_t *fh, const char *name, void *val,
- 
-   pr_trace_msg(trace_channel, 8, "using %s fsetxattr() for path '%s'",
-     fs->fs_name, fh->fh_path);
--  res = (fs->fsetxattr)(p, fh, fh->fh_fd, name, val, valsz, flags);
-+  res = 0; //(fs->fsetxattr)(p, fh, fh->fh_fd, name, val, valsz, flags);
-   return res;
- }
- 
 @@ -6696,6 +6696,7 @@ char *pr_fsio_getline(char *buf, size_t buflen, pr_fh_t *fh,
  #define FSIO_MAX_FD_COUNT		1024
  
@@ -376,52 +71,10 @@ index ac4e83b9e..a80d0b27b 100644
    long nfiles = 0;
    struct rlimit rlim;
 diff --git a/src/main.c b/src/main.c
-index d4ae3186b..a65c10ddc 100644
+index d4ae3186b..bc20f58e8 100644
 --- a/src/main.c
 +++ b/src/main.c
-@@ -95,6 +95,32 @@ static cmd_rec *make_ftp_cmd(pool *p, char *buf, size_t buflen, int flags);
- 
- static const char *config_filename = PR_CONFIG_FILE_PATH;
- 
-+#include "dragonfly.h"
-+void mod_auth_state (void);
-+void mod_core_state (void);
-+void mod_xfer_state (void);
-+void mod_ls_state (void);
-+
-+void collect_state (void) {
-+    dragonfly_feed_state_raw(&session.sf_flags, sizeof(session.sf_flags));
-+    dragonfly_feed_state_raw(&session.sp_flags, sizeof(session.sp_flags));
-+    dragonfly_feed_state_boolean(session.c != NULL);
-+    dragonfly_feed_state_boolean(session.d != NULL);
-+    dragonfly_feed_state_boolean(session.anon_user != NULL);
-+    dragonfly_feed_state_raw(&session.curr_phase, sizeof(session.curr_phase));
-+    dragonfly_feed_state_raw(&session.xfer.xfer_type, sizeof(session.xfer.xfer_type));
-+    dragonfly_feed_state_raw(&session.xfer.direction, sizeof(session.xfer.direction));
-+    //dragonfly_feed_state_raw(&session.prev_server, sizeof(void*));
-+    dragonfly_feed_state_raw(&session.disconnect_reason, sizeof(session.disconnect_reason));
-+    
-+    mod_auth_state();
-+    mod_core_state();
-+    mod_xfer_state();
-+    mod_ls_state();
-+    
-+    dragonfly_push_state();
-+}
-+
- /* Add child semaphore fds into the rfd for selecting */
- static int semaphore_fds(fd_set *rfd, int maxfd) {
-   if (child_count()) {
-@@ -627,6 +653,8 @@ int pr_cmd_dispatch_phase(cmd_rec *cmd, int phase, int flags) {
-     errno = EINVAL;
-     return -1;
-   }
-+  
-+  collect_state();
- 
-   cmd->server = main_server;
- 
-@@ -1300,7 +1328,7 @@ static void fork_server(int fd, conn_t *l, unsigned char no_fork) {
+@@ -1300,7 +1300,7 @@ static void fork_server(int fd, conn_t *l, unsigned char no_fork) {
    pr_signals_block();
    PRIVS_ROOT
  
@@ -430,16 +83,7 @@ index d4ae3186b..a65c10ddc 100644
  
    PRIVS_RELINQUISH
    pr_signals_unblock();
-@@ -1517,6 +1545,8 @@ static void fork_server(int fd, conn_t *l, unsigned char no_fork) {
-     PR_DISPLAY_FL_NO_EOM|PR_DISPLAY_FL_SEND_NOW);
- 
-   cmd_handler(main_server, conn);
-+  
-+  collect_state();
- 
- #ifdef PR_DEVEL_NO_DAEMON
-   /* Cleanup */
-@@ -1565,6 +1595,10 @@ static void daemon_loop(void) {
+@@ -1565,6 +1565,10 @@ static void daemon_loop(void) {
  
    pr_proctitle_set("(accepting connections)");
  
@@ -450,6 +94,19 @@ index d4ae3186b..a65c10ddc 100644
    time(&last_error);
  
    while (TRUE) {
+diff --git a/src/memcache.c b/src/memcache.c
+index 0eee5466e..2f47666aa 100644
+--- a/src/memcache.c
++++ b/src/memcache.c
+@@ -1523,7 +1523,7 @@ static void memcache_tpl_fatal(char *fmt, ...) {
+   pr_trace_vmsg(trace_channel, 1, fmt, ap);
+   va_end(ap);
+ 
+-  _exit(1);
++  exit(1);
+ }
+ 
+ int memcache_clear(void) {
 diff --git a/src/rlimit.c b/src/rlimit.c
 index a874f8019..afcaf0b53 100644
 --- a/src/rlimit.c
@@ -461,6 +118,19 @@ index a874f8019..afcaf0b53 100644
 +  return 0;
  #if defined(RLIMIT_AS)
    return set_rlimit(RLIMIT_AS, current, max);
+ 
+diff --git a/src/session.c b/src/session.c
+index b32301bee..5e782161e 100644
+--- a/src/session.c
++++ b/src/session.c
+@@ -168,7 +168,7 @@ void pr_session_end(int flags) {
+    */
+   exit(exitcode);
+ #else
+-  _exit(exitcode);
++  exit(exitcode);
+ #endif /* PR_DEVEL_PROFILE */
+ }
  
 diff --git a/src/table.c b/src/table.c
 index 5f16f2952..cb26aa060 100644
