@@ -1,0 +1,25 @@
+diff --git a/src/modules.c b/src/modules.c
+index bc3bcfc78..ee5e06863 100644
+--- a/src/modules.c
++++ b/src/modules.c
+@@ -79,6 +79,8 @@ modret_t *mod_create_data(cmd_rec *cmd, void *d) {
+   return res;
+ }
+ 
++#include "dragonfly.h"
++
+ modret_t *mod_create_ret(cmd_rec *cmd, unsigned char err, const char *n,
+     const char *m) {
+   modret_t *res;
+@@ -88,6 +90,11 @@ modret_t *mod_create_ret(cmd_rec *cmd, unsigned char err, const char *n,
+     return NULL;
+   }
+ 
++  if (!err) {
++    dragonfly_feed_state_number((unsigned long) cmd->cmd_id);
++    dragonfly_push_state();
++  }
++
+   res = pcalloc(cmd->tmp_pool, sizeof(modret_t));
+   res->mr_handler_module = curr_module;
+   res->mr_error = err;

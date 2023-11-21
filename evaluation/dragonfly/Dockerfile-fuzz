@@ -31,7 +31,7 @@ RUN meson setup ./build && \
 
 # Build ProFTPD
 WORKDIR ../evaluation/proftpd
-RUN git apply ../dragonfly/patch
+RUN git apply ../dragonfly/patch && git apply ../dragonfly/patch-state
 RUN export LIBDRAGONFLY="$(realpath ../../libdragonfly/build)" && \
     CC="$(realpath ../../AFLplusplus/afl-clang-lto)" \
     CFLAGS="-I$LIBDRAGONFLY/include -O3" \
