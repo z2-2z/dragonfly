@@ -1,8 +1,9 @@
+#![allow(unreachable_code)]
+#![allow(clippy::diverging_sub_expression)]
+
 use libafl_bolts::{
     AsMutSlice,
-    AsSlice,
     Named,
-    ownedref::OwnedMutSlice,
     shmem::{ShMem, ShMemProvider},
 };
 use libafl::prelude::{
@@ -20,7 +21,6 @@ use std::mem::size_of;
 
 use crate::graph::{
     HasStateGraph,
-    StateGraph,
 };
 
 const STATES_SHM_ID: &str = "__DRAGONFLY_STATES_SHM_ID";
@@ -29,11 +29,19 @@ const STATES_SHM_SIZE: &str = "__DRAGONFLY_STATES_SHM_SIZE";
 pub type State = [u8; 16];
 const NUM_STATES: usize = 1024;
 
+fn non_unique_error() -> ! {
+    panic!("Please use EventConfig::AlwaysUnique, other configurations are not supported by the StateObserver")
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct StateObserver<'a> {
-    state_channel: OwnedMutSlice<'a, u8>,
+    #[serde(skip, default = "non_unique_error")]
+    total_states: *mut u64,
+    
+    #[serde(skip, default = "non_unique_error")]
+    states_slice: &'a mut [State],
+    
     name: String,
-    new_transitions: bool,
 }
 
 impl<'a> StateObserver<'a> {
@@ -47,57 +55,45 @@ impl<'a> StateObserver<'a> {
         state_channel.write_to_env(STATES_SHM_ID)?;
         std::env::set_var(STATES_SHM_SIZE, format!("{}", state_channel_size));
 
-        let raw_mem = unsafe {
-            let slice = state_channel.as_mut_slice();
-            OwnedMutSlice::from_raw_parts_mut(slice.as_mut_ptr(), slice.len())
+        let raw_pointer = state_channel.as_mut_slice().as_mut_ptr();
+        
+        let total_states = raw_pointer as *mut u64;
+        let states_slice = unsafe {
+            std::slice::from_raw_parts_mut(
+                raw_pointer.add(8) as *mut State,
+                NUM_STATES,
+            )
         };
 
         // Dropping the variable would deallocate it so we need to forget it
         std::mem::forget(state_channel);
 
         Ok(Self {
-            state_channel: raw_mem,
+            total_states,
+            states_slice,
             name: name.into(),
-            new_transitions: false,
         })
     }
 
+    #[inline]
     pub fn get_total_states(&self) -> u64 {
-        let slice = &self.state_channel.as_slice();
-        debug_assert!(slice.len() >= 8);
-        unsafe { *std::mem::transmute::<*const u8, *const u64>(slice.as_ptr()) }
+        unsafe { *self.total_states }
     }
 
+    #[inline]
     fn set_total_states(&mut self, total_states: u64) {
-        let slice = self.state_channel.as_mut_slice();
-        debug_assert!(slice.len() >= 8);
-        unsafe {
-            *std::mem::transmute::<*mut u8, *mut u64>(slice.as_mut_ptr()) = total_states;
-        }
+        unsafe { *self.total_states = total_states; }
     }
 
+    #[inline]
     pub fn get_state(&self, idx: usize) -> &State {
-        assert!(idx < NUM_STATES);
-        let offset = 8 + idx * size_of::<State>();
-        let slice = self.state_channel.as_slice();
-        unsafe { &*std::mem::transmute::<*const u8, *const State>(slice.as_ptr().add(offset)) }
+        &self.states_slice[idx]
     }
 
+    #[inline]
     pub fn get_all_states(&self) -> &[State] {
         let len = self.get_total_states() as usize;
-        assert!(len < NUM_STATES);
-
-        let start_offset = 8;
-        let end_offset = start_offset + len * size_of::<State>();
-        let states = &self.state_channel.as_slice()[start_offset..end_offset];
-        unsafe {
-            let states = std::mem::transmute::<*const u8, *const State>(states.as_ptr());
-            std::slice::from_raw_parts(states, len)
-        }
-    }
-
-    pub fn had_new_transitions(&self) -> bool {
-        self.new_transitions
+        &self.states_slice[..len]
     }
 }
 
@@ -113,28 +109,10 @@ where
 {
     fn pre_exec(&mut self, _state: &mut S, _input: &S::Input) -> Result<(), Error> {
         self.set_total_states(0);
-        self.new_transitions = false;
         Ok(())
     }
 
-    fn post_exec(&mut self, state: &mut S, _input: &S::Input, _exit_kind: &ExitKind) -> Result<(), Error> {
-        let state_graph = state.get_stategraph_mut()?;
-        let total_states = self.get_total_states() as usize;
-        let mut old_node = StateGraph::ENTRYPOINT;
-
-        assert!(total_states <= NUM_STATES);
-
-        for i in 0..total_states {
-            let state = self.get_state(i);
-            let new_node = state_graph.add_node(state);
-
-            if new_node != old_node {
-                self.new_transitions |= state_graph.add_edge(old_node, new_node);
-            }
-
-            old_node = new_node;
-        }
-
+    fn post_exec(&mut self, _state: &mut S, _input: &S::Input, _exit_kind: &ExitKind) -> Result<(), Error> {
         Ok(())
     }
 }

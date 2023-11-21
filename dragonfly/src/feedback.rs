@@ -11,7 +11,7 @@ use libafl::prelude::{
 };
 
 use crate::{
-    graph::HasStateGraph,
+    graph::{HasStateGraph, StateGraph},
     observer::StateObserver,
 };
 
@@ -49,21 +49,33 @@ impl<S> Feedback<S> for StateFeedback
 where
     S: UsesInput + HasClientPerfMonitor + HasStateGraph,
 {
-    fn is_interesting<EM, OT>(&mut self, _state: &mut S, _manager: &mut EM, _input: &<S as UsesInput>::Input, observers: &OT, _exit_kind: &ExitKind) -> Result<bool, Error>
+    fn is_interesting<EM, OT>(&mut self, state: &mut S, _manager: &mut EM, _input: &<S as UsesInput>::Input, observers: &OT, _exit_kind: &ExitKind) -> Result<bool, Error>
     where
         EM: EventFirer<State = S>,
         OT: ObserversTuple<S>,
     {
         let state_observer = observers.match_name::<StateObserver>(&self.observer_name).ok_or_else(|| Error::empty_optional("StateFeedback could not find any StateObserver"))?;
-        let interesting = state_observer.had_new_transitions();
+        let state_graph = state.get_stategraph_mut()?;
+        let mut interesting = false;
+        
+        let mut old_node = StateGraph::ENTRYPOINT;
+
+        for state in state_observer.get_all_states() {
+            let new_node = state_graph.add_node(state);
+
+            if new_node != old_node {
+                interesting |= state_graph.add_edge(old_node, new_node);
+            }
+
+            old_node = new_node;
+        }
 
         #[cfg(feature = "user-stats")]
         if interesting {
-            let state_graph = _state.get_stategraph()?;
             let graph_size = state_graph.edges().len();
 
             _manager.fire(
-                _state,
+                state,
                 Event::UpdateUserStats {
                     name: stats::GRAPH_SIZE.to_string(),
                     value: UserStats::Number(graph_size as u64),
