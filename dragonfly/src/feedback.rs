@@ -1,21 +1,25 @@
 use libafl_bolts::Named;
 use libafl::prelude::{
     Error,
-    Event,
+    
     EventFirer,
     ExitKind,
     Feedback,
     HasClientPerfMonitor,
     ObserversTuple,
-    UserStats,
     UsesInput,
 };
-use std::marker::PhantomData;
 
 use crate::{
     graph::HasStateGraph,
     observer::StateObserver,
-    stats,
+};
+
+#[cfg(feature = "user-stats")]
+use {
+    libafl::prelude::{UserStats, Event,},
+    std::marker::PhantomData,
+    crate::stats,
 };
 
 const NAME_PREFIX: &str = "StateFeedbackFor";
@@ -45,7 +49,7 @@ impl<S> Feedback<S> for StateFeedback
 where
     S: UsesInput + HasClientPerfMonitor + HasStateGraph,
 {
-    fn is_interesting<EM, OT>(&mut self, state: &mut S, manager: &mut EM, _input: &<S as UsesInput>::Input, observers: &OT, _exit_kind: &ExitKind) -> Result<bool, Error>
+    fn is_interesting<EM, OT>(&mut self, _state: &mut S, _manager: &mut EM, _input: &<S as UsesInput>::Input, observers: &OT, _exit_kind: &ExitKind) -> Result<bool, Error>
     where
         EM: EventFirer<State = S>,
         OT: ObserversTuple<S>,
@@ -53,12 +57,13 @@ where
         let state_observer = observers.match_name::<StateObserver>(&self.observer_name).ok_or_else(|| Error::empty_optional("StateFeedback could not find any StateObserver"))?;
         let interesting = state_observer.had_new_transitions();
 
+        #[cfg(feature = "user-stats")]
         if interesting {
-            let state_graph = state.get_stategraph()?;
+            let state_graph = _state.get_stategraph()?;
             let graph_size = state_graph.edges().len();
 
-            manager.fire(
-                state,
+            _manager.fire(
+                _state,
                 Event::UpdateUserStats {
                     name: stats::GRAPH_SIZE.to_string(),
                     value: UserStats::Number(graph_size as u64),

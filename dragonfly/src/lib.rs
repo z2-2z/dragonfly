@@ -11,6 +11,8 @@ mod input;
 mod graph;
 mod scheduler;
 mod observer;
+
+#[cfg(feature = "user-stats")]
 mod stats;
 
 pub mod prelude {
