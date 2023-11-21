@@ -43,6 +43,7 @@ use libafl::{
     schedulers::{
         powersched::PowerSchedule,
         IndexesLenTimeMinimizerScheduler,
+        StdWeightedScheduler,
     },
     stages::{
         calibrate::CalibrationStage,
@@ -82,7 +83,6 @@ use crate::{
         SelectedPacketMutator,
     },
     observer::StateObserver,
-    scheduler::StateAwareWeightedScheduler,
     tt::{
         TokenInsertSpecialCharMutator,
         TokenReplaceDictMutator,
@@ -288,7 +288,7 @@ fn fuzz(
     let power = StdPowerMutationalStage::new(mutator);
 
     // A minimization+queue policy to get testcasess from the corpus
-    let scheduler = IndexesLenTimeMinimizerScheduler::new(StateAwareWeightedScheduler::new(&mut state, &edges_observer, Some(PowerSchedule::EXPLORE), &state_observer));
+    let scheduler = IndexesLenTimeMinimizerScheduler::new(StdWeightedScheduler::with_schedule(&mut state, &edges_observer, Some(PowerSchedule::EXPLORE)));
 
     // A fuzzer with feedbacks and a corpus scheduler
     let mut fuzzer = StdFuzzer::new(scheduler, feedback, objective);

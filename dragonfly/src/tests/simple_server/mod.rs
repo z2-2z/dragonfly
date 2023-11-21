@@ -35,6 +35,7 @@ use libafl::{
         Fuzzer,
         IndexesLenTimeMinimizerScheduler,
         StdPowerMutationalStage,
+        StdWeightedScheduler,
     },
     stages::calibrate::CalibrationStage,
     state::StdState,
@@ -65,7 +66,6 @@ use crate::{
         PacketReorderMutator,
     },
     observer::StateObserver,
-    scheduler::StateAwareWeightedScheduler,
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -232,7 +232,7 @@ fn fuzz(_objective_dir: PathBuf, logfile: &PathBuf, timeout: Duration, executabl
 
         let mutational = StdPowerMutationalStage::new(mutator);
 
-        let scheduler = IndexesLenTimeMinimizerScheduler::new(StateAwareWeightedScheduler::new(&mut state, &edges_observer, Some(PowerSchedule::FAST), &state_observer));
+        let scheduler = IndexesLenTimeMinimizerScheduler::new(StdWeightedScheduler::with_schedule(&mut state, &edges_observer, Some(PowerSchedule::FAST)));
 
         let mut fuzzer = StdFuzzer::new(scheduler, feedback, objective);
 

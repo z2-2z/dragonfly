@@ -9,7 +9,6 @@ mod feedback;
 mod executor;
 mod input;
 mod graph;
-mod scheduler;
 mod observer;
 
 #[cfg(feature = "user-stats")]
@@ -23,7 +22,6 @@ pub mod prelude {
         input::*,
         mutators::*,
         observer::*,
-        scheduler::*,
     };
 }
 
