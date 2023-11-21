@@ -41,32 +41,58 @@ use crate::input::{
     SerializeIntoBuffer,
 };
 
+#[derive(Clone, Copy)]
+#[repr(u32)]
 enum PacketType {
-    Data,
-    Sep,
-    Eof,
+    Data = 1,
+    Sep = 2,
+    Eof = 3,
 }
-const PACKET_HEADER_SIZE: usize = 4 + 4 + 8;
 
-fn write_packet_header(buf: &mut [u8], typ: PacketType, conn: usize, size: usize) {
-    assert!(buf.len() == PACKET_HEADER_SIZE);
+#[derive(Clone, Copy)]
+#[repr(C, align(8))]
+struct PacketHeader {
+    typ: PacketType,
+    conn: u32,
+    size: u64,
+}
 
-    let typ: u32 = match typ {
-        PacketType::Data => 1,
-        PacketType::Sep => 2,
-        PacketType::Eof => 3,
-    };
-    let conn = conn as u32;
-    let size = size as u64;
-
-    buf[0..4].copy_from_slice(&typ.to_ne_bytes());
-    buf[4..8].copy_from_slice(&conn.to_ne_bytes());
-    buf[8..16].copy_from_slice(&size.to_ne_bytes());
+impl PacketHeader {
+    fn serialize_into_buffer(&self, buffer: *mut u8) {
+        unsafe {
+            *std::mem::transmute::<*mut u8, *mut Self>(buffer) = *self;
+        }
+    }
+    
+    fn separator() -> Self {
+        Self {
+            typ: PacketType::Sep,
+            conn: 0,
+            size: 0,
+        }
+    }
+    
+    fn data(conn: u32, size: u64) -> Self {
+        Self {
+            typ: PacketType::Data,
+            conn,
+            size,
+        }
+    }
+    
+    fn eof() -> Self {
+        Self {
+            typ: PacketType::Eof,
+            conn: 0,
+            size: 0,
+        }
+    }
 }
 
 const PACKET_CHANNEL_SIZE: usize = 8 * 1024 * 1024;
 const PACKETS_SHM_ID: &str = "__DRAGONFLY_PACKETS_SHM_ID";
 
+#[inline]
 fn align8(x: usize) -> usize {
     let rem = x % 8;
 
@@ -164,43 +190,45 @@ where
     Z: UsesState<State = S>,
 {
     fn run_target(&mut self, _fuzzer: &mut Z, _state: &mut S, _mgr: &mut EM, input: &I) -> Result<ExitKind, Error> {
+        const PACKET_HEADER_SIZE: usize = std::mem::size_of::<PacketHeader>();
+        const PACKET_CHANNEL_END: usize = PACKET_CHANNEL_SIZE - PACKET_HEADER_SIZE;
         let mut exit_kind = ExitKind::Ok;
         let last_run_timed_out = self.forkserver.last_run_timed_out();
 
         /* Serialize input into packet channel */
-        let shmem = self.packet_channel.as_mut_slice();
+        let raw_pointer = self.packet_channel.as_mut_slice().as_mut_ptr();
 
-        write_packet_header(&mut shmem[0..PACKET_HEADER_SIZE], PacketType::Sep, 0, 0);
+        PacketHeader::separator().serialize_into_buffer(raw_pointer);
 
         let mut last_was_sep = true;
         let mut cursor = PACKET_HEADER_SIZE;
 
         for packet in input.packets() {
-            if cursor + PACKET_HEADER_SIZE >= PACKET_CHANNEL_SIZE - PACKET_HEADER_SIZE {
+            if cursor + PACKET_HEADER_SIZE >= PACKET_CHANNEL_END {
                 break;
             }
+            
+            let current_pointer = unsafe { raw_pointer.add(cursor) };
 
-            let packet_buf = &mut shmem[cursor + PACKET_HEADER_SIZE..PACKET_CHANNEL_SIZE - PACKET_HEADER_SIZE];
+            let packet_buf = unsafe {
+                std::slice::from_raw_parts_mut(current_pointer.add(PACKET_HEADER_SIZE), PACKET_CHANNEL_END - cursor - PACKET_HEADER_SIZE)
+            };
 
             if let Some(written) = packet.serialize_into_buffer(packet_buf) {
-                assert!(written <= packet_buf.len());
-
-                write_packet_header(&mut shmem[cursor..cursor + PACKET_HEADER_SIZE], PacketType::Data, packet.get_connection(), written);
+                PacketHeader::data(packet.get_connection() as u32, written as u64).serialize_into_buffer(current_pointer);
                 last_was_sep = false;
-
                 cursor += PACKET_HEADER_SIZE + align8(written);
             }
 
-            if packet.terminates_group() && cursor + PACKET_HEADER_SIZE < PACKET_CHANNEL_SIZE - PACKET_HEADER_SIZE && !last_was_sep {
-                write_packet_header(&mut shmem[cursor..cursor + PACKET_HEADER_SIZE], PacketType::Sep, 0, 0);
+            if packet.terminates_group() && cursor + PACKET_HEADER_SIZE < PACKET_CHANNEL_END && !last_was_sep {
+                PacketHeader::separator().serialize_into_buffer(unsafe { raw_pointer.add(cursor) });
                 last_was_sep = true;
-
                 cursor += PACKET_HEADER_SIZE;
             }
         }
 
-        assert!(cursor + PACKET_HEADER_SIZE <= PACKET_CHANNEL_SIZE);
-        write_packet_header(&mut shmem[cursor..cursor + PACKET_HEADER_SIZE], PacketType::Eof, 0, 0);
+        debug_assert!(cursor + PACKET_HEADER_SIZE <= PACKET_CHANNEL_SIZE);
+        PacketHeader::eof().serialize_into_buffer(unsafe { raw_pointer.add(cursor) });
 
         /* Launch the client */
         let send_len = self.forkserver.write_ctl(last_run_timed_out)?;
@@ -374,7 +402,7 @@ where
         let mut packet_channel = shmem_provider.new_shmem(PACKET_CHANNEL_SIZE)?;
         packet_channel.write_to_env(PACKETS_SHM_ID)?;
 
-        write_packet_header(&mut packet_channel.as_mut_slice()[0..PACKET_HEADER_SIZE], PacketType::Sep, 0, 0);
+        PacketHeader::separator().serialize_into_buffer(packet_channel.as_mut_slice().as_mut_ptr());
 
         let timeout = TimeSpec::milliseconds(timeout.as_millis() as i64);
 
