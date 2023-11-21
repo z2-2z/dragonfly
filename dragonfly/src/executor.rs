@@ -58,12 +58,14 @@ struct PacketHeader {
 }
 
 impl PacketHeader {
+    #[inline]
     fn serialize_into_buffer(&self, buffer: *mut u8) {
         unsafe {
             *std::mem::transmute::<*mut u8, *mut Self>(buffer) = *self;
         }
     }
     
+    #[inline]
     fn separator() -> Self {
         Self {
             typ: PacketType::Sep,
@@ -72,6 +74,7 @@ impl PacketHeader {
         }
     }
     
+    #[inline]
     fn data(conn: u32, size: u64) -> Self {
         Self {
             typ: PacketType::Data,
@@ -80,6 +83,7 @@ impl PacketHeader {
         }
     }
     
+    #[inline]
     fn eof() -> Self {
         Self {
             typ: PacketType::Eof,
