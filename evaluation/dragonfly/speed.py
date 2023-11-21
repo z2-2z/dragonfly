@@ -20,14 +20,15 @@ def main():
         )
     )
 
-    # Skip the first line since it is printed before the
-    # actual fuzzing starts
-    execs = execs[1:]
+    try:
+        execs.remove(0)
+    except ValueError:
+        pass
 
     left = min(execs)
     mean = statistics.fmean(execs)
     right = max(execs)
-    print(f"min={left}, mean={mean}, max={right}")
+    print(f"min={left}, avg={mean}, max={right}")
 
 if __name__ == "__main__":
     main()
