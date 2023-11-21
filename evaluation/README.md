@@ -6,7 +6,7 @@ The program under test is [ProFTPD](http://proftpd.org/) and both fuzzers start 
 FTP commands.
 The campaign is run for 24h and after that, the _statement_ coverage, obtained via gcov, is compared.
 
-## Dragonfly Fuzzer
+## Dragonfly
 ```
 cd dragonfly
 docker build --pull -t evaluation-dragonfly -f Dockerfile-fuzz .
@@ -24,3 +24,37 @@ docker run -v "$PWD/output":/output coverage-dragonfly
 ```
 
 The report can be found in `output/report/index.html`.
+
+## AFLNet
+```
+cd aflnet
+docker build --pull -t evaluation-aflnet -f Dockerfile-fuzz .
+mkdir output
+echo core | sudo tee /proc/sys/kernel/core_pattern
+pushd /sys/devices/system/cpu
+echo performance | sudo tee cpu*/cpufreq/scaling_governor
+popd
+docker run --security-opt seccomp:unconfined -v "$PWD/output":/output evaluation-aflnet
+```
+
+The container must be stopped with `docker stop <container-id>`, Ctrl+C will not work.
+
+To collect the coverage report execute:
+```
+cd aflnet
+docker build --pull -t coverage-aflnet -f Dockerfile-cov .
+docker run -v "$PWD/output":/output coverage-aflnet
+```
+
+The report can be found in `output/report/index.html`.
+
+## Results
+- AFLNet:
+    - avg. exec/s: 20
+    - coverage: 10.7%
+    - bugs: 0
+- Dragonfly without state feedback:
+    - avg. exec/s: 80
+    - coverage: 31.1%
+    - bugs: TODO (> 0)
+- Dragonfly + each valid cmd a new state: TODO

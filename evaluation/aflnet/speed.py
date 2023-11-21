@@ -32,7 +32,7 @@ def main():
     mean = statistics.fmean(execs)
     left = min(execs)
     right = max(execs)
-    print(f"min={left}, mean={mean}, max={right}")
+    print(f"min={left}, avg={mean}, max={right}")
     
 
 if __name__ == "__main__":
