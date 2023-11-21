@@ -1,4 +1,4 @@
-use ahash::AHasher;
+use ahash::RandomState;
 use libafl_bolts::{
     impl_serdeany,
 };
@@ -13,7 +13,6 @@ use serde::{
 };
 use std::{
     collections::HashSet,
-    hash::Hasher,
 };
 
 use crate::observer::State;
@@ -43,9 +42,16 @@ impl Edge {
     }
 }
 
+fn fixed_random_state() -> RandomState {
+    RandomState::with_seeds(0, 0, 0, 0)
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct StateGraph {
-    edges: HashSet<Edge, ahash::RandomState>,
+    edges: ahash::HashSet<Edge>,
+    
+    #[serde(skip, default = "fixed_random_state")]
+    hasher: RandomState,
 }
 
 impl StateGraph {
@@ -54,13 +60,12 @@ impl StateGraph {
     fn new() -> Self {
         Self {
             edges: HashSet::default(),
+            hasher: fixed_random_state(),
         }
     }
 
     pub fn add_node(&mut self, state: &State) -> NodeId {
-        let mut hasher = AHasher::default();
-        hasher.write(state);
-        let id = hasher.finish();
+        let id = self.hasher.hash_one(state);
 
         if id == Self::ENTRYPOINT {
             !Self::ENTRYPOINT
