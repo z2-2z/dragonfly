@@ -23,6 +23,9 @@ pub mod prelude {
         mutators::*,
         observer::*,
     };
+    
+    #[cfg(feature = "user-stats")]
+    pub use stats::*;
 }
 
 pub mod tt;
