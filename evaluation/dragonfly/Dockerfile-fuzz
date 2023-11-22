@@ -11,12 +11,10 @@ RUN cd dragonfly && \
 
 # Build AFL++
 WORKDIR dragonfly/AFLplusplus
-RUN mkdir -p /path && \
-    echo '#!/bin/sh' > /path/nproc && \
-    echo 'echo 1' >> /path/nproc && \
-    chmod +x /path/nproc
-RUN export PATH="/path:$PATH" && \
-    NO_PYTHON=1 NO_NYX=1 make source-only && test -f afl-clang-lto
+RUN NO_PYTHON=1 make -f GNUmakefile ./afl-showmap && \
+    make -j1 -f GNUmakefile.llvm ./afl-llvm-pass.so ./SanitizerCoveragePCGUARD.so ./split-compares-pass.so ./split-switches-pass.so ./cmplog-routines-pass.so ./cmplog-instructions-pass.so ./cmplog-switches-pass.so ./afl-llvm-dict2file.so ./compare-transform-pass.so ./afl-ld-lto ./afl-llvm-lto-instrumentlist.so ./SanitizerCoverageLTO.so && \
+    NO_PYTHON=1 NO_NYX=1 make source-only && \
+    test -f afl-clang-lto
 
 # Build libdragonfly
 WORKDIR ../libdragonfly
