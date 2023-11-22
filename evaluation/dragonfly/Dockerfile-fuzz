@@ -11,7 +11,11 @@ RUN cd dragonfly && \
 
 # Build AFL++
 WORKDIR dragonfly/AFLplusplus
-RUN NO_PYTHON=1 NO_NYX=1 make source-only && test -f afl-clang-lto
+RUN mkdir -p /path && \
+    echo '#!/bin/sh' > /path/nproc && \
+    echo 'echo 1' >> /path/nproc && \
+    chmod +x /path/nproc
+RUN PATH="/path:$PATH" NO_PYTHON=1 NO_NYX=1 make source-only && test -f afl-clang-lto
 
 # Build libdragonfly
 WORKDIR ../libdragonfly
