@@ -57,4 +57,12 @@ The report can be found in `output/report/index.html`.
     - avg. exec/s: 80
     - coverage: 31.1%
     - bugs: TODO (> 0)
-- Dragonfly + each valid cmd a new state: TODO
+- Dragonfly + feedback about valid cmds:
+    - avg. exec/s: 170
+    - coverage: 31.4%
+    - bugs: TODO (> 0)
+
+In all scenarios above the fuzzers were not able to synthesize a valid login sequence inspite of having
+access to a valid USER and PASS command.
+Try again with a valid input in corpus:
+

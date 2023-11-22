@@ -499,7 +499,7 @@ fn main() -> Result<(), Error> {
     } else {
         assert!(!args.debug && !args.trace);
         
-        /*
+        
         /* Start with a single interaction */
         let input = DragonflyInput::new(
             vec![
@@ -519,16 +519,15 @@ fn main() -> Result<(), Error> {
                 FTPPacket::Sep, 
             ]
         );
-        */
-       
         
+        /* 
         /* Start with an empty corpus */
         let input = DragonflyInput::new(
             vec![
                 FTPPacket::Ctrl(TokenStream::builder().build()),
             ]
         );
-        
+        */
         
         fuzzer.evaluate_input(&mut state, &mut executor, &mut mgr, input)?;
 
