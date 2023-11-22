@@ -52,7 +52,7 @@ RUN chmod -R 777 /tmp/ftproot
 # Build the fuzzer
 WORKDIR ../dragonfly/fuzzer
 RUN rustup default nightly
-RUN cargo build --release
+RUN cargo build --release && cargo build
 ENV RUST_BACKTRACE=full
 
 # Configure ProFTPD
