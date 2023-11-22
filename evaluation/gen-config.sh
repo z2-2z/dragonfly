@@ -12,6 +12,18 @@ SystemLog /dev/null
 UseReverseDNS off
 WtmpLog off
 AllowOverwrite on
+AllowForeignAddress on
+
+TraceLog /dev/null
+Trace DEFAULT:10
+TraceOptions -ConnIPs -Timestamp -TimestampMillis
+
+Protocols ftp
+
+TimeoutSession 60
+
+MaxTransfersPerHost RETR,APPE,STOR,STOU 2
+MaxTransfersPerUser RETR,APPE,STOR,STOU 2
 
 User				$USER
 Group				$USER

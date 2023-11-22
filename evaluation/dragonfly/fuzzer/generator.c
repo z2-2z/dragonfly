@@ -102,8 +102,10 @@ void random_buffer (unsigned char* buf, uint32_t len, uint64_t mask);
 static const unsigned char string_357634223873241833[10] = {0x4c, 0x49, 0x53, 0x54, 0x20, 0x61, 0x62, 0x63, 0xd, 0xa};
 static const unsigned char string_452836965304285521[10] = {0x44, 0x45, 0x4c, 0x45, 0x20, 0x61, 0x62, 0x63, 0xd, 0xa};
 static const unsigned char string_553001306382777075[15] = {0x41, 0x4c, 0x4c, 0x4f, 0x20, 0x34, 0x30, 0x39, 0x36, 0x20, 0x52, 0x20, 0x31, 0xd, 0xa};
+static const unsigned char string_1255940145116671190[5] = {0x45, 0x50, 0x52, 0x54, 0x20};
 static const unsigned char string_1322821659644260744[10] = {0x53, 0x54, 0x41, 0x54, 0x20, 0x61, 0x62, 0x63, 0xd, 0xa};
 static const unsigned char string_1787227683893679301[10] = {0x52, 0x4e, 0x54, 0x4f, 0x20, 0x78, 0x79, 0x7a, 0xd, 0xa};
+static const unsigned char string_2738044718386842685[4] = {0x45, 0x50, 0x53, 0x56};
 static const unsigned char string_3137864909032443780[10] = {0x54, 0x59, 0x50, 0x45, 0x20, 0x41, 0x20, 0x4e, 0xd, 0xa};
 static const unsigned char string_3407260272413593858[14] = {0x53, 0x4d, 0x4e, 0x54, 0x20, 0x75, 0x70, 0x6c, 0x6f, 0x61, 0x64, 0x73, 0xd, 0xa};
 static const unsigned char string_3888699756855861392[9] = {0x52, 0x4d, 0x44, 0x20, 0x61, 0x62, 0x63, 0xd, 0xa};
@@ -122,13 +124,19 @@ static const unsigned char string_9866723023257838052[13] = {0x52, 0x45, 0x53, 0
 static const unsigned char string_9904133961878437268[1] = {0x2c};
 static const unsigned char string_10273663291660329175[10] = {0x53, 0x54, 0x4f, 0x52, 0x20, 0x61, 0x62, 0x63, 0xd, 0xa};
 static const unsigned char string_10882850770906693452[6] = {0x4e, 0x4f, 0x4f, 0x50, 0xd, 0xa};
+static const unsigned char string_11217377278224470551[3] = {0x41, 0x4c, 0x4c};
 static const unsigned char string_11229452647410007184[8] = {0x53, 0x54, 0x52, 0x55, 0x20, 0x46, 0xd, 0xa};
 static const unsigned char string_11337447964492719760[6] = {0x52, 0x45, 0x49, 0x4e, 0xd, 0xa};
 static const unsigned char string_12038618858247955279[5] = {0x50, 0x4f, 0x52, 0x54, 0x20};
+static const unsigned char string_13361333851723138786[3] = {0x7c, 0x32, 0x7c};
 static const unsigned char string_13389084240346253293[2] = {0xd, 0xa};
 static const unsigned char string_13522589807571429534[6] = {0x53, 0x54, 0x4f, 0x55, 0xd, 0xa};
+static const unsigned char string_13662977705763058153[5] = {0x48, 0x4f, 0x53, 0x54, 0x20};
+static const unsigned char string_13964763651124847062[4] = {0x61, 0x73, 0x64, 0x66};
 static const unsigned char string_14143458678229299797[6] = {0x41, 0x42, 0x4f, 0x52, 0xd, 0xa};
 static const unsigned char string_14490114064326997348[8] = {0x4d, 0x4f, 0x44, 0x45, 0x20, 0x53, 0xd, 0xa};
+static const unsigned char string_14644096564724188688[5] = {0x52, 0x41, 0x4e, 0x47, 0x20};
+static const unsigned char string_14717616644326127620[3] = {0x7c, 0x31, 0x7c};
 static const unsigned char string_14735348259973616835[10] = {0x53, 0x49, 0x54, 0x45, 0x20, 0x3f, 0x3f, 0x3f, 0xd, 0xa};
 static const unsigned char string_17397722986415283233[10] = {0x4e, 0x4c, 0x53, 0x54, 0x20, 0x61, 0x62, 0x63, 0xd, 0xa};
 static const unsigned char string_17621312972018287284[6] = {0x51, 0x55, 0x49, 0x54, 0xd, 0xa};
@@ -136,6 +144,38 @@ static const unsigned char string_17675720925268162070[10] = {0x41, 0x43, 0x43, 
 static const unsigned char string_18269505720688649869[5] = {0x50, 0x57, 0x44, 0xd, 0xa};
 
 // Numbersets from grammar
+static uint8_t numberset_1315265350895592301() {
+    return 49U;
+}
+static uint8_t numberset_2974950330330226270() {
+    return 91U;
+}
+static uint8_t numberset_5309659876996352890() {
+    return 50U;
+}
+static uint8_t numberset_6579617425334308193() {
+    uint64_t numberset_selector = rand() % 3;
+    switch(numberset_selector) {
+        case 0: {
+            uint64_t range_selector = rand();
+            return (((uint8_t) range_selector) % 10U) + 48U;
+        }
+        case 1: {
+            uint64_t range_selector = rand();
+            return (((uint8_t) range_selector) % 6U) + 65U;
+        }
+        case 2: {
+            uint64_t range_selector = rand();
+            return (((uint8_t) range_selector) % 6U) + 97U;
+        }
+        default: {
+            __builtin_unreachable();
+        }
+    }
+}
+static uint8_t numberset_7382263630382457967() {
+    return 124U;
+}
 static uint32_t numberset_7633009975498440499() {
     uint64_t range_selector = rand();
     return (((uint32_t) range_selector) % 8U) + 1U;
@@ -144,12 +184,42 @@ static uint8_t numberset_11185474807884195476() {
     uint64_t range_selector = rand();
     return (((uint8_t) range_selector) % 10U) + 48U;
 }
+static uint8_t numberset_13374493992030014863() {
+    return 46U;
+}
+static uint8_t numberset_14751976593535872481() {
+    return 32U;
+}
+static uint8_t numberset_15518408013711948167() {
+    return 93U;
+}
+static uint32_t numberset_16055791668073734855() {
+    uint64_t range_selector = rand();
+    return (((uint32_t) range_selector) % 5U) + 0U;
+}
+static uint8_t numberset_16481366060854711735() {
+    return 58U;
+}
 
 // Forward declarations of containers
 static size_t container_0(unsigned char*, size_t);
 static size_t container_1(unsigned char*, size_t);
 static size_t container_2(unsigned char*, size_t);
 static size_t container_3(unsigned char*, size_t);
+static size_t container_4(unsigned char*, size_t);
+static size_t container_5(unsigned char*, size_t);
+static size_t container_6(unsigned char*, size_t);
+static size_t container_7(unsigned char*, size_t);
+static size_t container_8(unsigned char*, size_t);
+static size_t container_9(unsigned char*, size_t);
+static size_t container_10(unsigned char*, size_t);
+static size_t container_11(unsigned char*, size_t);
+static size_t container_12(unsigned char*, size_t);
+static size_t container_13(unsigned char*, size_t);
+static size_t container_14(unsigned char*, size_t);
+static size_t container_15(unsigned char*, size_t);
+static size_t container_16(unsigned char*, size_t);
+static size_t container_17(unsigned char*, size_t);
 
 // Definition of containers
 static size_t container_0(unsigned char* buf, size_t len) {
@@ -169,17 +239,156 @@ static size_t container_0(unsigned char* buf, size_t len) {
     return original_len - len;
 }
 static size_t container_1(unsigned char* buf, size_t len) {
+    // This container is struct IPv4Address
+    size_t original_len = len;
+    {
+        size_t container_len = container_0(buf, len);
+        buf += container_len; len -= container_len;
+    }
+    {
+        if (UNLIKELY(len < 1)) {
+            goto container_end;
+        }
+        *buf = (unsigned char) numberset_13374493992030014863();
+        buf += 1; len -= 1;
+    }
+    {
+        size_t container_len = container_0(buf, len);
+        buf += container_len; len -= container_len;
+    }
+    {
+        if (UNLIKELY(len < 1)) {
+            goto container_end;
+        }
+        *buf = (unsigned char) numberset_13374493992030014863();
+        buf += 1; len -= 1;
+    }
+    {
+        size_t container_len = container_0(buf, len);
+        buf += container_len; len -= container_len;
+    }
+    {
+        if (UNLIKELY(len < 1)) {
+            goto container_end;
+        }
+        *buf = (unsigned char) numberset_13374493992030014863();
+        buf += 1; len -= 1;
+    }
+    {
+        size_t container_len = container_0(buf, len);
+        buf += container_len; len -= container_len;
+    }
+    container_end:
+    return original_len - len;
+}
+static size_t container_2(unsigned char* buf, size_t len) {
+    // This container is struct HexChar
+    size_t original_len = len;
+    {
+        if (UNLIKELY(len < 1)) {
+            goto container_end;
+        }
+        *buf = (unsigned char) numberset_6579617425334308193();
+        buf += 1; len -= 1;
+    }
+    container_end:
+    return original_len - len;
+}
+static size_t container_3(unsigned char* buf, size_t len) {
+    // This container is struct IPv6Address
+    size_t original_len = len;
+    {
+        uint32_t repeats_i = numberset_16055791668073734855();
+        while (repeats_i--) {
+            size_t container_len = container_2(buf, len);
+            buf += container_len; len -= container_len;
+        }
+    }
+    {
+        if (UNLIKELY(len < 1)) {
+            goto container_end;
+        }
+        *buf = (unsigned char) numberset_16481366060854711735();
+        buf += 1; len -= 1;
+    }
+    {
+        uint32_t repeats_i = numberset_16055791668073734855();
+        while (repeats_i--) {
+            size_t container_len = container_2(buf, len);
+            buf += container_len; len -= container_len;
+        }
+    }
+    {
+        if (UNLIKELY(len < 1)) {
+            goto container_end;
+        }
+        *buf = (unsigned char) numberset_16481366060854711735();
+        buf += 1; len -= 1;
+    }
+    {
+        uint32_t repeats_i = numberset_16055791668073734855();
+        while (repeats_i--) {
+            size_t container_len = container_2(buf, len);
+            buf += container_len; len -= container_len;
+        }
+    }
+    {
+        if (UNLIKELY(len < 1)) {
+            goto container_end;
+        }
+        *buf = (unsigned char) numberset_16481366060854711735();
+        buf += 1; len -= 1;
+    }
+    {
+        uint32_t repeats_i = numberset_16055791668073734855();
+        while (repeats_i--) {
+            size_t container_len = container_2(buf, len);
+            buf += container_len; len -= container_len;
+        }
+    }
+    {
+        if (UNLIKELY(len < 1)) {
+            goto container_end;
+        }
+        *buf = (unsigned char) numberset_16481366060854711735();
+        buf += 1; len -= 1;
+    }
+    {
+        uint32_t repeats_i = numberset_16055791668073734855();
+        while (repeats_i--) {
+            size_t container_len = container_2(buf, len);
+            buf += container_len; len -= container_len;
+        }
+    }
+    {
+        if (UNLIKELY(len < 1)) {
+            goto container_end;
+        }
+        *buf = (unsigned char) numberset_16481366060854711735();
+        buf += 1; len -= 1;
+    }
+    {
+        uint32_t repeats_i = numberset_16055791668073734855();
+        while (repeats_i--) {
+            size_t container_len = container_2(buf, len);
+            buf += container_len; len -= container_len;
+        }
+    }
+    container_end:
+    return original_len - len;
+}
+static size_t container_4(unsigned char* buf, size_t len) {
     // This container is struct Root
     size_t original_len = len;
     {
-        size_t container_len = container_2(buf, len);
+        size_t container_len = container_5(buf, len);
         buf += container_len; len -= container_len;
     }
     return original_len - len;
 }
-static size_t container_2(unsigned char* buf, size_t len) {
+static size_t container_5(unsigned char* buf, size_t len) {
     size_t original_len = len;
-    uint64_t oneof_selector = rand() % 33;
+    uint64_t oneof_selector = rand() % 37;
     switch(oneof_selector) {
         case 0: {
             if (UNLIKELY(len < sizeof(string_4041482461632183779))) {
@@ -198,7 +407,7 @@ static size_t container_2(unsigned char* buf, size_t len) {
             break;
         }
         case 2: {
-            size_t container_len = container_3(buf, len);
+            size_t container_len = container_6(buf, len);
             buf += container_len; len -= container_len;
             break;
         }
@@ -442,6 +651,26 @@ static size_t container_2(unsigned char* buf, size_t len) {
             buf += sizeof(string_10882850770906693452); len -= sizeof(string_10882850770906693452);
             break;
         }
+        case 33: {
+            size_t container_len = container_7(buf, len);
+            buf += container_len; len -= container_len;
+            break;
+        }
+        case 34: {
+            size_t container_len = container_11(buf, len);
+            buf += container_len; len -= container_len;
+            break;
+        }
+        case 35: {
+            size_t container_len = container_14(buf, len);
+            buf += container_len; len -= container_len;
+            break;
+        }
+        case 36: {
+            size_t container_len = container_17(buf, len);
+            buf += container_len; len -= container_len;
+            break;
+        }
         default: {
             __builtin_unreachable();
         }
@@ -449,8 +678,8 @@ static size_t container_2(unsigned char* buf, size_t len) {
     container_end:
     return original_len - len;
 }
-static size_t container_3(unsigned char* buf, size_t len) {
-    // This container is the anonymous struct in line 17 column 9
+static size_t container_6(unsigned char* buf, size_t len) {
+    // This container is the anonymous struct in line 45 column 9
     size_t original_len = len;
     {
         if (UNLIKELY(len < sizeof(string_12038618858247955279))) {
@@ -528,6 +757,310 @@ static size_t container_3(unsigned char* buf, size_t len) {
     container_end:
     return original_len - len;
 }
+static size_t container_7(unsigned char* buf, size_t len) {
+    // This container is the anonymous struct in line 90 column 9
+    size_t original_len = len;
+    {
+        if (UNLIKELY(len < sizeof(string_1255940145116671190))) {
+            goto container_end;
+        }
+        __builtin_memcpy_inline(buf, string_1255940145116671190, sizeof(string_1255940145116671190));
+        buf += sizeof(string_1255940145116671190); len -= sizeof(string_1255940145116671190);
+    }
+    {
+        size_t container_len = container_8(buf, len);
+        buf += container_len; len -= container_len;
+    }
+    {
+        if (UNLIKELY(len < sizeof(string_13389084240346253293))) {
+            goto container_end;
+        }
+        __builtin_memcpy_inline(buf, string_13389084240346253293, sizeof(string_13389084240346253293));
+        buf += sizeof(string_13389084240346253293); len -= sizeof(string_13389084240346253293);
+    }
+    container_end:
+    return original_len - len;
+}
+static size_t container_8(unsigned char* buf, size_t len) {
+    size_t original_len = len;
+    uint64_t oneof_selector = rand() % 2;
+    switch(oneof_selector) {
+        case 0: {
+            size_t container_len = container_9(buf, len);
+            buf += container_len; len -= container_len;
+            break;
+        }
+        case 1: {
+            size_t container_len = container_10(buf, len);
+            buf += container_len; len -= container_len;
+            break;
+        }
+        default: {
+            __builtin_unreachable();
+        }
+    }
+    return original_len - len;
+}
+static size_t container_9(unsigned char* buf, size_t len) {
+    // This container is the anonymous struct in line 93 column 17
+    size_t original_len = len;
+    {
+        if (UNLIKELY(len < sizeof(string_14717616644326127620))) {
+            goto container_end;
+        }
+        __builtin_memcpy_inline(buf, string_14717616644326127620, sizeof(string_14717616644326127620));
+        buf += sizeof(string_14717616644326127620); len -= sizeof(string_14717616644326127620);
+    }
+    {
+        size_t container_len = container_1(buf, len);
+        buf += container_len; len -= container_len;
+    }
+    {
+        if (UNLIKELY(len < 1)) {
+            goto container_end;
+        }
+        *buf = (unsigned char) numberset_7382263630382457967();
+        buf += 1; len -= 1;
+    }
+    {
+        size_t container_len = container_0(buf, len);
+        buf += container_len; len -= container_len;
+    }
+    {
+        if (UNLIKELY(len < 1)) {
+            goto container_end;
+        }
+        *buf = (unsigned char) numberset_7382263630382457967();
+        buf += 1; len -= 1;
+    }
+    container_end:
+    return original_len - len;
+}
+static size_t container_10(unsigned char* buf, size_t len) {
+    // This container is the anonymous struct in line 100 column 17
+    size_t original_len = len;
+    {
+        if (UNLIKELY(len < sizeof(string_13361333851723138786))) {
+            goto container_end;
+        }
+        __builtin_memcpy_inline(buf, string_13361333851723138786, sizeof(string_13361333851723138786));
+        buf += sizeof(string_13361333851723138786); len -= sizeof(string_13361333851723138786);
+    }
+    {
+        size_t container_len = container_3(buf, len);
+        buf += container_len; len -= container_len;
+    }
+    {
+        if (UNLIKELY(len < 1)) {
+            goto container_end;
+        }
+        *buf = (unsigned char) numberset_7382263630382457967();
+        buf += 1; len -= 1;
+    }
+    {
+        size_t container_len = container_0(buf, len);
+        buf += container_len; len -= container_len;
+    }
+    {
+        if (UNLIKELY(len < 1)) {
+            goto container_end;
+        }
+        *buf = (unsigned char) numberset_7382263630382457967();
+        buf += 1; len -= 1;
+    }
+    container_end:
+    return original_len - len;
+}
+static size_t container_11(unsigned char* buf, size_t len) {
+    // This container is the anonymous struct in line 110 column 9
+    size_t original_len = len;
+    {
+        if (UNLIKELY(len < sizeof(string_2738044718386842685))) {
+            goto container_end;
+        }
+        __builtin_memcpy_inline(buf, string_2738044718386842685, sizeof(string_2738044718386842685));
+        buf += sizeof(string_2738044718386842685); len -= sizeof(string_2738044718386842685);
+    }
+    {
+        if ((rand() & 1)) {
+            size_t container_len = container_12(buf, len);
+            buf += container_len; len -= container_len;
+        }
+    }
+    {
+        if (UNLIKELY(len < sizeof(string_13389084240346253293))) {
+            goto container_end;
+        }
+        __builtin_memcpy_inline(buf, string_13389084240346253293, sizeof(string_13389084240346253293));
+        buf += sizeof(string_13389084240346253293); len -= sizeof(string_13389084240346253293);
+    }
+    container_end:
+    return original_len - len;
+}
+static size_t container_12(unsigned char* buf, size_t len) {
+    // This container is the anonymous struct in line 112 column 13
+    size_t original_len = len;
+    {
+        if (UNLIKELY(len < 1)) {
+            goto container_end;
+        }
+        *buf = (unsigned char) numberset_14751976593535872481();
+        buf += 1; len -= 1;
+    }
+    {
+        size_t container_len = container_13(buf, len);
+        buf += container_len; len -= container_len;
+    }
+    container_end:
+    return original_len - len;
+}
+static size_t container_13(unsigned char* buf, size_t len) {
+    size_t original_len = len;
+    uint64_t oneof_selector = rand() % 3;
+    switch(oneof_selector) {
+        case 0: {
+            if (UNLIKELY(len < 1)) {
+                goto container_end;
+            }
+            *buf = (unsigned char) numberset_1315265350895592301();
+            buf += 1; len -= 1;
+            break;
+        }
+        case 1: {
+            if (UNLIKELY(len < 1)) {
+                goto container_end;
+            }
+            *buf = (unsigned char) numberset_5309659876996352890();
+            buf += 1; len -= 1;
+            break;
+        }
+        case 2: {
+            if (UNLIKELY(len < sizeof(string_11217377278224470551))) {
+                goto container_end;
+            }
+            __builtin_memcpy_inline(buf, string_11217377278224470551, sizeof(string_11217377278224470551));
+            buf += sizeof(string_11217377278224470551); len -= sizeof(string_11217377278224470551);
+            break;
+        }
+        default: {
+            __builtin_unreachable();
+        }
+    }
+    container_end:
+    return original_len - len;
+}
+static size_t container_14(unsigned char* buf, size_t len) {
+    // This container is the anonymous struct in line 122 column 9
+    size_t original_len = len;
+    {
+        if (UNLIKELY(len < sizeof(string_13662977705763058153))) {
+            goto container_end;
+        }
+        __builtin_memcpy_inline(buf, string_13662977705763058153, sizeof(string_13662977705763058153));
+        buf += sizeof(string_13662977705763058153); len -= sizeof(string_13662977705763058153);
+    }
+    {
+        size_t container_len = container_15(buf, len);
+        buf += container_len; len -= container_len;
+    }
+    {
+        if (UNLIKELY(len < sizeof(string_13389084240346253293))) {
+            goto container_end;
+        }
+        __builtin_memcpy_inline(buf, string_13389084240346253293, sizeof(string_13389084240346253293));
+        buf += sizeof(string_13389084240346253293); len -= sizeof(string_13389084240346253293);
+    }
+    container_end:
+    return original_len - len;
+}
+static size_t container_15(unsigned char* buf, size_t len) {
+    size_t original_len = len;
+    uint64_t oneof_selector = rand() % 3;
+    switch(oneof_selector) {
+        case 0: {
+            if (UNLIKELY(len < sizeof(string_13964763651124847062))) {
+                goto container_end;
+            }
+            __builtin_memcpy_inline(buf, string_13964763651124847062, sizeof(string_13964763651124847062));
+            buf += sizeof(string_13964763651124847062); len -= sizeof(string_13964763651124847062);
+            break;
+        }
+        case 1: {
+            size_t container_len = container_16(buf, len);
+            buf += container_len; len -= container_len;
+            break;
+        }
+        case 2: {
+            size_t container_len = container_1(buf, len);
+            buf += container_len; len -= container_len;
+            break;
+        }
+        default: {
+            __builtin_unreachable();
+        }
+    }
+    container_end:
+    return original_len - len;
+}
+static size_t container_16(unsigned char* buf, size_t len) {
+    // This container is the anonymous struct in line 126 column 17
+    size_t original_len = len;
+    {
+        if (UNLIKELY(len < 1)) {
+            goto container_end;
+        }
+        *buf = (unsigned char) numberset_2974950330330226270();
+        buf += 1; len -= 1;
+    }
+    {
+        size_t container_len = container_3(buf, len);
+        buf += container_len; len -= container_len;
+    }
+    {
+        if (UNLIKELY(len < 1)) {
+            goto container_end;
+        }
+        *buf = (unsigned char) numberset_15518408013711948167();
+        buf += 1; len -= 1;
+    }
+    container_end:
+    return original_len - len;
+}
+static size_t container_17(unsigned char* buf, size_t len) {
+    // This container is the anonymous struct in line 135 column 9
+    size_t original_len = len;
+    {
+        if (UNLIKELY(len < sizeof(string_14644096564724188688))) {
+            goto container_end;
+        }
+        __builtin_memcpy_inline(buf, string_14644096564724188688, sizeof(string_14644096564724188688));
+        buf += sizeof(string_14644096564724188688); len -= sizeof(string_14644096564724188688);
+    }
+    {
+        size_t container_len = container_0(buf, len);
+        buf += container_len; len -= container_len;
+    }
+    {
+        if (UNLIKELY(len < 1)) {
+            goto container_end;
+        }
+        *buf = (unsigned char) numberset_14751976593535872481();
+        buf += 1; len -= 1;
+    }
+    {
+        size_t container_len = container_0(buf, len);
+        buf += container_len; len -= container_len;
+    }
+    {
+        if (UNLIKELY(len < sizeof(string_13389084240346253293))) {
+            goto container_end;
+        }
+        __builtin_memcpy_inline(buf, string_13389084240346253293, sizeof(string_13389084240346253293));
+        buf += sizeof(string_13389084240346253293); len -= sizeof(string_13389084240346253293);
+    }
+    container_end:
+    return original_len - len;
+}
 
 // Entrypoint for the generator
 size_t ftp_generator_generate(unsigned char* buf, size_t len) {
@@ -535,5 +1068,5 @@ size_t ftp_generator_generate(unsigned char* buf, size_t len) {
         return 0;
     }
     
-    return container_1(buf, len);
+    return container_4(buf, len);
 }

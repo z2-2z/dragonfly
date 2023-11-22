@@ -9,6 +9,34 @@ struct Decimal {
     repeats 1..8 digit: char = '0'..'9';
 }
 
+struct IPv4Address {
+    o1: Decimal;
+    dot: char = '.';
+    o2: Decimal;
+    dot: char = '.';
+    o3: Decimal;
+    dot: char = '.';
+    o4: Decimal;
+}
+
+struct HexChar {
+    _: char = 'a'..'f', 'A'..'F', '0'..'9';
+}
+
+struct IPv6Address {
+    repeats 0..4 s1: HexChar;
+    sep: char = ':';
+    repeats 0..4 s1: HexChar;
+    sep: char = ':';
+    repeats 0..4 s1: HexChar;
+    sep: char = ':';
+    repeats 0..4 s1: HexChar;
+    sep: char = ':';
+    repeats 0..4 s1: HexChar;
+    sep: char = ':';
+    repeats 0..4 s1: HexChar;
+}
+
 struct Root {
     ftp_command: oneof {
         /* From RFC 959 */
@@ -59,5 +87,57 @@ struct Root {
         stat: string = "STAT abc\r\n";
         help: string = "HELP ???\r\n";
         noop: string = "NOOP\r\n";
+        eprt: struct {
+            cmd: string = "EPRT ";
+            content: oneof {
+                v4: struct {
+                    family: string = "|1|";
+                    ip: IPv4Address;
+                    sep: char = '|';
+                    port: Decimal;
+                    sep: char = '|';
+                };
+                v6: struct {
+                    family: string = "|2|";
+                    ip: IPv6Address;
+                    sep: char = '|';
+                    port: Decimal;
+                    sep: char = '|';
+                };
+            };
+            eol: string = "\r\n";
+        };
+        epsv: struct {
+            cmd: string = "EPSV";
+            optional arg: struct {
+                _: char = ' ';
+                _: oneof {
+                    _: char = '1';
+                    _: char = '2';
+                    _: string = "ALL";
+                };
+            };
+            eol: string = "\r\n";
+        };
+        host: struct {
+            cmd: string = "HOST ";
+            arg: oneof {
+                domain: string = "asdf";
+                ipv6: struct {
+                    _: char = '[';
+                    addr: IPv6Address;
+                    _: char = ']';
+                };
+                ipv4: IPv4Address;
+            };
+            eol: string = "\r\n";
+        };
+        rang: struct {
+            cmd: string = "RANG ";
+            start: Decimal;
+            _: char = ' ';
+            end: Decimal;
+            eol: string = "\r\n";
+        };
     };
 }
