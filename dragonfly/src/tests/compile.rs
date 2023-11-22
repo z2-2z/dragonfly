@@ -34,7 +34,7 @@ use libafl::{
         StdFuzzer,
     },
     monitors::SimpleMonitor,
-    mutators::StdMOptMutator,
+    mutators::StdScheduledMutator,
     observers::{
         HitcountsMapObserver,
         StdMapObserver,
@@ -71,8 +71,6 @@ use crate::{
     input::DragonflyInput,
     mutators::{
         InsertRandomPacketMutator,
-        NopMutator,
-        NopPacketMutator,
         PacketCrossoverInsertMutator,
         PacketCrossoverReplaceMutator,
         PacketDeleteMutator,
@@ -80,7 +78,7 @@ use crate::{
         PacketReorderMutator,
         PacketRepeatMutator,
         PacketSelectorMutator,
-        SelectedPacketMutator,
+        ScheduledPacketMutator,
     },
     observer::StateObserver,
     tt::{
@@ -101,6 +99,7 @@ use crate::{
         TokenValueDeleteMutator,
         TokenValueCopyMutator,
         TokenValueInsertRandomMutator,
+        TokenReplaceSpecialCharMutator,
     },
 };
 
@@ -252,38 +251,44 @@ fn fuzz(
     let max_tokens = 32;
     let max_packets = 32;
     // Setup a MOPT mutator
-    let mutator = PacketSelectorMutator::new(StdMOptMutator::new(
-        &mut state,
+    let packet_mutator = ScheduledPacketMutator::with_max_stack_pow(
         tuple_list!(
-            SelectedPacketMutator::new(NopPacketMutator::new()),
-            SelectedPacketMutator::new(TokenStreamInsertRandomMutator::new(max_tokens)),
-            SelectedPacketMutator::new(TokenReplaceRandomMutator::new()),
-            SelectedPacketMutator::new(TokenSplitMutator::new(max_tokens)),
-            SelectedPacketMutator::new(TokenStreamInsertInterestingMutator::new(max_tokens)),
-            SelectedPacketMutator::new(TokenReplaceInterestingMutator::new()),
-            SelectedPacketMutator::new(TokenValueCopyMutator::new()),
-            SelectedPacketMutator::new(TokenValueInsertRandomMutator::new()),
-            SelectedPacketMutator::new(TokenStreamCopyMutator::new(max_tokens)),
-            SelectedPacketMutator::new(TokenStreamSwapMutator::new()),
-            SelectedPacketMutator::new(TokenStreamDeleteMutator::new(1)),
-            SelectedPacketMutator::new(TokenRotateCharMutator::new()),
-            SelectedPacketMutator::new(TokenValueDeleteMutator::new(1)),
-            SelectedPacketMutator::new(TokenInsertSpecialCharMutator::new()),
-            SelectedPacketMutator::new(TokenStreamDictInsertMutator::new(max_tokens)),
-            SelectedPacketMutator::new(TokenReplaceDictMutator::new()),
-            SelectedPacketMutator::new(TokenStreamScannerMutator::new(max_tokens)),
-            PacketReorderMutator::new(),
-            PacketDeleteMutator::new(0),
-            NopMutator::new(),
-            PacketDuplicateMutator::new(max_packets),
-            InsertRandomPacketMutator::new(),
-            PacketCrossoverReplaceMutator::new(),
-            PacketCrossoverInsertMutator::new(),
-            PacketRepeatMutator::new(16, 16)
+            TokenStreamInsertRandomMutator::new(max_tokens),
+            TokenReplaceRandomMutator::new(),
+            TokenSplitMutator::new(max_tokens),
+            TokenStreamInsertInterestingMutator::new(max_tokens),
+            TokenReplaceInterestingMutator::new(),
+            TokenValueCopyMutator::new(),
+            TokenValueInsertRandomMutator::new(),
+            TokenStreamCopyMutator::new(max_tokens),
+            TokenStreamSwapMutator::new(),
+            TokenStreamDeleteMutator::new(1),
+            TokenRotateCharMutator::new(),
+            TokenValueDeleteMutator::new(1),
+            TokenInsertSpecialCharMutator::new(),
+            TokenStreamDictInsertMutator::new(max_tokens),
+            TokenReplaceDictMutator::new(),
+            TokenStreamScannerMutator::new(max_tokens),
+            TokenReplaceSpecialCharMutator::new()
         ),
-        7,
-        5,
-    )?);
+        2,
+    );
+    let mutator = PacketSelectorMutator::new(
+        StdScheduledMutator::with_max_stack_pow(
+            tuple_list!(
+                PacketDeleteMutator::new(1),
+                PacketDuplicateMutator::new(max_packets),
+                PacketReorderMutator::new(),
+                packet_mutator,
+                InsertRandomPacketMutator::new(),
+                //InsertGeneratedPacketMutator::new(),
+                PacketCrossoverInsertMutator::new(),
+                PacketCrossoverReplaceMutator::new(),
+                PacketRepeatMutator::new(max_packets, max_packets)
+            ),
+            1
+        )
+    );
 
     let power = StdPowerMutationalStage::new(mutator);
 

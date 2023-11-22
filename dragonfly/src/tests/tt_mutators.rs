@@ -25,7 +25,6 @@ use libafl::prelude::{
     TimeFeedback,
     TimeObserver,
     Tokens,
-    StdScheduledMutator,
 };
 
 fn test_token_stream(input: &DragonflyInput<TokenStream>) -> ExitKind {
@@ -73,25 +72,25 @@ fn test_roundtrip() -> Result<(), Error> {
     state.add_metadata(tokens);
 
     let max_tokens = 16;
-    let tt_mutations = PacketSelectorMutator::new(StdScheduledMutator::with_max_stack_pow(
+    let tt_mutations = PacketSelectorMutator::new(ScheduledPacketMutator::with_max_stack_pow(
         tuple_list!(
-            /*  0 */ SelectedPacketMutator::new(NopPacketMutator::new()),
-            /*  1 */ SelectedPacketMutator::new(TokenStreamInsertRandomMutator::new(max_tokens)),
-            /*  2 */ SelectedPacketMutator::new(TokenReplaceRandomMutator::new()),
-            /*  3 */ SelectedPacketMutator::new(TokenSplitMutator::new(max_tokens)),
-            /*  4 */ SelectedPacketMutator::new(TokenStreamInsertInterestingMutator::new(max_tokens)),
-            /*  5 */ SelectedPacketMutator::new(TokenReplaceInterestingMutator::new()),
-            /*  7 */ SelectedPacketMutator::new(TokenValueCopyMutator::new()),
-            /*  8 */ SelectedPacketMutator::new(TokenValueInsertRandomMutator::new()),
-            /*  9 */ SelectedPacketMutator::new(TokenStreamCopyMutator::new(max_tokens)),
-            /* 10 */ SelectedPacketMutator::new(TokenStreamSwapMutator::new()),
-            /* 11 */ SelectedPacketMutator::new(TokenStreamDeleteMutator::new(0)),
-            /* 13 */ SelectedPacketMutator::new(TokenRotateCharMutator::new()),
-            /* 14 */ SelectedPacketMutator::new(TokenValueDeleteMutator::new(0)),
-            /* 15 */ SelectedPacketMutator::new(TokenInsertSpecialCharMutator::new()),
-            /* 17 */ SelectedPacketMutator::new(TokenStreamDictInsertMutator::new(max_tokens)),
-            /* 18 */ SelectedPacketMutator::new(TokenReplaceDictMutator::new()),
-            /* 19 */ SelectedPacketMutator::new(TokenStreamScannerMutator::new(max_tokens)),
+            NopPacketMutator::new(),
+            TokenStreamInsertRandomMutator::new(max_tokens),
+            TokenReplaceRandomMutator::new(),
+            TokenSplitMutator::new(max_tokens),
+            TokenStreamInsertInterestingMutator::new(max_tokens),
+            TokenReplaceInterestingMutator::new(),
+            TokenValueCopyMutator::new(),
+            TokenValueInsertRandomMutator::new(),
+            TokenStreamCopyMutator::new(max_tokens),
+            TokenStreamSwapMutator::new(),
+            TokenStreamDeleteMutator::new(0),
+            TokenRotateCharMutator::new(),
+            TokenValueDeleteMutator::new(0),
+            TokenInsertSpecialCharMutator::new(),
+            TokenStreamDictInsertMutator::new(max_tokens),
+            TokenReplaceDictMutator::new(),
+            TokenStreamScannerMutator::new(max_tokens),
         ),
         16,
     ));
@@ -153,26 +152,26 @@ fn test_outcome() -> Result<(), Error> {
     state.add_metadata(tokens);
 
     let max_tokens = 16;
-    let tt_mutations = PacketSelectorMutator::new(StdScheduledMutator::with_max_stack_pow(
+    let tt_mutations = PacketSelectorMutator::new(ScheduledPacketMutator::with_max_stack_pow(
         tuple_list!(
-            /*  1 */ SelectedPacketMutator::new(TokenStreamInsertRandomMutator::new(max_tokens)),
-            /*  2 */ SelectedPacketMutator::new(TokenReplaceRandomMutator::new()),
-            /*  3 */ SelectedPacketMutator::new(TokenSplitMutator::new(max_tokens)),
-            /*  4 */ SelectedPacketMutator::new(TokenStreamInsertInterestingMutator::new(max_tokens)),
-            /*  5 */ SelectedPacketMutator::new(TokenReplaceInterestingMutator::new()),
-            /*  7 */ SelectedPacketMutator::new(TokenValueCopyMutator::new()),
-            /*  8 */ SelectedPacketMutator::new(TokenValueInsertRandomMutator::new()),
-            /*  9 */ SelectedPacketMutator::new(TokenStreamCopyMutator::new(max_tokens)),
-            /* 10 */ SelectedPacketMutator::new(TokenStreamSwapMutator::new()),
-            /* 11 */ SelectedPacketMutator::new(TokenStreamDeleteMutator::new(0)),
-            /* 13 */ SelectedPacketMutator::new(TokenRotateCharMutator::new()),
-            /* 14 */ SelectedPacketMutator::new(TokenValueDeleteMutator::new(0)),
-            /* 15 */ SelectedPacketMutator::new(TokenInsertSpecialCharMutator::new()),
-            /* 17 */ SelectedPacketMutator::new(TokenStreamDictInsertMutator::new(max_tokens)),
-            /* 18 */ SelectedPacketMutator::new(TokenReplaceDictMutator::new()),
-            /* 19 */ SelectedPacketMutator::new(TokenStreamScannerMutator::new(max_tokens)),
+            TokenStreamInsertRandomMutator::new(max_tokens),
+            TokenReplaceRandomMutator::new(),
+            TokenSplitMutator::new(max_tokens),
+            TokenStreamInsertInterestingMutator::new(max_tokens),
+            TokenReplaceInterestingMutator::new(),
+            TokenValueCopyMutator::new(),
+            TokenValueInsertRandomMutator::new(),
+            TokenStreamCopyMutator::new(max_tokens),
+            TokenStreamSwapMutator::new(),
+            TokenStreamDeleteMutator::new(0),
+            TokenRotateCharMutator::new(),
+            TokenValueDeleteMutator::new(0),
+            TokenInsertSpecialCharMutator::new(),
+            TokenStreamDictInsertMutator::new(max_tokens),
+            TokenReplaceDictMutator::new(),
+            TokenStreamScannerMutator::new(max_tokens),
         ),
-        8,
+        16,
     ));
 
     let mutational = StdMutationalStage::new(tt_mutations);

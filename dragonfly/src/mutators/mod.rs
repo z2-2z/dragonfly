@@ -7,7 +7,6 @@ mod packet;
 mod random;
 mod reorder;
 mod repeat;
-mod selected;
 mod selector;
 mod scheduled;
 
@@ -36,6 +35,5 @@ pub use random::{
 };
 pub use reorder::PacketReorderMutator;
 pub use repeat::PacketRepeatMutator;
-pub use selected::SelectedPacketMutator;
 pub use selector::{SelectedPacketMetadata, PacketSelectorMutator};
 pub use scheduled::ScheduledPacketMutator;
