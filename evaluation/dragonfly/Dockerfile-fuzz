@@ -31,13 +31,13 @@ RUN meson setup ./build && \
 
 # Build ProFTPD
 WORKDIR ../evaluation/proftpd
-RUN git apply ../dragonfly/patch && git apply ../dragonfly/patch-state
+RUN git apply ../dragonfly/patch && git apply ../dragonfly/patch-state && git apply ../dragonfly/patch-asan
 RUN export LIBDRAGONFLY="$(realpath ../../libdragonfly/build)" && \
-    CC="$(realpath ../../AFLplusplus/afl-clang-lto)" \
-    CFLAGS="-I$LIBDRAGONFLY/include -O3" \
-    LDFLAGS="-L$LIBDRAGONFLY -ldragonfly -Wl,-rpath=$LIBDRAGONFLY" \
-    ./configure --disable-shadow --disable-auth-pam --disable-cap && \
     export AFL_CC_COMPILER=LTO && \
+    CC="$(realpath ../../AFLplusplus/afl-clang-lto)" \
+    CFLAGS="-I$LIBDRAGONFLY/include -g -Og -fsanitize=address" \
+    LDFLAGS="-L$LIBDRAGONFLY -ldragonfly -lcrypt -Wl,-rpath=$LIBDRAGONFLY -fsanitize=address" \
+    ./configure --disable-shadow --disable-auth-pam --disable-cap && \
     make
 RUN setcap cap_sys_chroot+ep ./proftpd
 
