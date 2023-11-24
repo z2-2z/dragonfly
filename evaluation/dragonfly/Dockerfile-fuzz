@@ -38,8 +38,8 @@ RUN git apply ../dragonfly/patch && git apply ../dragonfly/patch-state && git ap
 RUN export LIBDRAGONFLY="$(realpath ../../libdragonfly/build)" && \
     export AFL_CC_COMPILER=LTO && \
     CC="$(realpath ../../AFLplusplus/afl-clang-lto)" \
-    CFLAGS="-I$LIBDRAGONFLY/include -g -Og -fsanitize=address" \
-    LDFLAGS="-L$LIBDRAGONFLY -ldragonfly -lcrypt -Wl,-rpath=$LIBDRAGONFLY -fsanitize=address" \
+    CFLAGS="-I$LIBDRAGONFLY/include -g -O3" \
+    LDFLAGS="-L$LIBDRAGONFLY -ldragonfly -lcrypt -Wl,-rpath=$LIBDRAGONFLY" \
     ./configure --disable-shadow --disable-auth-pam --disable-cap && \
     make
 RUN setcap cap_sys_chroot+ep ./proftpd
