@@ -12,7 +12,10 @@ RUN cd dragonfly && \
 
 # Build AFL++
 WORKDIR dragonfly/AFLplusplus
-RUN NO_PYTHON=1 NO_NYX=1 make source-only && test -f afl-gcc
+RUN NO_PYTHON=1 make -f GNUmakefile ./afl-showmap && \
+    make -j1 -f GNUmakefile.llvm ./afl-llvm-pass.so ./SanitizerCoveragePCGUARD.so ./split-compares-pass.so ./split-switches-pass.so ./cmplog-routines-pass.so ./cmplog-instructions-pass.so ./cmplog-switches-pass.so ./afl-llvm-dict2file.so ./compare-transform-pass.so ./afl-ld-lto ./afl-llvm-lto-instrumentlist.so ./SanitizerCoverageLTO.so && \
+    NO_PYTHON=1 NO_NYX=1 make source-only && \
+    test -f afl-clang-lto
 
 # Build libdragonfly
 WORKDIR ../libdragonfly
@@ -32,11 +35,11 @@ RUN meson setup ./build && \
 
 # Build ProFTPD
 WORKDIR ../evaluation/proftpd
-RUN git apply ../dragonfly/patch
+RUN git apply ../dragonfly/patch && git apply ../dragonfly/patch-state && git apply ../dragonfly/patch-asan
 RUN export LIBDRAGONFLY="$(realpath ../../libdragonfly/build)" && \
     CC="$(realpath ../../AFLplusplus/afl-gcc)" \
     CFLAGS="-I$LIBDRAGONFLY/include -O0 -g --coverage" \
-    LDFLAGS="-L$LIBDRAGONFLY -ldragonfly -Wl,-rpath=$LIBDRAGONFLY --coverage" \
+    LDFLAGS="-L$LIBDRAGONFLY -ldragonfly -lcrypt -Wl,-rpath=$LIBDRAGONFLY --coverage" \
     ./configure --disable-shadow --disable-auth-pam --disable-cap && \
     rm -fv *.gcno && \
     make
