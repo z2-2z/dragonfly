@@ -1,6 +1,6 @@
 FROM archlinux:latest
 
-RUN pacman --noconfirm -Sy git make clang llvm lld diffutils meson ninja coreutils libcap shadow rustup python-pip graphviz
+RUN pacman --noconfirm -Sy git make gcc diffutils meson ninja coreutils libcap shadow rustup python-pip graphviz
 RUN python3 -m pip install --break-system-packages gcovr==6.0
 
 RUN git clone https://github.com/z2-2z/dragonfly
@@ -12,10 +12,7 @@ RUN cd dragonfly && \
 
 # Build AFL++
 WORKDIR dragonfly/AFLplusplus
-RUN NO_PYTHON=1 make -f GNUmakefile ./afl-showmap && \
-    make -j1 -f GNUmakefile.llvm ./afl-llvm-pass.so ./SanitizerCoveragePCGUARD.so ./split-compares-pass.so ./split-switches-pass.so ./cmplog-routines-pass.so ./cmplog-instructions-pass.so ./cmplog-switches-pass.so ./afl-llvm-dict2file.so ./compare-transform-pass.so ./afl-ld-lto ./afl-llvm-lto-instrumentlist.so ./SanitizerCoverageLTO.so && \
-    NO_PYTHON=1 NO_NYX=1 make source-only && \
-    test -f afl-clang-lto
+RUN NO_PYTHON=1  NO_PYTHON=1 NO_NYX=1 make source-only && test -f afl-gcc
 
 # Build libdragonfly
 WORKDIR ../libdragonfly
