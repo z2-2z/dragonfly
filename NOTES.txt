@@ -2,7 +2,7 @@ Mutators:
 ~~ Split up text/number with random token
 ~~ crossover insert / replace subslice from other corpus entry
 ~~ delete subslice
-- copy subslice to random index
+~~ copy subslice to random index
 - swap two tokens
 - insert / replace random values
 - constant swap with other constant (from dict)
@@ -13,3 +13,4 @@ Mutators:
 - word swap: find two non-overlapping subslices that are enclosed by whitespaces and swap them
 - dictionary insert constant (optionally surrounded by whitespace)
 - mark all constants as text
+- truncate ?
