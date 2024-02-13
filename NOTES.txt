@@ -3,9 +3,9 @@ Mutators:
 ~~ crossover insert / replace subslice from other corpus entry
 ~~ delete subslice
 ~~ copy subslice to random index
-- swap two tokens
+~~ swap two tokens
 - insert / replace random values
-- constant swap with other constant (from dict)
+~~ constant swap with other constant (from dict)
 - replace with interesting value for number
 - insert / replace special chars into text tokens
 - inflate a token by repeating its content
