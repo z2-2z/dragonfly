@@ -1,0 +1,23 @@
+[package]
+name = "dragonfly-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+libafl_bolts = "0.11.2"
+ahash = "0.8"
+
+[dependencies.dragonfly]
+path = ".."
+
+[[bin]]
+name = "mutate_split"
+path = "fuzz_targets/mutate_split.rs"
+test = false
+doc = false
+bench = false

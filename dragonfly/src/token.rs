@@ -143,11 +143,30 @@ impl TextToken {
         
         TextToken::Text(data)
     }
+    
+    pub(crate) fn clone_nodata(&self) -> Self {
+        match self {
+            TextToken::Constant(_) => TextToken::Constant(Vec::new()),
+            TextToken::Number(_) => TextToken::Number(Vec::new()),
+            TextToken::Whitespace(_) => TextToken::Whitespace(Vec::new()),
+            TextToken::Text(_) => TextToken::Text(Vec::new()),
+        }
+    }
 }
 
 impl TextToken {
     #[inline]
     pub fn data(&self) -> &[u8] {
+        match self {
+            TextToken::Constant(data) |
+            TextToken::Number(data) |
+            TextToken::Whitespace(data) |
+            TextToken::Text(data) => data,
+        }
+    }
+    
+    #[inline]
+    pub(crate) fn data_mut(&mut self) -> &mut Vec<u8> {
         match self {
             TextToken::Constant(data) |
             TextToken::Number(data) |
@@ -219,6 +238,21 @@ impl TokenStream {
     #[inline]
     pub fn tokens(&self) -> &[TextToken] {
         &self.0
+    }
+    
+    #[inline]
+    pub(crate) fn tokens_mut(&mut self) -> &mut Vec<TextToken> {
+        &mut self.0
+    }
+    
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+    
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
     }
     
     pub fn serialize_into_buffer(&self, buffer: &mut [u8]) -> usize {
