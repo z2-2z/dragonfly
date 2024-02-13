@@ -7,4 +7,4 @@ then
     exit 1
 fi
 
-taskset -c 0 cargo fuzz run "$1" -- -only_ascii=1 -reduce_inputs=0
+taskset -c 0 cargo fuzz run -D "$1" -- -only_ascii=1 -reduce_inputs=0

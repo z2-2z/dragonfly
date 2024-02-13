@@ -21,3 +21,10 @@ path = "fuzz_targets/mutate_split.rs"
 test = false
 doc = false
 bench = false
+
+[[bin]]
+name = "mutate_swap_words"
+path = "fuzz_targets/mutate_swap_words.rs"
+test = false
+doc = false
+bench = false
