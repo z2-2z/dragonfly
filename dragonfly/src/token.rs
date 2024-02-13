@@ -78,10 +78,11 @@ impl TextToken {
     }
     
     #[doc(hidden)]
-    pub fn random_whitespace<R: Rand>(rand: &mut R, min_len: usize, max_len: usize) -> Self {
-        const WHITESPACE: [u8; 6] = [b' ', b'\t', b'\n', 0x0b, 0x0c, b'\r',];
-        debug_assert!(min_len <= max_len);
-        let random_len = rand.between(min_len as u64, max_len as u64) as usize;
+    pub fn random_whitespace<R: Rand, const MIN: u64, const MAX: u64>(rand: &mut R) -> Self {
+        debug_assert!(MIN <= MAX);
+        
+        const WHITESPACE: [u8; 6] = [b' ', b'\t', b'\n', 0x0b, 0x0c, b'\r'];
+        let random_len = rand.between(MIN, MAX) as usize;
         let mut data = vec![0; random_len];
         
         for byte in &mut data {
@@ -90,6 +91,30 @@ impl TextToken {
         }
         
         TextToken::Whitespace(data)
+    }
+    
+    #[doc(hidden)]
+    pub fn random_number<R: Rand, const MAX: u64>(rand: &mut R) -> Self {
+        debug_assert!(MAX >= 2);
+        
+        const DIGITS: [u8; 10] = [b'0', b'1', b'2', b'3', b'4', b'5', b'6', b'7', b'8', b'9'];
+        let random_len = rand.between(2, MAX) as usize;
+        let mut data = vec![0; random_len];
+        
+        for byte in &mut data {
+            let idx = rand.next() as usize;
+            *byte = DIGITS[idx % 10];
+        }
+        
+        let idx = rand.next() & 0b11;
+        
+        match idx {
+            0 => data[0] = b'-',
+            1 => data[0] = b'+',
+            _ => {},
+        }
+        
+        TextToken::Number(data)
     }
 }
 
