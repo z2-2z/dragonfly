@@ -1,5 +1,6 @@
 use serde::{Serialize, Deserialize};
 use std::str::FromStr;
+use libafl_bolts::prelude::Rand;
 
 #[derive(Clone, Serialize, Deserialize, Debug, Hash)]
 pub enum TextToken {
@@ -74,6 +75,21 @@ impl TextToken {
         } else {
             Some(TextToken::Text(data[0..len].to_vec()))
         }
+    }
+    
+    #[doc(hidden)]
+    pub fn random_whitespace<R: Rand>(rand: &mut R, min_len: usize, max_len: usize) -> Self {
+        const WHITESPACE: [u8; 6] = [b' ', b'\t', b'\n', 0x0b, 0x0c, b'\r',];
+        debug_assert!(min_len <= max_len);
+        let random_len = rand.between(min_len as u64, max_len as u64) as usize;
+        let mut data = vec![0; random_len];
+        
+        for byte in &mut data {
+            let idx = rand.next() as usize;
+            *byte = WHITESPACE[idx % 6];
+        }
+        
+        TextToken::Whitespace(data)
     }
 }
 
