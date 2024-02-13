@@ -1,6 +1,6 @@
 Mutators:
-- Split up text/number with random token
-- crossover insert / replace subslice from other corpus entry
+~~ Split up text/number with random token
+~~ crossover insert / replace subslice from other corpus entry
 - delete subslice
 - copy subslice to random index
 - swap two tokens
