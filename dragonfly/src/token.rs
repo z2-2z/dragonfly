@@ -116,6 +116,33 @@ impl TextToken {
         
         TextToken::Number(data)
     }
+    
+    #[doc(hidden)]
+    pub fn random_text<R: Rand, const MIN: u64, const MAX: u64>(rand: &mut R) -> Self {
+        const ALLOW_MAP: [bool; 256] = [true, true, true, true, true, true, true, true, true, false, false, false, false, false, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, false, true, true, true, true, true, true, true, true, true, true, false, true, false, true, true, false, false, false, false, false, false, false, false, false, false, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false];
+        let random_len = rand.between(MIN, MAX) as usize;
+        let mut data = vec![0; random_len];
+        
+        let num_qwords = random_len / 8;
+        let ptr = unsafe { std::mem::transmute::<*mut u8, *mut u64>(data.as_mut_ptr()) };
+        let slice = unsafe { std::slice::from_raw_parts_mut(ptr, num_qwords) };
+        
+        for qword in slice {
+            *qword = rand.next() & 0x7F7F7F7F7F7F7F7Fu64;
+        }
+        
+        for byte in &mut data[num_qwords * 8..] {
+            *byte = (rand.next() as u8) & 0x7Fu8;
+        }
+        
+        for byte in &mut data {
+            if ! unsafe { *ALLOW_MAP.get_unchecked(*byte as usize) } {
+                *byte = rand.between(58, 126) as u8;
+            }
+        }
+        
+        TextToken::Text(data)
+    }
 }
 
 impl TextToken {
@@ -211,6 +238,7 @@ impl TokenStream {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use libafl_bolts::prelude::{StdRand, current_nanos};
     
     fn test_roundtrip(s: &str) {
         let mut data = [0u8; 32];
@@ -227,5 +255,27 @@ mod tests {
         test_roundtrip("200 fuck my shit up\r\n");
         test_roundtrip("PORT 127,0,0,1,80,80\r\n");
         test_roundtrip("12 + 12 = 24");
+    }
+    
+    #[test]
+    fn random_number() {
+        let mut rand = StdRand::with_seed(current_nanos());
+        
+        for _ in 0..10 {
+            let token = TextToken::random_number::<_, 16>(&mut rand);
+            let data = std::str::from_utf8(token.data()).unwrap();
+            println!("{}", data);
+        }
+    }
+    
+    #[test]
+    fn random_text() {
+        let mut rand = StdRand::with_seed(current_nanos());
+        
+        for _ in 0..10 {
+            let token = TextToken::random_text::<_, 1, 16>(&mut rand);
+            let data = std::str::from_utf8(token.data()).unwrap();
+            println!("{}", data);
+        }
     }
 }
