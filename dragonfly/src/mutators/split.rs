@@ -40,7 +40,7 @@ mod tests {
     use libafl_bolts::prelude::{StdRand, current_nanos};
     
     #[test]
-    fn test_mutation() {
+    fn test_split() {
         let mut buffer = [0; 1024];
         let mut rand = StdRand::with_seed(current_nanos());
         let stream = "200 fuck my shit up".parse::<TokenStream>().unwrap();

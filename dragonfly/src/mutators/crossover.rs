@@ -1,19 +1,5 @@
-use crate::TokenStream;
+use crate::{TokenStream, mutators::common::random_range};
 use libafl_bolts::prelude::Rand;
-use std::ops::Range;
-
-#[inline]
-fn random_range<R: Rand>(rand: &mut R, len: usize) -> Range<usize> {
-    debug_assert!(len > 0);
-    
-    let start = rand.below(len as u64) as usize;
-    let rem_len = len - start;
-    let slice_len = 1 + rand.below(rem_len as u64) as usize;
-    
-    debug_assert!(slice_len > 0);
-    
-    start..start + slice_len
-}
 
 pub fn mutate_crossover_replace<R: Rand>(rand: &mut R, stream: &mut TokenStream, other: &TokenStream) -> bool {
     if stream.is_empty() || other.is_empty() {
