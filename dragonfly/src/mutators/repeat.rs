@@ -27,6 +27,11 @@ pub fn mutate_repeat_char<R: Rand, const AMNT: usize>(rand: &mut R, stream: &mut
     
     let idx = rand.below(stream.len() as u64) as usize;
     let elem = &mut stream.tokens_mut()[idx];
+    
+    if elem.is_constant() {
+        return false;
+    }
+    
     let elem_len = elem.len();
     
     if elem_len == 0 || elem_len >= AMNT {

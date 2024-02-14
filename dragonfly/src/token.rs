@@ -148,6 +148,50 @@ impl TextToken {
             TextToken::Text(_) => TextToken::Text(Vec::new()),
         }
     }
+    
+    pub(crate) fn verify(&self) -> bool {
+        match self {
+            TextToken::Constant(_) => true,
+            TextToken::Number(data) => {
+                for (i, byte) in data.iter().enumerate() {
+                    match *byte {
+                        b'-' | b'+' => {
+                            if i != 0 {
+                                return false;
+                            }
+                        },
+                        b'0' | b'1' | b'2' | b'3' | b'4' | b'5' | b'6' | b'7' | b'8' | b'9' => {},
+                        _ => return false,
+                    }
+                }
+                true
+            },
+            TextToken::Whitespace(data) => {
+                for byte in data {
+                    match *byte {
+                        b' ' | b'\t' | b'\n' | 0x0b | 0x0c | b'\r' => {},
+                        _ => return false,
+                    }
+                }
+                true
+            },
+            TextToken::Text(data) => {
+                const BLACKLIST: [u8; 18] = [
+                    // Whitespace
+                    b' ', b'\t', b'\n', 0x0b, 0x0c, b'\r',
+                    
+                    // Number
+                    b'+', b'-', b'0', b'1', b'2', b'3', b'4', b'5', b'6', b'7', b'8', b'9',
+                ];
+                for byte in data {
+                    if *byte >= 0x80 || BLACKLIST.contains(byte) {
+                        return false;
+                    }
+                }
+                true
+            },
+        }
+    }
 }
 
 impl TextToken {
