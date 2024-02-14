@@ -11,6 +11,6 @@ Mutators:
 ~~ inflate a token by repeating its content
 - modify value sligtly: replace content with some chars from a whitelist
 ~~ word swap: find two non-overlapping subslices that are enclosed by whitespaces and swap them
-- dictionary insert constant (optionally surrounded by whitespace)
+~~ dictionary insert constant (optionally surrounded by whitespace)
 - mark all constants as text
 - truncate ?

@@ -8,6 +8,7 @@ mod repeat;
 mod random;
 mod interesting;
 mod special;
+mod dict;
 
 pub use split::*;
 pub use crossover::*;
@@ -18,3 +19,4 @@ pub use repeat::*;
 pub use random::*;
 pub use interesting::*;
 pub use special::*;
+pub use dict::*;
