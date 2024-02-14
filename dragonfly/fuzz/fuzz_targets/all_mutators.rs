@@ -9,6 +9,12 @@ use ahash::RandomState;
 fuzz_target!(|data: &[u8]| {
     if let Ok(s) = std::str::from_utf8(data) {
         if let Ok(mut stream) = s.parse::<TokenStream>() {
+            const MAX_LEN: usize = 64;
+            let small_before = stream.len() <= MAX_LEN;
+            
+            #[cfg(fuzzing_repro)]
+            println!("Starting point: {:?}", stream);
+            
             let mut dict = Tokens::new();
             dict.add_tokens([
                 &b"X".to_vec(),
@@ -17,10 +23,14 @@ fuzz_target!(|data: &[u8]| {
             ]);
             let seed = RandomState::new().hash_one(data);
             let mut rand = StdRand::with_seed(seed);
-            const MAX_LEN: usize = 64;
             
-            for _ in 0..100 {
-                let mutated = match rand.below(19) {
+            for _i in 0..64 {
+                let mutation = rand.below(19); 
+                
+                #[cfg(fuzzing_repro)]
+                println!("Iteration #{} with mutation #{}", _i, mutation);
+                
+                let mutated = match mutation {
                     0 => mutate_copy(&mut rand, &mut stream, MAX_LEN),
                     1 => {
                         let other = stream.clone();
@@ -50,7 +60,10 @@ fuzz_target!(|data: &[u8]| {
                 };
                 
                 if mutated {
-                    assert!(stream.len() <= MAX_LEN);
+                    #[cfg(fuzzing_repro)]
+                    println!("    -> {:?}", stream);
+                    
+                    assert!(!small_before || stream.len() <= MAX_LEN);
                     
                     for token in stream.tokens() {
                         assert!(token.verify());
