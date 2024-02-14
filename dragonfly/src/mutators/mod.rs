@@ -7,6 +7,7 @@ mod swap;
 mod repeat;
 mod random;
 mod interesting;
+mod special;
 
 pub use split::*;
 pub use crossover::*;
@@ -16,3 +17,4 @@ pub use swap::*;
 pub use repeat::*;
 pub use random::*;
 pub use interesting::*;
+pub use special::*;

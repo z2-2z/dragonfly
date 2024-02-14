@@ -60,8 +60,7 @@ pub fn mutate_interesting<R: Rand>(rand: &mut R, stream: &mut TokenStream) -> bo
     
     for token in &mut stream.tokens_mut()[start..] {
         if let TextToken::Number(data) = token {
-            let idx = rand.below(INTERESTING.len() as u64) as usize;
-            copy_vec(data, INTERESTING[idx]);
+            copy_vec(data, rand.choose(INTERESTING));
             return true;
         }
     }
