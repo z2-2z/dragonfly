@@ -20,7 +20,7 @@ fuzz_target!(|data: &[u8]| {
             let mut count = 0;
             
             while count < 100 {
-                let mutated = match rand.below(18) {
+                let mutated = match rand.below(19) {
                     0 => mutate_copy(&mut rand, &mut stream),
                     1 => {
                         let other = stream.clone();
@@ -45,6 +45,7 @@ fuzz_target!(|data: &[u8]| {
                     15 => mutate_swap_constants(&mut rand, &mut stream, &dict),
                     16 => mutate_swap_tokens(&mut rand, &mut stream),
                     17 => mutate_swap_words(&mut rand, &mut stream),
+                    18 => mutate_truncate(&mut rand, &mut stream),
                     _ => unreachable!(),
                 };
                 

@@ -10,6 +10,7 @@ mod interesting;
 mod special;
 mod dict;
 mod flip;
+mod truncate;
 
 pub use split::*;
 pub use crossover::*;
@@ -22,3 +23,4 @@ pub use interesting::*;
 pub use special::*;
 pub use dict::*;
 pub use flip::*;
+pub use truncate::*;
