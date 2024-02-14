@@ -6,7 +6,7 @@ Mutators:
 ~~ swap two tokens
 ~~ insert / replace random values
 ~~ constant swap with other constant (from dict)
-- replace with interesting value for number
+~~ replace with interesting value for number
 - insert / replace special chars into text tokens
 ~~ inflate a token by repeating its content
 - modify value sligtly: replace content with some chars from a whitelist
