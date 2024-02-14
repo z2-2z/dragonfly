@@ -149,6 +149,7 @@ impl TextToken {
         }
     }
     
+    #[cfg(test)]
     pub(crate) fn verify(&self) -> bool {
         match self {
             TextToken::Constant(_) => true,
@@ -176,12 +177,12 @@ impl TextToken {
                 true
             },
             TextToken::Text(data) => {
-                const BLACKLIST: [u8; 18] = [
+                const BLACKLIST: [u8; 16] = [
                     // Whitespace
                     b' ', b'\t', b'\n', 0x0b, 0x0c, b'\r',
                     
                     // Number
-                    b'+', b'-', b'0', b'1', b'2', b'3', b'4', b'5', b'6', b'7', b'8', b'9',
+                    b'0', b'1', b'2', b'3', b'4', b'5', b'6', b'7', b'8', b'9',
                 ];
                 for byte in data {
                     if *byte >= 0x80 || BLACKLIST.contains(byte) {

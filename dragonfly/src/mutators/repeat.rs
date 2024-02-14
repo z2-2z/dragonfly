@@ -40,6 +40,11 @@ pub fn mutate_repeat_char<R: Rand, const AMNT: usize>(rand: &mut R, stream: &mut
     
     let n = AMNT - elem_len;
     let idx = rand.below(elem_len as u64) as usize;
+    
+    if idx == 0 && elem.is_number() {
+        return false;
+    }
+    
     let c = elem.data()[idx];
     elem.data_mut().splice(idx..idx, vec![c; n]);
     
