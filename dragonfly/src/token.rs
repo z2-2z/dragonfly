@@ -86,8 +86,7 @@ impl TextToken {
         let mut data = vec![0; random_len];
         
         for byte in &mut data {
-            let idx = rand.next() as usize;
-            *byte = WHITESPACE[idx % 6];
+            *byte = rand.choose(WHITESPACE);
         }
         
         TextToken::Whitespace(data)
@@ -102,13 +101,10 @@ impl TextToken {
         let mut data = vec![0; random_len];
         
         for byte in &mut data {
-            let idx = rand.next() as usize;
-            *byte = DIGITS[idx % 10];
+            *byte = rand.choose(DIGITS);
         }
         
-        let idx = rand.next() & 0b11;
-        
-        match idx {
+        match rand.below(4) {
             0 => data[0] = b'-',
             1 => data[0] = b'+',
             _ => {},

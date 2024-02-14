@@ -10,6 +10,7 @@ cargo-fuzz = true
 [dependencies]
 libfuzzer-sys = "0.4"
 libafl_bolts = "0.11.2"
+libafl = "0.11.2"
 ahash = "0.8"
 
 [dependencies.dragonfly]
@@ -25,6 +26,13 @@ bench = false
 [[bin]]
 name = "mutate_swap_words"
 path = "fuzz_targets/mutate_swap_words.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "all_mutators"
+path = "fuzz_targets/all_mutators.rs"
 test = false
 doc = false
 bench = false

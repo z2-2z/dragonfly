@@ -11,7 +11,7 @@ pub fn mutate_dict_insert<R: Rand>(rand: &mut R, stream: &mut TokenStream, dict:
     let item = rand.below(dict.len() as u64) as usize;
     let new_elem = dict.tokens()[item].to_owned();
     
-    if (rand.next() & 1) == 1 {
+    if rand.below(2) == 1 {
         stream.tokens_mut().insert(idx, TextToken::Constant(new_elem));
     } else {
         let new_elems = [

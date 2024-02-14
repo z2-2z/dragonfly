@@ -22,7 +22,7 @@ pub fn mutate_split<R: Rand>(rand: &mut R, stream: &mut TokenStream) -> bool {
     let mut split_elem = token.clone_nodata();
     *split_elem.data_mut() = token.data_mut().split_off(pos);
     
-    let new_elem = match rand.next() % 4 {
+    let new_elem = match rand.below(4) {
         0 => TextToken::random_number::<_, 16>(rand),
         1 => TextToken::random_whitespace::<_, 1, 16>(rand),
         2 ..= 3 => TextToken::random_text::<_, 1, 16>(rand),

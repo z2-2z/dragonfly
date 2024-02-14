@@ -3,7 +3,7 @@ use libafl_bolts::prelude::Rand;
 
 pub fn mutate_random_insert<R: Rand>(rand: &mut R, stream: &mut TokenStream) -> bool {
     let idx = rand.below(stream.len() as u64 + 1) as usize;
-    let new_elem = match rand.next() % 5 {
+    let new_elem = match rand.below(5) {
         0 => TextToken::random_number::<_, 16>(rand),
         1 => TextToken::random_whitespace::<_, 1, 16>(rand),
         2 ..= 4 => TextToken::random_text::<_, 1, 16>(rand),
@@ -19,7 +19,7 @@ pub fn mutate_random_replace<R: Rand>(rand: &mut R, stream: &mut TokenStream) ->
     }
     
     let idx = rand.below(stream.len() as u64) as usize;
-    let new_elem = match rand.next() % 5 {
+    let new_elem = match rand.below(5) {
         0 => TextToken::random_number::<_, 16>(rand),
         1 => TextToken::random_whitespace::<_, 1, 16>(rand),
         2 ..= 4 => TextToken::random_text::<_, 1, 16>(rand),
