@@ -97,4 +97,108 @@ mod tests {
             }
         }
     }
+    
+    #[test]
+    fn test_generation() {
+        let mut stream = "".parse::<TokenStream>().unwrap();
+        let mut dict = Tokens::new();
+        dict.add_tokens([
+            &b"<TOKEN>".to_vec(),
+        ]);
+        let mut rand = StdRand::with_seed(current_nanos());
+        const MAX_LEN: usize = 128;
+        
+        for _ in 0..10 {
+            match rand.below(19) {
+                0 => mutate_copy(&mut rand, &mut stream, MAX_LEN),
+                1 => {
+                    let other = stream.clone();
+                    mutate_crossover_insert(&mut rand, &mut stream, &other, MAX_LEN)
+                },
+                2 => {
+                    let other = stream.clone();
+                    mutate_crossover_replace(&mut rand, &mut stream, &other, MAX_LEN)
+                },
+                3 => mutate_delete(&mut rand, &mut stream),
+                4 => mutate_dict_insert(&mut rand, &mut stream, &dict, MAX_LEN),
+                5 => mutate_dict_replace(&mut rand, &mut stream, &dict),
+                6 => mutate_flip(&mut rand, &mut stream),
+                7 => mutate_interesting(&mut rand, &mut stream),
+                8 => mutate_random_insert(&mut rand, &mut stream, MAX_LEN),
+                9 => mutate_random_replace(&mut rand, &mut stream),
+                10 => mutate_repeat_char::<_, 8>(&mut rand, &mut stream),
+                11 => mutate_repeat_token::<_, 8>(&mut rand, &mut stream, MAX_LEN),
+                12 => mutate_special_insert(&mut rand, &mut stream),
+                13 => mutate_special_replace(&mut rand, &mut stream),
+                14 => mutate_split(&mut rand, &mut stream, MAX_LEN),
+                15 => mutate_swap_constants(&mut rand, &mut stream, &dict),
+                16 => mutate_swap_tokens(&mut rand, &mut stream),
+                17 => mutate_swap_words(&mut rand, &mut stream),
+                18 => mutate_truncate(&mut rand, &mut stream),
+                _ => unreachable!(),
+            };
+        }
+        
+        let mut total_len = 0;
+        for token in stream.tokens() {
+            total_len += token.len();
+        }
+        
+        let mut buffer = vec![0; total_len];
+        stream.serialize_into_buffer(&mut buffer);
+        
+        println!("{}", std::str::from_utf8(&buffer).unwrap());
+    }
+    
+    #[test]
+    fn test_mutation() {
+        let mut stream = "PORT 127,0,0,1,80,80\r\n".parse::<TokenStream>().unwrap();
+        let mut dict = Tokens::new();
+        dict.add_tokens([
+            &b"<TOKEN>".to_vec(),
+        ]);
+        let mut rand = StdRand::with_seed(current_nanos());
+        const MAX_LEN: usize = 128;
+        
+        for _ in 0..2 {
+            match rand.below(19) {
+                0 => mutate_copy(&mut rand, &mut stream, MAX_LEN),
+                1 => {
+                    let other = stream.clone();
+                    mutate_crossover_insert(&mut rand, &mut stream, &other, MAX_LEN)
+                },
+                2 => {
+                    let other = stream.clone();
+                    mutate_crossover_replace(&mut rand, &mut stream, &other, MAX_LEN)
+                },
+                3 => mutate_delete(&mut rand, &mut stream),
+                4 => mutate_dict_insert(&mut rand, &mut stream, &dict, MAX_LEN),
+                5 => mutate_dict_replace(&mut rand, &mut stream, &dict),
+                6 => mutate_flip(&mut rand, &mut stream),
+                7 => mutate_interesting(&mut rand, &mut stream),
+                8 => mutate_random_insert(&mut rand, &mut stream, MAX_LEN),
+                9 => mutate_random_replace(&mut rand, &mut stream),
+                10 => mutate_repeat_char::<_, 8>(&mut rand, &mut stream),
+                11 => mutate_repeat_token::<_, 8>(&mut rand, &mut stream, MAX_LEN),
+                12 => mutate_special_insert(&mut rand, &mut stream),
+                13 => mutate_special_replace(&mut rand, &mut stream),
+                14 => mutate_split(&mut rand, &mut stream, MAX_LEN),
+                15 => mutate_swap_constants(&mut rand, &mut stream, &dict),
+                16 => mutate_swap_tokens(&mut rand, &mut stream),
+                17 => mutate_swap_words(&mut rand, &mut stream),
+                18 => mutate_truncate(&mut rand, &mut stream),
+                _ => unreachable!(),
+            };
+        }
+        
+        let mut total_len = 0;
+        for token in stream.tokens() {
+            total_len += token.len();
+        }
+        
+        let mut buffer = vec![0; total_len];
+        stream.serialize_into_buffer(&mut buffer);
+        
+        println!("{:?}", std::str::from_utf8(&buffer).unwrap());
+    }
 }

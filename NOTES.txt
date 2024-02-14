@@ -13,5 +13,4 @@ Mutators:
 ~~ word swap: find two non-overlapping subslices that are enclosed by whitespaces and swap them
 ~~ dictionary insert constant (optionally surrounded by whitespace)
 
-TextToken verify + fuzzing
-manually check how good input generation is
+
