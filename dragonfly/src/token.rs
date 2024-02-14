@@ -310,6 +310,21 @@ impl TokenStream {
     }
 }
 
+pub trait HasTokenStream {
+    fn token_stream(&self) -> &TokenStream;
+    fn token_stream_mut(&mut self) -> &mut TokenStream;
+}
+
+impl HasTokenStream for TokenStream {
+    fn token_stream(&self) -> &TokenStream {
+        self
+    }
+
+    fn token_stream_mut(&mut self) -> &mut TokenStream {
+        self
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
