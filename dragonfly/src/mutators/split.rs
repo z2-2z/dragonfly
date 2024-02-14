@@ -1,8 +1,8 @@
 use crate::{TokenStream, TextToken};
 use libafl_bolts::prelude::Rand;
 
-pub fn mutate_split<R: Rand>(rand: &mut R, stream: &mut TokenStream) -> bool {
-    if stream.is_empty() {
+pub fn mutate_split<R: Rand>(rand: &mut R, stream: &mut TokenStream, max_len: usize) -> bool {
+    if stream.is_empty() || max_len.saturating_sub(stream.len()) < 2 {
         return false;
     }
     
@@ -31,6 +31,7 @@ pub fn mutate_split<R: Rand>(rand: &mut R, stream: &mut TokenStream) -> bool {
     
     stream.tokens_mut().splice(idx + 1..idx + 1, [new_elem, split_elem]);
     
+    debug_assert!(stream.len() <= max_len);
     true
 }
 
@@ -49,7 +50,7 @@ mod tests {
         for _ in 0..10 {
             let mut stream = stream.clone();
             
-            if mutate_split(&mut rand, &mut stream) {
+            if mutate_split(&mut rand, &mut stream, 16) {
                 let size = stream.serialize_into_buffer(&mut buffer);
                 let s = std::str::from_utf8(&buffer[0..size]).unwrap();
                 println!("{}", s);

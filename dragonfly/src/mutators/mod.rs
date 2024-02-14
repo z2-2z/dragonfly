@@ -43,7 +43,7 @@ mod tests {
         ]);
         let mut rand = StdRand::with_seed(current_nanos());
         let mut count = 0;
-        const MAX_LEN: usize = 16;
+        const MAX_LEN: usize = 128;
         
         loop {
             count += 1;
@@ -62,20 +62,20 @@ mod tests {
                     },
                     2 => {
                         let other = stream.clone();
-                        mutate_crossover_replace(&mut rand, &mut stream, &other)
+                        mutate_crossover_replace(&mut rand, &mut stream, &other, MAX_LEN)
                     },
                     3 => mutate_delete(&mut rand, &mut stream),
-                    4 => mutate_dict_insert(&mut rand, &mut stream, &dict),
+                    4 => mutate_dict_insert(&mut rand, &mut stream, &dict, MAX_LEN),
                     5 => mutate_dict_replace(&mut rand, &mut stream, &dict),
                     6 => mutate_flip(&mut rand, &mut stream),
                     7 => mutate_interesting(&mut rand, &mut stream),
-                    8 => mutate_random_insert(&mut rand, &mut stream),
+                    8 => mutate_random_insert(&mut rand, &mut stream, MAX_LEN),
                     9 => mutate_random_replace(&mut rand, &mut stream),
                     10 => mutate_repeat_char::<_, 8>(&mut rand, &mut stream),
-                    11 => mutate_repeat_token::<_, 8>(&mut rand, &mut stream),
+                    11 => mutate_repeat_token::<_, 8>(&mut rand, &mut stream, MAX_LEN),
                     12 => mutate_special_insert(&mut rand, &mut stream),
                     13 => mutate_special_replace(&mut rand, &mut stream),
-                    14 => mutate_split(&mut rand, &mut stream),
+                    14 => mutate_split(&mut rand, &mut stream, MAX_LEN),
                     15 => mutate_swap_constants(&mut rand, &mut stream, &dict),
                     16 => mutate_swap_tokens(&mut rand, &mut stream),
                     17 => mutate_swap_words(&mut rand, &mut stream),
@@ -84,6 +84,10 @@ mod tests {
                 };
                 
                 if mutated {
+                    if stream.len() > MAX_LEN {
+                        panic!("Mutation #{} went out of bounds for number of tokens", mutation);
+                    }
+                    
                     for token in stream.tokens() {
                         if !token.verify() {
                             panic!("Mutation #{} produced invalid token: {:?} (full stream: {:?})", mutation, token, stream);

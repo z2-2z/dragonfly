@@ -2,26 +2,28 @@ use crate::{TokenStream, TextToken};
 use libafl_bolts::prelude::Rand;
 use libafl::prelude::Tokens;
 
-pub fn mutate_dict_insert<R: Rand>(rand: &mut R, stream: &mut TokenStream, dict: &Tokens) -> bool {
-    if dict.is_empty() {
+pub fn mutate_dict_insert<R: Rand>(rand: &mut R, stream: &mut TokenStream, dict: &Tokens, max_len: usize) -> bool {
+    if dict.is_empty() || stream.len() >= max_len {
         return false;
     }
     
+    let cap = max_len - stream.len();
     let idx = rand.below(stream.len() as u64 + 1) as usize;
     let item = rand.below(dict.len() as u64) as usize;
     let new_elem = dict.tokens()[item].to_owned();
     
-    if rand.below(2) == 1 {
-        stream.tokens_mut().insert(idx, TextToken::Constant(new_elem));
-    } else {
+    if cap >= 3 && rand.below(2) == 0 {
         let new_elems = [
             TextToken::random_whitespace::<_, 1, 1>(rand),
             TextToken::Constant(new_elem),
             TextToken::random_whitespace::<_, 1, 1>(rand),
         ];
         stream.tokens_mut().splice(idx..idx, new_elems);
+    } else {
+        stream.tokens_mut().insert(idx, TextToken::Constant(new_elem));
     }
     
+    debug_assert!(stream.len() <= max_len);
     true
 }
 
@@ -63,7 +65,7 @@ mod tests {
         
         for _ in 0..10 {
             let mut stream = stream.clone();
-            mutate_dict_insert(&mut rand, &mut stream, &dict);
+            mutate_dict_insert(&mut rand, &mut stream, &dict, 16);
             let size = stream.serialize_into_buffer(&mut buffer);
             let s = std::str::from_utf8(&buffer[0..size]).unwrap();
             println!("{}", s);

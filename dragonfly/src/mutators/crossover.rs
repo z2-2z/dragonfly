@@ -1,16 +1,17 @@
 use crate::{TokenStream, mutators::common::random_range};
 use libafl_bolts::prelude::Rand;
 
-pub fn mutate_crossover_replace<R: Rand>(rand: &mut R, stream: &mut TokenStream, other: &TokenStream) -> bool {
-    if stream.is_empty() || other.is_empty() {
+pub fn mutate_crossover_replace<R: Rand>(rand: &mut R, stream: &mut TokenStream, other: &TokenStream, max_len: usize) -> bool {
+    if stream.is_empty() || other.is_empty() || stream.len() >= max_len {
         return false;
     }
     
     let dst_range = random_range(rand, stream.len(), stream.len());
-    let src_range = random_range(rand, other.len(), stream.len());
+    let src_range = random_range(rand, other.len(), max_len - stream.len() + dst_range.end - dst_range.start);
     
     stream.tokens_mut().splice(dst_range, other.tokens()[src_range].to_owned());
     
+    debug_assert!(stream.len() <= max_len);
     true
 }
 
@@ -42,7 +43,7 @@ mod tests {
         
         for _ in 0..10 {
             let mut stream = stream1.clone();
-            mutate_crossover_replace(&mut rand, &mut stream, &stream2);
+            mutate_crossover_replace(&mut rand, &mut stream, &stream2, 16);
             let size = stream.serialize_into_buffer(&mut buffer);
             let s = std::str::from_utf8(&buffer[0..size]).unwrap();
             println!("{}", s);
