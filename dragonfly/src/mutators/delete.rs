@@ -6,7 +6,7 @@ pub fn mutate_delete<R: Rand>(rand: &mut R, stream: &mut TokenStream) -> bool {
         return false;
     }
     
-    let range = random_range(rand, stream.len());
+    let range = random_range(rand, stream.len(), stream.len());
     stream.tokens_mut().splice(range, []);
     
     true

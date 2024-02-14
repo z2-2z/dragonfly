@@ -14,7 +14,7 @@ mod truncate;
 
 pub use split::*;
 pub use crossover::*;
-pub use delete::*;
+ pub use delete::*;
 pub use copy::*;
 pub use swap::*;
 pub use repeat::*;
@@ -43,6 +43,7 @@ mod tests {
         ]);
         let mut rand = StdRand::with_seed(current_nanos());
         let mut count = 0;
+        const MAX_LEN: usize = 16;
         
         loop {
             count += 1;
@@ -54,10 +55,10 @@ mod tests {
                 let mutation = rand.below(19);
                 
                 let mutated = match mutation {
-                    0 => mutate_copy(&mut rand, &mut stream),
+                    0 => mutate_copy(&mut rand, &mut stream, MAX_LEN),
                     1 => {
                         let other = stream.clone();
-                        mutate_crossover_insert(&mut rand, &mut stream, &other)
+                        mutate_crossover_insert(&mut rand, &mut stream, &other, MAX_LEN)
                     },
                     2 => {
                         let other = stream.clone();
