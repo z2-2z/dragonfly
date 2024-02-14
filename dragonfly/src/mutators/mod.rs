@@ -9,6 +9,7 @@ mod random;
 mod interesting;
 mod special;
 mod dict;
+mod flip;
 
 pub use split::*;
 pub use crossover::*;
@@ -20,3 +21,4 @@ pub use random::*;
 pub use interesting::*;
 pub use special::*;
 pub use dict::*;
+pub use flip::*;
