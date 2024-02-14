@@ -149,8 +149,8 @@ impl TextToken {
         }
     }
     
-    #[cfg(test)]
-    pub(crate) fn verify(&self) -> bool {
+    #[doc(hidden)]
+    pub fn verify(&self) -> bool {
         match self {
             TextToken::Constant(_) => true,
             TextToken::Number(data) => {

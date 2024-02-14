@@ -10,7 +10,7 @@ pub fn bench_mutate_split(c: &mut Criterion) {
     let stream = "200  fuck  my  shit  up\r\nPORT  127,,,00,,,00,,,11,,,80,,,,80\r\n12  ++  12  ==  24".parse::<TokenStream>().unwrap();
     c.bench_function("mutate_split", |b| b.iter(|| {
         let mut stream = black_box(stream.clone());
-        mutate_split(&mut rand, &mut stream);
+        mutate_split(&mut rand, &mut stream, 16);
     }));
 }
 
