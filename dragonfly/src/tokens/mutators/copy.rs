@@ -1,4 +1,4 @@
-use crate::{TokenStream, mutators::common::random_range};
+use crate::tokens::{TokenStream, mutators::common::random_range};
 use libafl_bolts::prelude::Rand;
 
 pub fn mutate_copy<R: Rand>(rand: &mut R, stream: &mut TokenStream, max_len: usize) -> bool {

@@ -1,4 +1,4 @@
-use crate::{TokenStream, TextToken};
+use crate::tokens::{TokenStream, TextToken};
 use libafl_bolts::prelude::Rand;
 
 const WHITESPACE: [u8; 6] = [b' ', b'\t', b'\n', 0x0b, 0x0c, b'\r'];

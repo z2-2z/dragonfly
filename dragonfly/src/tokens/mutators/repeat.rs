@@ -1,4 +1,4 @@
-use crate::TokenStream;
+use crate::tokens::TokenStream;
 use libafl_bolts::prelude::Rand;
 
 pub fn mutate_repeat_token<R: Rand, const AMNT: usize>(rand: &mut R, stream: &mut TokenStream, max_len: usize) -> bool {

@@ -1,4 +1,4 @@
-use crate::{TokenStream, TextToken};
+use crate::tokens::{TokenStream, TextToken};
 use libafl_bolts::prelude::Rand;
 
 const SPECIAL: [u8; 33] = [

@@ -1,4 +1,4 @@
-use crate::TokenStream;
+use crate::tokens::TokenStream;
 use libafl_bolts::prelude::Rand;
 
 pub fn mutate_truncate<R: Rand>(rand: &mut R, stream: &mut TokenStream) -> bool {

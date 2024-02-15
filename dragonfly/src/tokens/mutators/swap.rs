@@ -1,4 +1,4 @@
-use crate::{TokenStream, TextToken, mutators::common::copy_vec};
+use crate::tokens::{TokenStream, TextToken, mutators::common::copy_vec};
 use libafl_bolts::prelude::Rand;
 use libafl::prelude::Tokens;
 use smallvec::SmallVec;

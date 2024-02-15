@@ -14,7 +14,7 @@ mod truncate;
 
 pub use split::*;
 pub use crossover::*;
- pub use delete::*;
+pub use delete::*;
 pub use copy::*;
 pub use swap::*;
 pub use repeat::*;
@@ -28,7 +28,7 @@ pub use truncate::*;
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::TokenStream;
+    use crate::tokens::TokenStream;
     use libafl::prelude::Tokens;
     use libafl_bolts::prelude::{StdRand, current_nanos, Rand};
     

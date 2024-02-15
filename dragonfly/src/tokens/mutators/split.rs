@@ -1,4 +1,4 @@
-use crate::{TokenStream, TextToken};
+use crate::tokens::{TokenStream, TextToken};
 use libafl_bolts::prelude::Rand;
 
 pub fn mutate_split<R: Rand>(rand: &mut R, stream: &mut TokenStream, max_len: usize) -> bool {
