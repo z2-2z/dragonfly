@@ -1,7 +1,7 @@
 #![no_main]
 
 use libfuzzer_sys::fuzz_target;
-use dragonfly::{TokenStream, TextToken, mutators::*};
+use dragonfly::tokens::{TokenStream, TextToken, mutators::*};
 use libafl_bolts::prelude::{StdRand, Rand};
 use libafl::prelude::Tokens;
 use ahash::RandomState;

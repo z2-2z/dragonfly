@@ -1,5 +1,5 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use dragonfly::{TokenStream, mutators::{
+use dragonfly::tokens::{TokenStream, mutators::{
     mutate_split, mutate_swap_words,
     }
 };

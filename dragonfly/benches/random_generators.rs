@@ -1,5 +1,5 @@
 use criterion::{criterion_group, criterion_main, Criterion};
-use dragonfly::TextToken;
+use dragonfly::tokens::TextToken;
 use libafl_bolts::prelude::StdRand;
 
 pub fn bench_random_whitespace(c: &mut Criterion) {
