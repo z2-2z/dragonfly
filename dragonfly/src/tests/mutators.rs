@@ -23,9 +23,12 @@ static mut SIGNALS_PTR: *mut u8 = unsafe { SIGNALS.as_mut_ptr() };
 
 #[test]
 fn simple_harness() {
+    let mut serbuf = vec![0; 4096];
+    
     // The closure that we want to fuzz
     let mut harness = |input: &DragonflyInput<TokenStream>| {
-        println!("{:?}", input);
+        //println!("{:?}", input);
+        input.serialize_dragonfly_format(&mut serbuf);
         ExitKind::Ok
     };
 

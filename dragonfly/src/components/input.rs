@@ -151,20 +151,19 @@ where
         
         /* Then, serialize all packets */
         for packet in self.packets() {
-            let start_header = cursor;
-            cursor += PacketHeader::SIZE;
+            debug_assert!(cursor % 8 == 0);
             
-            if cursor >= end {
+            /* If packet contains data, write data */
+            if cursor + PacketHeader::SIZE >= end {
                 break;
             }
             
-            /* If packet contains data, write data */
-            if let Some(packet_size) = packet.serialize_content(&mut buffer[cursor..end]) {
+            if let Some(packet_size) = packet.serialize_content(&mut buffer[cursor + PacketHeader::SIZE..end]) {
                 let header = PacketHeader::data(packet.connection() as u32, packet_size as u64);
                 unsafe {
-                    *std::mem::transmute::<*mut u8, *mut PacketHeader>(buffer[start_header..].as_mut_ptr()) = header;
+                    *std::mem::transmute::<*mut u8, *mut PacketHeader>(buffer[cursor..].as_mut_ptr()) = header;
                 }
-                cursor = std::cmp::min(cursor + align8(packet_size), end);
+                cursor = std::cmp::min(cursor + PacketHeader::SIZE + align8(packet_size), end);
                 last_was_sep = false;
             }
             
