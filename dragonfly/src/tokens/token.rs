@@ -1,6 +1,7 @@
 use serde::{Serialize, Deserialize};
 use std::str::FromStr;
 use libafl_bolts::prelude::Rand;
+use crate::components::Packet;
 
 #[derive(Clone, Serialize, Deserialize, Debug, Hash)]
 pub enum TextToken {
@@ -307,6 +308,12 @@ impl TokenStream {
         }
         
         cursor
+    }
+}
+
+impl Packet for TokenStream {
+    fn serialize_content(&self, buffer: &mut [u8]) -> Option<usize> {
+        Some(self.serialize_into_buffer(buffer))
     }
 }
 

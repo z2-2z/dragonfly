@@ -29,7 +29,7 @@ where
     fn mutate(&mut self, state: &mut S, input: &mut DragonflyInput<P>, _stage_idx: i32) -> Result<MutationResult, Error> {
         let len = input.packets().len();
         
-        if len >= self.max_length {
+        if len == 0 || len >= self.max_length {
             return Ok(MutationResult::Skipped);
         }
         
