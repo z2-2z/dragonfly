@@ -2,39 +2,41 @@ use libafl_bolts::prelude::{Named, Rand};
 use libafl::prelude::{Mutator, MutationResult, Error, HasRand};
 use crate::components::{DragonflyInput, Packet};
 
-pub struct PacketDeleteMutator {
-    min_length: usize,
+pub struct PacketRepeatMutator {
+    max_length: usize,
 }
 
-impl PacketDeleteMutator {
+impl PacketRepeatMutator {
     #[allow(clippy::new_without_default)]
-    pub fn new(min_length: usize) -> Self {
+    pub fn new(max_length: usize) -> Self {
         Self {
-            min_length,
+            max_length,
         }
     }
 }
 
-impl Named for PacketDeleteMutator {
+impl Named for PacketRepeatMutator {
     fn name(&self) -> &str {
-        "PacketDeleteMutator"
+        "PacketRepeatMutator"
     }
 }
 
-impl<P, S> Mutator<DragonflyInput<P>, S> for PacketDeleteMutator
+impl<P, S> Mutator<DragonflyInput<P>, S> for PacketRepeatMutator
 where
-    P: Packet,
+    P: Packet + Clone,
     S: HasRand,
 {
     fn mutate(&mut self, state: &mut S, input: &mut DragonflyInput<P>, _stage_idx: i32) -> Result<MutationResult, Error> {
         let len = input.packets().len();
         
-        if len <= self.min_length {
+        if len >= self.max_length {
             return Ok(MutationResult::Skipped);
         }
         
         let idx = state.rand_mut().below(len as u64) as usize;
-        input.packets_mut().remove(idx);
+        let n = 1 + state.rand_mut().below((self.max_length - len) as u64) as usize;
+        let packet = input.packets()[idx].clone();
+        input.packets_mut().splice(idx..idx, vec![packet; n]);
         
         Ok(MutationResult::Mutated)
     }
