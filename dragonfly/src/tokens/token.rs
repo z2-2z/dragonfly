@@ -313,6 +313,9 @@ impl TokenStream {
 pub trait HasTokenStream {
     fn token_stream(&self) -> &TokenStream;
     fn token_stream_mut(&mut self) -> &mut TokenStream;
+    fn has_token_stream(&self) -> bool {
+        true
+    }
 }
 
 impl HasTokenStream for TokenStream {
