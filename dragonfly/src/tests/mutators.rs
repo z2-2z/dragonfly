@@ -1,21 +1,18 @@
-use std::{path::PathBuf, ptr::write};
 use libafl::monitors::SimpleMonitor;
 use libafl::{
-    corpus::{InMemoryCorpus, OnDiskCorpus},
+    corpus::InMemoryCorpus,
     events::SimpleEventManager,
     executors::{inprocess::InProcessExecutor, ExitKind},
     feedbacks::{CrashFeedback, MaxMapFeedback},
     fuzzer::{Fuzzer, StdFuzzer},
-    generators::RandPrintablesGenerator,
-    inputs::{BytesInput, HasTargetBytes},
-    mutators::scheduled::{havoc_mutations, StdScheduledMutator},
+    mutators::scheduled::StdScheduledMutator,
     observers::StdMapObserver,
     schedulers::QueueScheduler,
     stages::mutational::StdMutationalStage,
     state::StdState,
     prelude::{Evaluator, Tokens, HasMetadata},
 };
-use libafl_bolts::{current_nanos, rands::StdRand, tuples::tuple_list, AsSlice};
+use libafl_bolts::{current_nanos, rands::StdRand, tuples::tuple_list};
 use crate::{components::{DragonflyInput, PacketCopyMutator, PacketDeleteMutator, PacketRepeatMutator, PacketSwapMutator, TokenStreamMutator, PacketContentMutator}, tokens::TokenStream};
 
 static mut SIGNALS: [u8; 16] = [0; 16];
