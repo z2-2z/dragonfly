@@ -14,29 +14,30 @@ int main (void) {
     while (1) {
         char c = 0;
         
-        int next_0 = packet_channel_is_next(0);
-        int next_1 = packet_channel_is_next(1);
-        
-        if (next_1) {
-            size_t ret = packet_channel_read(1, &c, 1);
-            
-            if (ret == 0) {
-                printf("(EOF 1)\n");
-            } else if (ret == 1) {
-                printf("(1) %c\n", c);
-            } else {
-                return 1;
-            }
-        }
+        packet_channel_check_available_data();
+        int next_0 = packet_channel_has_data(0);
+        int next_1 = packet_channel_has_data(1);
         
         if (next_0) {
             size_t ret = packet_channel_read(0, &c, 1);
             
             if (ret == 0) {
-                printf("(EOF 0)\n");
+                printf("(EOF 0) ");
                 break;
             } else if (ret == 1) {
-                printf("(0) %c\n", c);
+                printf("(0) %c ", c);
+            } else {
+                return 1;
+            }
+        }
+        
+        if (next_1) {
+            size_t ret = packet_channel_read(1, &c, 1);
+            
+            if (ret == 0) {
+                printf("(EOF 1) ");
+            } else if (ret == 1) {
+                printf("(1) %c ", c);
             } else {
                 return 1;
             }
@@ -46,8 +47,10 @@ int main (void) {
             return 1;
         }
         
-        printf("---\n");
+        printf("\n");
     }
+    
+    printf("\n");
     
     return 0;
 }

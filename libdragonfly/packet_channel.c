@@ -154,12 +154,19 @@ void packet_channel_init(void* buffer) {
     }
 }
 
-int packet_channel_is_next(size_t conn) {
+static int conn_has_data[MAX_CONNS] = {0};
+static int next_group = 0;
+
+int packet_channel_has_data(size_t conn) {
     if (conn >= MAX_CONNS) {
         return 0;
     }
     
-    /* Collect all cursor positions */
+    return conn_has_data[conn];
+}
+
+void packet_channel_check_available_data(void) {
+    /* Collect all cursor positions inside the current group */
     Packet* cursor_pos[MAX_CONNS] = {NULL};
     
     for (int i = 0; i < MAX_CONNS; ++i) {
@@ -172,29 +179,44 @@ int packet_channel_is_next(size_t conn) {
         cursor_pos[i] = packet;
     }
     
-    /* If there is data left, it can be next */
-    Packet* pointer = cursor_pos[conn];
+    /* Check if connections have data left */
+    int have_data = 0;
     
-    if (pointer->type == TYPE_DATA) {
-        return 1;
+    for (int i = 0; i < MAX_CONNS; ++i) {
+        int is_data = (cursor_pos[i]->type == TYPE_DATA);
+        conn_has_data[i] = is_data;
+        have_data |= is_data;
     }
     
-    /* Given connection contains the next packet iff its packet pointer is smaller than every other pointer */
-    for (size_t i = 0; i < MAX_CONNS; ++i) {
-        if (cursor_pos[i]->type == TYPE_DATA) {
-            return 0;
+    /* Edge case: sent all data of the current group */
+    if (!have_data) {
+        if (next_group) {
+            /* Signal that we can continue with next group */
+            Packet* pointer = cursor_pos[0];
+#ifdef DEBUG
+            for (int i = 0; i < MAX_CONNS; ++i) {
+                assert(cursor_pos[i] == pointer);
+            }
+#endif
+            pointer = next_packet(pointer);
+            
+            if (pointer->type == TYPE_DATA) {
+#ifdef DEBUG
+                assert(pointer->conn < MAX_CONNS);
+#endif
+                conn_has_data[pointer->conn] = 1;
+            } else {
+                conn_has_data[0] = 1;
+            }
+            
+            next_group = 0;
+        } else {
+            /* Signal EOF to all secondary connections */
+            for (int i = 1; i < MAX_CONNS; ++i) {
+                conn_has_data[i] = 1;
+            }
+            next_group = 1;
         }
-        
-        assert(pointer == cursor_pos[i]);
-    }
-    
-    /* Edge case: All pointers point to the same group separator */
-    pointer = next_packet(pointer);
-    
-    if (pointer->type == TYPE_DATA) {
-        return (conn == pointer->conn);
-    } else {
-        return 1;
     }
 }
 
@@ -209,9 +231,13 @@ size_t packet_channel_read(size_t conn, char* buf, size_t size) {
     while (1) {
         switch (packet->type) {
             case TYPE_SEP: {
-                select_group(packet);
-                packet = cursor->packet;
-                break;
+                if (!next_group) {
+                    select_group(packet);
+                    packet = cursor->packet;
+                    break;
+                } else {
+                    return 0;
+                }
             }
             
             case TYPE_EOF: {
