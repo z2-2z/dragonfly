@@ -27,6 +27,8 @@ typedef struct {
 } ConnState;
 
 static ConnState cursors[MAX_CONNS] = {0};
+static int conn_has_data[MAX_CONNS] = {0};
+static int signal_eof = 0;
 
 static uint64_t align8 (uint64_t val) {
     uint64_t rem = val % 8;
@@ -154,9 +156,6 @@ void packet_channel_init(void* buffer) {
     }
 }
 
-static int conn_has_data[MAX_CONNS] = {0};
-static int next_group = 0;
-
 int packet_channel_has_data(size_t conn) {
     if (conn >= MAX_CONNS) {
         return 0;
@@ -190,8 +189,8 @@ void packet_channel_check_available_data(void) {
     
     /* Edge case: sent all data of the current group */
     if (!have_data) {
-        if (next_group) {
-            /* Signal that we can continue with next group */
+        if (signal_eof) {
+            /* EOF done, signal that we can continue with next group */
             Packet* pointer = cursor_pos[0];
 #ifdef DEBUG
             for (int i = 0; i < MAX_CONNS; ++i) {
@@ -209,13 +208,13 @@ void packet_channel_check_available_data(void) {
                 conn_has_data[0] = 1;
             }
             
-            next_group = 0;
+            signal_eof = 0;
         } else {
             /* Signal EOF to all secondary connections */
             for (int i = 1; i < MAX_CONNS; ++i) {
                 conn_has_data[i] = 1;
             }
-            next_group = 1;
+            signal_eof = 1;
         }
     }
 }
@@ -231,12 +230,12 @@ size_t packet_channel_read(size_t conn, char* buf, size_t size) {
     while (1) {
         switch (packet->type) {
             case TYPE_SEP: {
-                if (!next_group) {
+                if (signal_eof) {
+                    return 0;
+                } else {
                     select_group(packet);
                     packet = cursor->packet;
                     break;
-                } else {
-                    return 0;
                 }
             }
             
