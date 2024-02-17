@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -8,13 +9,6 @@
 #ifndef MAX_CONNS
 #error "MAX_CONNS not set"
 #endif
-
-#define min(a,b)             \
-({                           \
-    __typeof__ (a) _a = (a); \
-    __typeof__ (b) _b = (b); \
-    _a < _b ? _a : _b;       \
-})
 
 #define TYPE_DATA 1
 #define TYPE_SEP  2
@@ -178,20 +172,30 @@ int packet_channel_is_next(size_t conn) {
         cursor_pos[i] = packet;
     }
     
-    /* Given connection contains the next packet iff its packet pointer is smaller than every other pointer */
+    /* If there is data left, it can be next */
     Packet* pointer = cursor_pos[conn];
     
-    if (conn > 0 && pointer->type != TYPE_DATA) {
+    if (pointer->type == TYPE_DATA) {
         return 1;
     }
     
+    /* Given connection contains the next packet iff its packet pointer is smaller than every other pointer */
     for (size_t i = 0; i < MAX_CONNS; ++i) {
-        if (i != conn && cursor_pos[i] <= pointer) {
+        if (cursor_pos[i]->type == TYPE_DATA) {
             return 0;
         }
+        
+        assert(pointer == cursor_pos[i]);
     }
     
-    return 1;
+    /* Edge case: All pointers point to the same group separator */
+    pointer = next_packet(pointer);
+    
+    if (pointer->type == TYPE_DATA) {
+        return (conn == pointer->conn);
+    } else {
+        return 1;
+    }
 }
 
 size_t packet_channel_read(size_t conn, char* buf, size_t size) {
@@ -205,13 +209,8 @@ size_t packet_channel_read(size_t conn, char* buf, size_t size) {
     while (1) {
         switch (packet->type) {
             case TYPE_SEP: {
-                if (conn == 0) {
-                    select_group(packet);
-                    packet = cursor->packet;
-                } else {
-                    return 0;
-                }
-                
+                select_group(packet);
+                packet = cursor->packet;
                 break;
             }
             
@@ -232,7 +231,7 @@ size_t packet_channel_read(size_t conn, char* buf, size_t size) {
                 }
                 
                 uint64_t rem_bytes = packet->size - cursor->consumed;
-                uint64_t final_size = min(size, rem_bytes);
+                uint64_t final_size = (size < rem_bytes) ? size : rem_bytes;
                 
                 memcpy(buf, (void*) &packet->content[cursor->consumed], final_size);
                 cursor->consumed += final_size;
