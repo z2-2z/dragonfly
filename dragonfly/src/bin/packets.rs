@@ -90,7 +90,7 @@ pub fn main() -> Result<(), ()> {
     }
     
     let input = DragonflyInput::new(packets);
-    let mut buf = vec![0; 8 * 1024 * 1024];
+    let mut buf = vec![0; 16 * 1024 * 1024];
     
     let len = input.serialize_dragonfly_format(&mut buf);
     

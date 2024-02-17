@@ -273,3 +273,13 @@ size_t packet_channel_read(size_t conn, char* buf, size_t size) {
         }
     }
 }
+
+int packet_channel_eof(void) {
+    int eof = 1;
+    
+    for (int i = 0; i < MAX_CONNS; ++i) {
+        eof &= (cursors[i].packet->type == TYPE_EOF);
+    }
+    
+    return eof;
+}
