@@ -21,6 +21,28 @@ struct timespec diff_timespec(const struct timespec *time0, const struct timespe
     return diff;
 }
 
+size_t run_one (char* packet_buf, size_t amount) {
+    char buf[amount];
+    size_t total_bytes = 0;
+    
+    packet_channel_init(packet_buf);
+    
+    while (!packet_channel_eof()) {
+        size_t num_read = 0;
+        
+        packet_channel_check_available_data();
+        for (size_t i = 0; i < MAX_CONNS; ++i) {
+            if (packet_channel_has_data(i)) {
+                num_read += packet_channel_read(i, buf, amount);
+            }
+        }
+        
+        total_bytes += num_read;
+    }
+    
+    return total_bytes;
+}
+
 int main (int argc, char** argv) {
     size_t amount = 1;
     size_t total_bytes = 0;
@@ -34,29 +56,17 @@ int main (int argc, char** argv) {
         return 1;
     }
     
-    packet_channel_init(packet_buf);
-    
     clock_gettime(CLOCK_MONOTONIC, &start);
     
-    while (!packet_channel_eof()) {
-        char buf[amount + 1];
-        size_t num_read = 0;
-        
-        packet_channel_check_available_data();
-        for (size_t i = 0; i < MAX_CONNS; ++i) {
-            if (packet_channel_has_data(i)) {
-                num_read += packet_channel_read(i, buf, amount);
-            }
-        }
-        
-        total_bytes += num_read;
+    while (total_bytes < 1 * 1024 * 1024 * 1024) {
+        total_bytes += run_one(packet_buf, amount);
     }
     
     clock_gettime(CLOCK_MONOTONIC, &end);
     
     struct timespec diff = diff_timespec(&start, &end);
     
-    printf("Received %lu bytes in %lds + %ldns\n", total_bytes, diff.tv_sec, diff.tv_nsec);
+    printf("Time to 1 GiB: %lds + %ldns\n", diff.tv_sec, diff.tv_nsec);
     
     return 0;
 }
