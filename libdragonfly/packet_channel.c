@@ -107,6 +107,7 @@ static void select_group (Packet* group_separator) {
 #endif
     
     /* Reset global state */
+    signal_eof = 0;
     __builtin_memset(cursors, 0, sizeof(ConnState) * MAX_CONNS);
     
     /* Set all cursors to first packet for given connection in current group */
@@ -186,10 +187,13 @@ void packet_channel_check_available_data (void) {
     }
     
     if (have_data) {
+        //printf("have_data %d\n", min_index);
         conn_has_data[min_index] = 1;
     } else {
         /* Edge case: sent all data of the current group */
         if (signal_eof) {
+            //printf("next group\n");
+            
             /* EOF done, signal that we can continue with next group */
             Packet* packet = next_packet(min_pointer);
             
@@ -215,13 +219,14 @@ void packet_channel_check_available_data (void) {
 #endif
                 }
             }
-            
-            signal_eof = 0;
         } else {
+            //printf("signaling eof\n");
+            
             /* Signal EOF to all secondary connections */
             __builtin_memset(&conn_has_data[1], 1, MAX_CONNS - 1);
-            signal_eof = 1;
         }
+        
+        signal_eof = !signal_eof;
     }
 }
 
@@ -236,7 +241,7 @@ size_t packet_channel_read (size_t conn, char* buf, size_t size) {
     while (1) {
         switch (packet->type) {
             case TYPE_SEP: {
-                if (packet->conn > 0) {
+                if (signal_eof) {
                     return 0;
                 } else {
                     select_group(packet);
