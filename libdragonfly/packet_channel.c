@@ -107,7 +107,6 @@ static void select_group (Packet* group_separator) {
 #endif
     
     /* Reset global state */
-    signal_eof = 0;
     __builtin_memset(cursors, 0, sizeof(ConnState) * MAX_CONNS);
     
     /* Set all cursors to first packet for given connection in current group */
