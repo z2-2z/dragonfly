@@ -10,12 +10,14 @@
 #error "MAX_CONNS not set"
 #endif
 
-#define TYPE_DATA 1
-#define TYPE_SEP  2
-#define TYPE_EOF  3
+typedef enum {
+    TYPE_DATA = 1,
+    TYPE_SEP = 2,
+    TYPE_EOF = 3,
+} PacketType;
 
 typedef struct {
-    uint32_t type;
+    PacketType type;
     uint32_t conn;
     uint64_t size;
     char content[];
@@ -40,7 +42,7 @@ static uint64_t align8 (uint64_t val) {
     }
 }
 
-static size_t packet_size(Packet* packet) {
+static size_t packet_size (Packet* packet) {
     switch (packet->type) {
         case TYPE_SEP:
         case TYPE_EOF: {
@@ -61,7 +63,7 @@ static size_t packet_size(Packet* packet) {
     }
 }
 
-static Packet* next_packet(Packet* packet) {
+static Packet* next_packet (Packet* packet) {
     if (packet->type == TYPE_EOF) {
         return packet;
     }
@@ -69,7 +71,7 @@ static Packet* next_packet(Packet* packet) {
     return (Packet*) ((char*)packet + packet_size(packet));
 }
 
-static Packet* next_packet_for_conn(Packet* start, size_t conn) {
+static Packet* next_packet_for_conn (Packet* start, size_t conn) {
     Packet* cursor = start;
     
     while (1) {
@@ -100,7 +102,7 @@ static Packet* next_packet_for_conn(Packet* start, size_t conn) {
     }
 }
 
-static void select_group(Packet* group_separator) {
+static void select_group (Packet* group_separator) {
 #ifdef DEBUG
     assert(group_separator->type == TYPE_SEP);
 #endif
@@ -148,7 +150,7 @@ static void select_group(Packet* group_separator) {
     }
 }
 
-void packet_channel_init(void* buffer) {
+void packet_channel_init (void* buffer) {
     if (buffer) {
         select_group((Packet*) buffer);
     } else {
@@ -156,7 +158,7 @@ void packet_channel_init(void* buffer) {
     }
 }
 
-int packet_channel_has_data(size_t conn) {
+int packet_channel_has_data (size_t conn) {
     if (conn >= MAX_CONNS) {
         return 0;
     }
@@ -164,7 +166,7 @@ int packet_channel_has_data(size_t conn) {
     return conn_has_data[conn];
 }
 
-void packet_channel_check_available_data(void) {
+void packet_channel_check_available_data (void) {
     /* Collect all cursor positions inside the current group */
     Packet* cursor_pos[MAX_CONNS] = {NULL};
     
@@ -187,8 +189,26 @@ void packet_channel_check_available_data(void) {
         have_data |= is_data;
     }
     
-    /* Edge case: sent all data of the current group */
-    if (!have_data) {
+    if (have_data) {
+        /* There is still is some data left in this group to send, select the next packet */
+        Packet* value = (Packet*)(size_t)-1LL;
+        int index = 0;
+        
+        for (int i = 0; i < MAX_CONNS; ++i) {
+            printf("value %p\n", (void*) value);
+            
+            if (cursor_pos[i] < value) {
+                value = cursor_pos[i];
+                index = i;
+                
+            }
+        }
+        
+        __builtin_memset(conn_has_data, 0, MAX_CONNS);
+        conn_has_data[index] = 1;
+        
+    } else {
+        /* Edge case: sent all data of the current group */
         if (signal_eof) {
             /* EOF done, signal that we can continue with next group */
             Packet* pointer = cursor_pos[0];
@@ -211,15 +231,15 @@ void packet_channel_check_available_data(void) {
             signal_eof = 0;
         } else {
             /* Signal EOF to all secondary connections */
-            for (int i = 1; i < MAX_CONNS; ++i) {
-                conn_has_data[i] = 1;
+            for (int i = 0; i < MAX_CONNS; ++i) {
+                conn_has_data[i] = (i > 0);
             }
             signal_eof = 1;
         }
     }
 }
 
-size_t packet_channel_read(size_t conn, char* buf, size_t size) {
+size_t packet_channel_read (size_t conn, char* buf, size_t size) {
     if (conn >= MAX_CONNS || !buf || !size) {
         return 0;
     }
@@ -274,7 +294,7 @@ size_t packet_channel_read(size_t conn, char* buf, size_t size) {
     }
 }
 
-int packet_channel_eof(void) {
+int packet_channel_eof (void) {
     int eof = 1;
     
     for (int i = 0; i < MAX_CONNS; ++i) {
