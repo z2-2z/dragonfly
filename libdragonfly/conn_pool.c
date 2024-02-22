@@ -17,26 +17,24 @@
 static size_t connections[MAX_CONNS];
 static size_t fd_map[NUM_FDS] = {NO_CONN};
 
-size_t conn_pool_open (int fd) {
+static inline size_t get_next_conn(void) {
+    for (size_t conn = 0; conn < MAX_CONNS; ++conn) {
+        if (connections[conn] == 0) {
+            return conn;
+        }
+    }
+    
+    ABORT;
+}
+
+void conn_pool_open (int fd) {
     if (fd >= NUM_FDS) {
         ABORT;
     }
     
-    size_t conn = 0;
-    
-    for (; conn < MAX_CONNS; ++conn) {
-        if (connections[conn] == 0) {
-            break;
-        }
-    }
-    
-    if (conn >= MAX_CONNS) {
-        ABORT;
-    }
-    
+    size_t conn = get_next_conn();
     fd_map[fd] = conn;
-    connections[conn] = 1;
-    return conn;
+    connections[conn] += 1;
 }
 
 void conn_pool_close (int fd) {
@@ -65,6 +63,11 @@ void conn_pool_dup (int old, int new) {
     conn_pool_close(new);
     
     size_t conn = fd_map[old];
+    
+    if (conn == NO_CONN) {
+        ABORT;
+    }
+    
     fd_map[new] = conn;
     connections[conn] += 1;
 }
