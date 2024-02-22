@@ -187,13 +187,9 @@ void packet_channel_check_available_data (void) {
     }
     
     if (have_data) {
-        //printf("have_data %d\n", min_index);
         conn_has_data[min_index] = 1;
     } else {
-        /* Edge case: sent all data of the current group */
-        if (signal_eof) {
-            //printf("next group\n");
-            
+        if (signal_eof) {            
             /* EOF done, signal that we can continue with next group */
             Packet* packet = next_packet(min_pointer);
             
@@ -220,8 +216,6 @@ void packet_channel_check_available_data (void) {
                 }
             }
         } else {
-            //printf("signaling eof\n");
-            
             /* Signal EOF to all secondary connections */
             __builtin_memset(&conn_has_data[1], 1, MAX_CONNS - 1);
         }
