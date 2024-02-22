@@ -189,7 +189,7 @@ void packet_channel_check_available_data (void) {
     if (have_data) {
         conn_has_data[min_index] = 1;
     } else {
-        if (signal_eof) {            
+        if (signal_eof) {
             /* EOF done, signal that we can continue with next group */
             Packet* packet = next_packet(min_pointer);
             
@@ -215,6 +215,8 @@ void packet_channel_check_available_data (void) {
 #endif
                 }
             }
+            
+            select_group(min_pointer);
         } else {
             /* Signal EOF to all secondary connections */
             __builtin_memset(&conn_has_data[1], 1, MAX_CONNS - 1);
@@ -235,7 +237,7 @@ size_t packet_channel_read (size_t conn, char* buf, size_t size) {
     while (1) {
         switch (packet->type) {
             case TYPE_SEP: {
-                if (signal_eof) {
+                if (conn > 0) {
                     return 0;
                 } else {
                     select_group(packet);

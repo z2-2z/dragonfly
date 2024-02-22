@@ -18,7 +18,7 @@ int main (int argc, char** argv) {
     
     packet_channel_init(packet_buf);
     
-    while (1) {
+    while (!packet_channel_eof()) {
         char buf[amount + 1];
         
         packet_channel_check_available_data();
@@ -30,7 +30,6 @@ int main (int argc, char** argv) {
             
             if (ret == 0) {
                 printf("(EOF 0) ");
-                break;
             } else {
                 buf[ret] = 0;
                 printf("(0) \"%s\" ", buf);
@@ -54,8 +53,6 @@ int main (int argc, char** argv) {
         
         printf("\n");
     }
-    
-    printf("\n");
     
     return 0;
 }
