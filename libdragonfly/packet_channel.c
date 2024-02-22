@@ -194,10 +194,9 @@ void packet_channel_check_available_data (void) {
             
             switch (packet->type) {
                 case TYPE_DATA: {
-#ifdef DEBUG
-                    assert(packet->conn < MAX_CONNS);
-#endif
-                    conn_has_data[packet->conn] = 1;
+                    if (packet->conn < MAX_CONNS) {
+                        conn_has_data[packet->conn] = 1;
+                    }
                     break;
                 }
                 
