@@ -7,7 +7,7 @@
 #include <string.h>
 
 #ifndef MAX_CONNS
-#error "MAX_CONNS not set"
+#error "MAX_CONNS has not been set"
 #endif
 
 typedef enum {
@@ -29,7 +29,7 @@ typedef struct {
 } ConnState;
 
 static ConnState cursors[MAX_CONNS] = {0};
-static int conn_has_data[MAX_CONNS] = {0};
+static char conn_has_data[MAX_CONNS] = {0};
 static int signal_eof = 0;
 
 static uint64_t align8 (uint64_t val) {
@@ -164,8 +164,10 @@ int packet_channel_has_data (size_t conn) {
 }
 
 void packet_channel_check_available_data (void) {
-    /* Collect all cursor positions inside the current group */
-    Packet* cursor_pos[MAX_CONNS] = {NULL};
+    /* Check if each connection has a data packet in the current group */
+    Packet* min_pointer = (Packet*)(size_t)-1LL;
+    int min_index = -1;
+    int have_data = 0;
     
     for (int i = 0; i < MAX_CONNS; ++i) {
         Packet* packet = cursors[i].packet;
@@ -174,63 +176,50 @@ void packet_channel_check_available_data (void) {
             packet = next_packet_for_conn(packet, (size_t) packet->conn);
         }
         
-        cursor_pos[i] = packet;
-    }
-    
-    /* Check if connections have data left */
-    int have_data = 0;
-    
-    for (int i = 0; i < MAX_CONNS; ++i) {
-        int is_data = (cursor_pos[i]->type == TYPE_DATA);
-        conn_has_data[i] = is_data;
-        have_data |= is_data;
+        conn_has_data[i] = 0;
+        have_data |= packet->type == TYPE_DATA;
+        
+        if (packet < min_pointer) {
+            min_pointer = packet;
+            min_index = i;
+        }
     }
     
     if (have_data) {
-        /* There is still is some data left in this group to send, select the next packet */
-        Packet* value = (Packet*)(size_t)-1LL;
-        int index = 0;
-        
-        for (int i = 0; i < MAX_CONNS; ++i) {
-            printf("value %p\n", (void*) value);
-            
-            if (cursor_pos[i] < value) {
-                value = cursor_pos[i];
-                index = i;
-                
-            }
-        }
-        
-        __builtin_memset(conn_has_data, 0, MAX_CONNS);
-        conn_has_data[index] = 1;
-        
+        conn_has_data[min_index] = 1;
     } else {
         /* Edge case: sent all data of the current group */
         if (signal_eof) {
             /* EOF done, signal that we can continue with next group */
-            Packet* pointer = cursor_pos[0];
-#ifdef DEBUG
-            for (int i = 0; i < MAX_CONNS; ++i) {
-                assert(cursor_pos[i] == pointer);
-            }
-#endif
-            pointer = next_packet(pointer);
+            Packet* packet = next_packet(min_pointer);
             
-            if (pointer->type == TYPE_DATA) {
+            switch (packet->type) {
+                case TYPE_DATA: {
 #ifdef DEBUG
-                assert(pointer->conn < MAX_CONNS);
+                    assert(packet->conn < MAX_CONNS);
 #endif
-                conn_has_data[pointer->conn] = 1;
-            } else {
-                conn_has_data[0] = 1;
+                    conn_has_data[packet->conn] = 1;
+                    break;
+                }
+                
+                case TYPE_EOF: {
+                    __builtin_memset(conn_has_data, 1, MAX_CONNS);
+                    break;
+                }
+                
+                case TYPE_SEP: {
+#ifdef DEBUG
+                    abort();
+#else
+                    __builtin_unreachable();
+#endif
+                }
             }
             
             signal_eof = 0;
         } else {
             /* Signal EOF to all secondary connections */
-            for (int i = 0; i < MAX_CONNS; ++i) {
-                conn_has_data[i] = (i > 0);
-            }
+            __builtin_memset(&conn_has_data[1], 1, MAX_CONNS - 1);
             signal_eof = 1;
         }
     }
@@ -247,7 +236,7 @@ size_t packet_channel_read (size_t conn, char* buf, size_t size) {
     while (1) {
         switch (packet->type) {
             case TYPE_SEP: {
-                if (signal_eof) {
+                if (packet->conn > 0) {
                     return 0;
                 } else {
                     select_group(packet);
