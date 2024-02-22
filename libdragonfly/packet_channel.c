@@ -42,11 +42,14 @@ static uint64_t align8 (uint64_t val) {
     }
 }
 
-static size_t packet_size (Packet* packet) {
+static inline size_t packet_size (Packet* packet) {
     switch (packet->type) {
-        case TYPE_SEP:
-        case TYPE_EOF: {
+        case TYPE_SEP: {
             return sizeof(Packet);
+        }
+        
+        case TYPE_EOF: {
+            return 0;
         }
         
         case TYPE_DATA: {
@@ -64,10 +67,6 @@ static size_t packet_size (Packet* packet) {
 }
 
 static Packet* next_packet (Packet* packet) {
-    if (packet->type == TYPE_EOF) {
-        return packet;
-    }
-    
     return (Packet*) ((char*)packet + packet_size(packet));
 }
 
@@ -111,7 +110,6 @@ static void select_group (Packet* group_separator) {
     __builtin_memset(cursors, 0, sizeof(ConnState) * MAX_CONNS);
     
     /* Set all cursors to first packet for given connection in current group */
-    char cursor_set[MAX_CONNS] = {0};
     Packet* cursor = group_separator;
     
     while (1) {
@@ -121,7 +119,7 @@ static void select_group (Packet* group_separator) {
             case TYPE_SEP:
             case TYPE_EOF: {
                 for (int i = 0; i < MAX_CONNS; ++i) {
-                    if (!cursor_set[i]) {
+                    if (cursors[i].packet == NULL) {
                         cursors[i].packet = cursor;
                     }
                 }
@@ -131,9 +129,8 @@ static void select_group (Packet* group_separator) {
             case TYPE_DATA: {
                 size_t conn = (size_t) cursor->conn;
                 
-                if (conn < MAX_CONNS && !cursor_set[conn]) {
+                if (conn < MAX_CONNS && cursors[conn].packet == NULL) {
                     cursors[conn].packet = cursor;
-                    cursor_set[conn] = 1;
                 }
                 
                 break;
