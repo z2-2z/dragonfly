@@ -22,33 +22,18 @@ int main (int argc, char** argv) {
         char buf[amount + 1];
         
         packet_channel_check_available_data();
-        int next_0 = packet_channel_has_data(0);
-        int next_1 = packet_channel_has_data(1);
         
-        if (next_0) {
-            size_t ret = packet_channel_read(0, buf, amount);
+        for (size_t i = 0; i < MAX_CONNS; ++i) {
+            if (packet_channel_has_data(i)) {
+                size_t ret = packet_channel_read(i, buf, amount);
             
-            if (ret == 0) {
-                printf("(EOF 0) ");
-            } else {
-                buf[ret] = 0;
-                printf("(0) \"%s\" ", buf);
+                if (ret == 0) {
+                    printf("(EOF %lu) ", i);
+                } else {
+                    buf[ret] = 0;
+                    printf("(%lu) \"%s\" ", i, buf);
+                }
             }
-        }
-        
-        if (next_1) {
-            size_t ret = packet_channel_read(1, buf, amount);
-            
-            if (ret == 0) {
-                printf("(EOF 1) ");
-            } else {
-                buf[ret] = 0;
-                printf("(1) \"%s\" ", buf);
-            }
-        }
-        
-        if (!next_0 && !next_1) {
-            return 1;
         }
         
         printf("\n");
