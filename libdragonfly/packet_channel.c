@@ -214,7 +214,9 @@ void packet_channel_check_available_data (void) {
                 }
             }
             
-            select_group(min_pointer);
+            if (min_pointer->type != TYPE_EOF) {
+                select_group(min_pointer);
+            }
         } else {
             /* Signal EOF to all secondary connections */
             __builtin_memset(&conn_has_data[1], 1, MAX_CONNS - 1);

@@ -6,7 +6,7 @@
 const char elf_interpreter[] __attribute__ ((section (".interp"))) = INTERPRETER;
 
 void desock_main (void) {
-    printf ("libdragonfly.so: A helper library for stateful fuzzing\n" "\n" "This library can desock\n" "    servers = "
+    printf ("libdragonfly.so: A helper library for the dragonfly tool\n" "\n" "This library can desock\n" "    servers = "
 #ifdef DESOCK_BIND
             "yes"
 #else
