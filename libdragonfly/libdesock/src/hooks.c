@@ -16,6 +16,10 @@
 static int active_channel = 0;
 static void* packet_channel = NULL;
 
+#ifdef DEBUG
+static unsigned char packet_buf[16 * 1024 * 1024];
+#endif
+
 __attribute__((constructor))
 static void attach_packet_channel (void) {
     char* shm_id = getenv("__LIBDRAGONFLY_PACKET_CHANNEL");
@@ -36,6 +40,13 @@ static void attach_packet_channel (void) {
         
         DEBUG_LOG("Attached to packet channel %lu @ %p\n", id, packet_channel);
     }
+#ifdef DEBUG
+    else {
+        syscall_cp (SYS_read, 0, packet_buf, sizeof(packet_buf));
+        packet_channel = (void*) packet_buf;
+        DEBUG_LOG("Read packets from stdin\n");
+    }
+#endif
 }
 
 void hook_shutdown_write (int fd) {

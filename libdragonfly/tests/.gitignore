@@ -2,3 +2,4 @@ packet_channel_bytewise
 bench_packet_decode
 perf.data*
 check_perf
+server_single
