@@ -37,15 +37,15 @@ void conn_pool_open (int fd) {
     connections[conn] += 1;
 }
 
-void conn_pool_close (int fd) {
+int conn_pool_close (int fd) {
     if (fd >= NUM_FDS) {
-        ABORT;
+        return 0;
     }
     
     size_t conn = fd_map[fd];
     
     if (conn == NO_CONN) {
-        return;
+        return 0;
     }
     
     fd_map[fd] = NO_CONN;
@@ -53,6 +53,8 @@ void conn_pool_close (int fd) {
     if (connections[conn] > 0) {
         connections[conn] -= 1;
     }
+    
+    return 1;
 }
 
 void conn_pool_dup (int old, int new) {
@@ -74,14 +76,20 @@ void conn_pool_dup (int old, int new) {
 
 size_t conn_pool_map_fd (int fd) {
     if (fd >= NUM_FDS) {
-        ABORT;
+        return NO_CONN;
     }
     
     size_t conn = fd_map[fd];
     
-    if (conn == NO_CONN) {
-        ABORT;
+    return conn;
+}
+
+int conn_pool_has_open_connections (void) {
+    for (size_t conn = 0; conn < MAX_CONNS; ++conn) {
+        if (connections[conn] != 0) {
+            return 1;
+        }
     }
     
-    return conn;
+    return 0;
 }
