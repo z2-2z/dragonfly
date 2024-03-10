@@ -54,7 +54,9 @@ void hook_shutdown_write (int fd) {
 }
 
 void hook_shutdown_read (int fd) {
-    if (conn_pool_close(fd) && active_channel) {
+    conn_pool_close(fd);
+    
+    if (active_channel) {
         active_channel = conn_pool_has_open_connections();
     }
 }
@@ -106,8 +108,10 @@ int hook_is_next (int fd) {
         
         if (conn < MAX_CONNS) {
             return packet_channel_has_data(conn);
+        } else {
+            return 0;
         }
     }
     
-    return 0;
+    return 1;
 }
