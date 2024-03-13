@@ -61,10 +61,10 @@ where
 
 impl<'a, OT, S, SP, P> DragonflyForkserverExecutor<OT, S, SP, P>
 where
-OT: ObserversTuple<S>,
-S:  State + UsesInput<Input = DragonflyInput<P>>,
-SP: ShMemProvider,
-P: Packet,
+    OT: ObserversTuple<S>,
+    S:  State + UsesInput<Input = DragonflyInput<P>>,
+    SP: ShMemProvider,
+    P: Packet,
 {
     fn new(observers: OT, packet_channel: SP::ShMem, timeout: TimeSpec, signal: Signal, forkserver: Forkserver) -> Self {
         Self {
@@ -84,30 +84,30 @@ P: Packet,
 
 impl<OT, S, SP, P> UsesState for DragonflyForkserverExecutor<OT, S, SP, P>
 where
-OT: ObserversTuple<S>,
-S:  State + UsesInput<Input = DragonflyInput<P>>,
-SP: ShMemProvider,
-P: Packet,
+    OT: ObserversTuple<S>,
+    S:  State + UsesInput<Input = DragonflyInput<P>>,
+    SP: ShMemProvider,
+    P: Packet,
 {
     type State = S;
 }
 
 impl<OT, S, SP, P> UsesObservers for DragonflyForkserverExecutor<OT, S, SP, P>
 where
-OT: ObserversTuple<S>,
-S:  State + UsesInput<Input = DragonflyInput<P>>,
-SP: ShMemProvider,
-P: Packet,
+    OT: ObserversTuple<S>,
+    S:  State + UsesInput<Input = DragonflyInput<P>>,
+    SP: ShMemProvider,
+    P: Packet,
 {
     type Observers = OT;
 }
 
 impl<OT, S, SP, P> HasObservers for DragonflyForkserverExecutor<OT, S, SP, P>
 where
-OT: ObserversTuple<S>,
-S:  State + UsesInput<Input = DragonflyInput<P>>,
-SP: ShMemProvider,
-P: Packet,
+    OT: ObserversTuple<S>,
+    S:  State + UsesInput<Input = DragonflyInput<P>>,
+    SP: ShMemProvider,
+    P: Packet,
 {
     fn observers(&self) -> &OT {
         &self.observers
@@ -120,10 +120,10 @@ P: Packet,
 
 impl<OT, S, SP, P, EM, Z> Executor<EM, Z> for DragonflyForkserverExecutor<OT, S, SP, P>
 where
-OT: ObserversTuple<S>,
-S:  State + UsesInput<Input = DragonflyInput<P>>,
-SP: ShMemProvider,
-P: Packet,
+    OT: ObserversTuple<S>,
+    S:  State + UsesInput<Input = DragonflyInput<P>>,
+    SP: ShMemProvider,
+    P: Packet,
     EM: UsesState<State = S>,
     Z: UsesState<State = S>,
 {
@@ -177,10 +177,10 @@ P: Packet,
 
 pub struct DragonflyForkserverExecutorBuilder<'a, OT, S, SP, P>
 where
-OT: ObserversTuple<S>,
-S:  State + UsesInput<Input = DragonflyInput<P>>,
-SP: ShMemProvider,
-P: Packet,
+    OT: ObserversTuple<S>,
+    S:  State + UsesInput<Input = DragonflyInput<P>>,
+    SP: ShMemProvider,
+    P: Packet,
 {
     shmem_provider: Option<&'a mut SP>,
     observers: Option<OT>,
@@ -196,10 +196,10 @@ P: Packet,
 
 impl<'a, OT, S, SP, P> DragonflyForkserverExecutorBuilder<'a, OT, S, SP, P>
 where
-OT: ObserversTuple<S>,
-S:  State + UsesInput<Input = DragonflyInput<P>>,
-SP: ShMemProvider,
-P: Packet,
+    OT: ObserversTuple<S>,
+    S:  State + UsesInput<Input = DragonflyInput<P>>,
+    SP: ShMemProvider,
+    P: Packet,
 {
     #[allow(clippy::new_without_default)]
     fn new() -> Self {
