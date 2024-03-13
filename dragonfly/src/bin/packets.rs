@@ -1,5 +1,5 @@
 use clap::Parser;
-use dragonfly::components::DragonflyInput;
+use dragonfly::components::{DragonflyInput, PACKET_CHANNEL_SIZE};
 use std::io::Write;
 
 #[derive(Debug)]
@@ -90,7 +90,7 @@ pub fn main() -> Result<(), ()> {
     }
     
     let input = DragonflyInput::new(packets);
-    let mut buf = vec![0; 16 * 1024 * 1024];
+    let mut buf = vec![0; PACKET_CHANNEL_SIZE];
     
     let len = input.serialize_dragonfly_format(&mut buf);
     

@@ -40,7 +40,7 @@ use crate::components::{
     DragonflyInput, Packet,
 };
 
-const PACKET_CHANNEL_SIZE: usize = 16 * 1024 * 1024;
+pub const PACKET_CHANNEL_SIZE: usize = 16 * 1024 * 1024;
 const PACKET_CHANNEL_ENV_VAR: &str = "__LIBDRAGONFLY_PACKET_CHANNEL";
 
 #[derive(Debug)]
