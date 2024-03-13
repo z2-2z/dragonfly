@@ -1,0 +1,211 @@
+diff --git a/modules/mod_delay.c b/modules/mod_delay.c
+index 6023932d5..06cec24a3 100644
+--- a/modules/mod_delay.c
++++ b/modules/mod_delay.c
+@@ -2366,6 +2366,7 @@ static conftable delay_conftab[] = {
+ };
+ 
+ static cmdtable delay_cmdtab[] = {
++  { 0, NULL },
+   { PRE_CMD,		C_PASS,	G_NONE,	delay_pre_pass,		FALSE, FALSE },
+   { POST_CMD,		C_PASS,	G_NONE,	delay_post_pass,	FALSE, FALSE },
+   { POST_CMD_ERR,	C_PASS,	G_NONE,	delay_post_pass,	FALSE, FALSE },
+@@ -2379,6 +2380,10 @@ static cmdtable delay_cmdtab[] = {
+   { 0, NULL }
+ };
+ 
++static int nop (void) {
++    return 0;
++}
++
+ module delay_module = {
+   NULL, NULL,
+ 
+@@ -2398,10 +2403,10 @@ module delay_module = {
+   NULL,
+ 
+   /* Module initialization function */
+-  delay_init,
++  nop,
+ 
+   /* Session initialization function */
+-  delay_sess_init,
++  nop,
+ 
+   /* Module version */
+   MOD_DELAY_VERSION
+diff --git a/modules/mod_rlimit.c b/modules/mod_rlimit.c
+index b5729f52e..dd6be80f2 100644
+--- a/modules/mod_rlimit.c
++++ b/modules/mod_rlimit.c
+@@ -576,10 +576,10 @@ static int rlimit_set_core(int scope) {
+      * so when possible, use PR_SET_DUMPABLE to ensure that no coredumps
+      * happen.
+      */
+-    if (prctl(PR_SET_DUMPABLE, 0, 0, 0, 0) < 0) {
++    /*if (prctl(PR_SET_DUMPABLE, 0, 0, 0, 0) < 0) {
+       pr_log_pri(PR_LOG_ERR, "error setting PR_SET_DUMPABLE to false: %s",
+         strerror(errno));
+-    }
++    }*/
+   }
+ #endif /* no --enable-devel=coredump and HAVE_PRCTL and PR_SET_DUMPABLE */
+ 
+@@ -588,6 +588,7 @@ static int rlimit_set_core(int scope) {
+ }
+ 
+ static int rlimit_set_cpu(int scope) {
++  return 0;
+   config_rec *c;
+ 
+   /* Now check for the configurable resource limits */
+@@ -710,6 +711,7 @@ static int rlimit_set_files(int scope) {
+ }
+ 
+ static int rlimit_set_memory(int scope) {
++  return 0;
+   config_rec *c;
+ 
+   /* Now check for the configurable resource limits */
+diff --git a/src/fsio.c b/src/fsio.c
+index e5c48b298..e03b9d349 100644
+--- a/src/fsio.c
++++ b/src/fsio.c
+@@ -6696,6 +6696,7 @@ char *pr_fsio_getline(char *buf, size_t buflen, pr_fh_t *fh,
+ #define FSIO_MAX_FD_COUNT		1024
+ 
+ void pr_fs_close_extra_fds(void) {
++  return;
+   register unsigned int i;
+   long nfiles = 0;
+   struct rlimit rlim;
+diff --git a/src/main.c b/src/main.c
+index 3a9079425..1b98d5b3c 100644
+--- a/src/main.c
++++ b/src/main.c
+@@ -1326,7 +1326,7 @@ static void fork_server(int fd, conn_t *l, unsigned char no_fork) {
+   pr_signals_block();
+   PRIVS_ROOT
+ 
+-  log_opensyslog(NULL);
++  //log_opensyslog(NULL);
+ 
+   PRIVS_RELINQUISH
+   pr_signals_unblock();
+@@ -1591,6 +1591,10 @@ static void daemon_loop(void) {
+ 
+   pr_proctitle_set("(accepting connections)");
+ 
++#ifdef __AFL_INIT
++  __AFL_INIT();
++#endif
++
+   time(&last_error);
+ 
+   while (TRUE) {
+@@ -2456,7 +2460,7 @@ int main(int argc, char *argv[], char **envp) {
+   }
+ 
+   /* Open the syslog */
+-  log_opensyslog(NULL);
++  //log_opensyslog(NULL);
+ 
+   /* Initialize the memory subsystem here */
+   init_pools();
+diff --git a/src/memcache.c b/src/memcache.c
+index 0eee5466e..2f47666aa 100644
+--- a/src/memcache.c
++++ b/src/memcache.c
+@@ -1523,7 +1523,7 @@ static void memcache_tpl_fatal(char *fmt, ...) {
+   pr_trace_vmsg(trace_channel, 1, fmt, ap);
+   va_end(ap);
+ 
+-  _exit(1);
++  exit(1);
+ }
+ 
+ int memcache_clear(void) {
+diff --git a/src/session.c b/src/session.c
+index b32301bee..5e782161e 100644
+--- a/src/session.c
++++ b/src/session.c
+@@ -168,7 +168,7 @@ void pr_session_end(int flags) {
+    */
+   exit(exitcode);
+ #else
+-  _exit(exitcode);
++  exit(exitcode);
+ #endif /* PR_DEVEL_PROFILE */
+ }
+ 
+diff --git a/src/signals.c b/src/signals.c
+index 828717e7a..74e6bf182 100644
+--- a/src/signals.c
++++ b/src/signals.c
+@@ -530,11 +530,11 @@ static void handle_signals(int delay_on_eintr) {
+ }
+ 
+ void pr_signals_handle(void) {
+-  handle_signals(TRUE);
++  //handle_signals(TRUE);
+ }
+ 
+ void pr_signals_handle_without_delay(void) {
+-  handle_signals(FALSE);
++  //handle_signals(FALSE);
+ }
+ 
+ /* sig_restart occurs in the master daemon when manually "kill -HUP"
+@@ -588,6 +588,7 @@ RETSIGTYPE pr_signals_handle_event(int signo) {
+ }
+ 
+ int init_signals(void) {
++  return 0;
+   sigset_t sig_set;
+ 
+   /* Should the master server (only applicable in standalone mode)
+diff --git a/src/table.c b/src/table.c
+index 97cbfc016..bbf3c640d 100644
+--- a/src/table.c
++++ b/src/table.c
+@@ -356,6 +356,7 @@ static void tab_entry_remove(pr_table_t *tab, pr_table_entry_t *e) {
+ }
+ 
+ static unsigned int tab_get_seed(void) {
++  return 1234;
+   unsigned int seed = 0;
+ #ifndef PR_USE_OPENSSL
+   int fd = -1;
+diff --git a/src/throttle.c b/src/throttle.c
+index f73a2104b..dd5042542 100644
+--- a/src/throttle.c
++++ b/src/throttle.c
+@@ -292,7 +292,7 @@ void pr_throttle_pause(off_t xferlen, int update_scoreboard, off_t xfer_done) {
+     /* No interruptions, please... */
+     xfer_rate_sigmask(TRUE);
+ 
+-    if (select(0, NULL, NULL, NULL, &tv) < 0) {
++    if (0) {
+       int xerrno = errno;
+ 
+       if (XFER_ABORTED) {
+diff --git a/src/timers.c b/src/timers.c
+index 23b210e6f..ca4e2e704 100644
+--- a/src/timers.c
++++ b/src/timers.c
+@@ -525,6 +525,7 @@ static int sleep_cb(CALLBACK_FRAME) {
+ }
+ 
+ int pr_timer_sleep(int seconds) {
++  return 0;
+   int timerno = 0;
+   sigset_t oset;
+ 
+@@ -551,6 +552,7 @@ int pr_timer_sleep(int seconds) {
+ }
+ 
+ int pr_timer_usleep(unsigned long usecs) {
++  return 0;
+   struct timeval tv;
+ 
+   if (usecs == 0) {
