@@ -1,0 +1,4 @@
+[submodule "evaluation/ProFTPD/proftpd"]
+	path = evaluation/ProFTPD/proftpd
+	url = https://github.com/proftpd/proftpd/
+    ignore = dirty
