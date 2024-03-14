@@ -1,0 +1,4 @@
+dragonfly/
+libdragonfly/
+!libdragonfly/build/libdragonfly.so
+!dragonfly/target/debug/packets

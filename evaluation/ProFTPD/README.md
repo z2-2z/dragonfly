@@ -1,6 +1,12 @@
 # Fuzzing ProFTPD
 
 ## Setup
+Build dragonfly:
+```
+cd dragonfly
+cargo build
+```
+
 Build libdragonfly:
 ```sh
 cd libdragonfly
@@ -25,12 +31,11 @@ CC="afl-clang-lto" \
 Build the fuzzer:
 ```
 cd fuzzer
-cargo build
 cargo build --release
 ```
 
 Build the image:
 ```
 docker pull archlinux
-docker build -t proftpd .
+docker build -t proftpd -f Dockerfile ../..
 ```

@@ -43,6 +43,9 @@ enum Subcommand {
         #[arg(long)]
         corpus: Option<String>,
         
+        #[arg(long)]
+        debug: bool,
+        
         #[arg(long, default_value_t = String::from("0"))]
         cores: String,
     },
@@ -106,10 +109,9 @@ impl HasTokenStream for FTPPacket {
     }
 }
 
-fn fuzz(output: String, corpus: Option<String>, cores: String) {
+fn fuzz(output: String, corpus: Option<String>, debug_child: bool, cores: String) {
     let mut run_client = |state: Option<_>, mut mgr: LlmpRestartingEventManager<_, _>, _core_id| {
         let timeout = Duration::from_millis(5000);
-        let debug_child = cfg!(debug_assertions);
         let signal = str::parse::<Signal>("SIGKILL").unwrap();
         let seed = current_nanos();
         let loglevel = if debug_child {
@@ -155,7 +157,7 @@ fn fuzz(output: String, corpus: Option<String>, cores: String) {
             )?
         };
         
-        let dictionary = Tokens::from_file("ftp.dict")?;
+        let dictionary = Tokens::from_file("./ftp.dict")?;
         state.add_metadata(dictionary);
         
         let max_packets = 16;
@@ -181,8 +183,8 @@ fn fuzz(output: String, corpus: Option<String>, cores: String) {
             .signal(signal)
             .debug_child(debug_child)
             .env("LD_PRELOAD", "./libdragonfly.so")
-            .program("proftpd")
-            .args(["-d", loglevel, "-q", "-X", "-c", "config", "-n"])
+            .program("./proftpd")
+            .args(["-d", loglevel, "-q", "-X", "-c", "/proftpd/config", "-n"])
             .is_deferred_forkserver(true)
             .build()?;
         
@@ -253,6 +255,6 @@ fn main() {
     let args = Args::parse();
 
     match args.command {
-        Subcommand::Fuzz { output, corpus, cores } => fuzz(output, corpus, cores),
+        Subcommand::Fuzz { output, corpus, debug, cores } => fuzz(output, corpus, debug, cores),
     }
 }
