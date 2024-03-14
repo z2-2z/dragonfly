@@ -196,9 +196,9 @@ fn fuzz(output: String, corpus: Option<String>, debug_child: bool, cores: String
             } else {
                 let input = DragonflyInput::new(
                     vec![
-                        FTPPacket::Ctrl("USER user\r\n".parse().unwrap()),
+                        FTPPacket::Ctrl("USER ftp\r\n".parse().unwrap()),
                         FTPPacket::Sep,
-                        FTPPacket::Ctrl("PASS user\r\n".parse().unwrap()),
+                        FTPPacket::Ctrl("PASS fuck@you.org\r\n".parse().unwrap()),
                         FTPPacket::Sep,
                         FTPPacket::Ctrl("CWD uploads\r\n".parse().unwrap()),
                         FTPPacket::Sep,
