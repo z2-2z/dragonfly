@@ -309,6 +309,16 @@ impl TokenStream {
         
         cursor
     }
+    
+    pub fn serialized_len(&self) -> usize {
+        let mut ret = 0;
+        
+        for token in &self.0 {
+            ret += token.len();
+        }
+        
+        ret
+    }
 }
 
 impl Packet for TokenStream {

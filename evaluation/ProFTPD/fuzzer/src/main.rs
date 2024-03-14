@@ -17,7 +17,7 @@ use libafl::prelude::{
     CachedOnDiskCorpus, OnDiskCorpus, Tokens, HasMetadata,
     StdScheduledMutator, StdMutationalStage, QueueScheduler,
     StdFuzzer, Fuzzer, OnDiskJSONMonitor, NopMonitor, Launcher,
-    Error, EventConfig, Evaluator,
+    Error, EventConfig, Evaluator, Input,
 };
 use libafl_bolts::prelude::{
     current_nanos, UnixShMemProvider, shmem::{ShMemProvider, ShMem},
@@ -49,6 +49,10 @@ enum Subcommand {
         #[arg(long, default_value_t = String::from("0"))]
         cores: String,
     },
+    
+    Print {
+        file: String,
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Hash)]
@@ -251,10 +255,28 @@ fn fuzz(output: String, corpus: Option<String>, debug_child: bool, cores: String
     }
 }
 
+fn print(file: String) {
+    let input = DragonflyInput::<FTPPacket>::from_file(file).unwrap();
+    
+    for packet in input.packets() {
+        match packet {
+            FTPPacket::Ctrl(stream) => {
+                let mut buf = vec![0; stream.serialized_len()];
+                let len = stream.serialize_into_buffer(&mut buf);
+                let str = std::str::from_utf8(&buf[..len]).unwrap();
+                println!("ctrl: {:?}", str);
+            },
+            FTPPacket::Data => println!("<data>"),
+            FTPPacket::Sep => println!("<sep>"),
+        }
+    }
+}
+
 fn main() {
     let args = Args::parse();
 
     match args.command {
         Subcommand::Fuzz { output, corpus, debug, cores } => fuzz(output, corpus, debug, cores),
+        Subcommand::Print { file } => print(file),
     }
 }
