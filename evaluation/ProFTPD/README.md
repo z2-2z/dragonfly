@@ -39,3 +39,8 @@ Build the image:
 docker pull archlinux
 docker build -t proftpd -f Dockerfile ../..
 ```
+
+## Running a 24h campaign
+```
+docker run -v "$PWD/ftproot:/ftproot" -v "$PWD/output:/output" proftpd
+```

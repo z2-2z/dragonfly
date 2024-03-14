@@ -11,6 +11,9 @@ COPY evaluation/ProFTPD/ftp.dict ./ftp.dict
 COPY libdragonfly/build/libdragonfly.so ./libdragonfly.so
 COPY evaluation/ProFTPD/fuzzer/target/release/fuzzer ./fuzzer
 COPY dragonfly/target/debug/packets ./packets
+COPY evaluation/ProFTPD/entrypoint.sh ./entrypoint.sh
 
 VOLUME /ftproot
 VOLUME /output
+
+CMD ["timeout", "24h", "/bin/bash", "./entrypoint.sh"]
