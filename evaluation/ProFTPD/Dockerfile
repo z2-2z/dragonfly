@@ -16,4 +16,4 @@ COPY evaluation/ProFTPD/entrypoint.sh ./entrypoint.sh
 VOLUME /ftproot
 VOLUME /output
 
-CMD /bin/bash ./entrypoint.sh
+ENTRYPOINT /bin/bash ./entrypoint.sh
