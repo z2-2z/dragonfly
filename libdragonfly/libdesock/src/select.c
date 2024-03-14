@@ -34,7 +34,7 @@ static int filter_prioritized (int n, fd_set* set, int must_filter) {
 static int internal_select (int n, fd_set* rfds, fd_set* wfds, fd_set* efds, int polling) {
     DEBUG_LOG ("[%d] desock::internal_select(%d, %p, %p, %p)", gettid (), n, rfds, wfds, efds);
 
-    int ret = 0;
+    int num_r = 0, num_w = 0;
     int server_sock = -1;
 
     for (int i = 0; i < n; ++i) {
@@ -44,7 +44,7 @@ static int internal_select (int n, fd_set* rfds, fd_set* wfds, fd_set* efds, int
                     server_sock = i;
                 }
 
-                ++ret;
+                ++num_r;
             } else {
                 FD_CLR (i, rfds);
             }
@@ -52,7 +52,7 @@ static int internal_select (int n, fd_set* rfds, fd_set* wfds, fd_set* efds, int
 
         if (wfds && FD_ISSET (i, wfds)) {
             if (VALID_FD (i) && fd_table[i].desock && !fd_table[i].listening) {
-                ++ret;
+                ++num_w;
             } else {
                 FD_CLR (i, wfds);
             }
@@ -66,7 +66,7 @@ static int internal_select (int n, fd_set* rfds, fd_set* wfds, fd_set* efds, int
     int filtered = filter_prioritized(n, rfds, polling);
     
     if (filtered || polling) {
-        ret = filtered;
+        num_r = filtered;
         server_sock = -1;
     }
 
@@ -78,15 +78,16 @@ static int internal_select (int n, fd_set* rfds, fd_set* wfds, fd_set* efds, int
                 _error ("desock::internal_select(): sem_trywait failed\n");
             }
 
-            if (ret == 1) {
+            if (num_r + num_w == 1) {
                 sem_wait (&sem);
             } else {
                 FD_CLR (server_sock, rfds);
-                --ret;
+                --num_r;
             }
         }
     }
 
+    int ret = num_r + num_w;
     DEBUG_LOG (" = %d\n", ret);
     return ret;
 }

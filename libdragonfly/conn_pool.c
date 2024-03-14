@@ -11,11 +11,23 @@
 #define ABORT __builtin_unreachable()
 #endif
 
+#ifdef FD_TABLE_SIZE
+#define NUM_FDS FD_TABLE_SIZE
+#else
 #define NUM_FDS 1024
+#endif
+
 #define NO_CONN ((size_t) -1LL)
 
 static size_t connections[MAX_CONNS];
 static size_t fd_map[NUM_FDS] = {NO_CONN};
+
+__attribute__((constructor))
+static void init_conn_pool (void) {
+    for (int i = 0; i < NUM_FDS; ++i) {
+        fd_map[i] = NO_CONN;
+    }
+}
 
 static inline size_t get_next_conn(void) {
     for (size_t conn = 0; conn < MAX_CONNS; ++conn) {

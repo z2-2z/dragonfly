@@ -77,7 +77,13 @@ ssize_t hook_input (int fd, char* buf, size_t size) {
         size_t conn = conn_pool_map_fd(fd);
         
         if (conn < MAX_CONNS) {
-            return packet_channel_read(conn, buf, size);
+            size_t ret = packet_channel_read(conn, buf, size);
+#ifdef DEBUG
+            fprintf(stderr, "\n< ");
+            fwrite(buf, 1, ret, stderr);
+            fprintf(stderr, "\n");
+#endif
+            return ret;
         }
     }
     
@@ -88,6 +94,11 @@ ssize_t hook_input (int fd, char* buf, size_t size) {
 ssize_t hook_output (int fd, char* buf, size_t size) {
     (void) fd;
     (void) buf;
+#ifdef DEBUG
+    fprintf(stderr, "\n> ");
+    fwrite(buf, 1, size, stderr);
+    fprintf(stderr, "\n");
+#endif
     return (ssize_t) size;
 }
 

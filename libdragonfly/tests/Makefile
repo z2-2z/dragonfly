@@ -1,4 +1,4 @@
-all: packet_channel_bytewise bench_packet_decode check_perf server_single server_multi
+all: packet_channel_bytewise bench_packet_decode check_perf server_single server_multi test_dup
 
 packet_channel_bytewise: packet_channel_bytewise.c ../packet_channel.c
 	clang -Werror -Wall -Wextra -Wpedantic -DDEBUG -DMAX_CONNS=8 -O0 -g -fsanitize=address,undefined -I../ -o $@ $^
@@ -13,4 +13,7 @@ server_single: server_single.c
 	clang -Werror -Wall -Wextra -Wpedantic -DMAX_CONNS=2 -o $@ $^
 
 server_multi: server_multi.c
+	clang -Werror -Wall -Wextra -Wpedantic -DMAX_CONNS=2 -o $@ $^
+
+test_dup: test_dup.c
 	clang -Werror -Wall -Wextra -Wpedantic -DMAX_CONNS=2 -o $@ $^
