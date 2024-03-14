@@ -26,6 +26,14 @@ CC="afl-clang-lto" \
     LDFLAGS="-lcrypt -flto" \
     ./configure --disable-auth-pam --disable-cap && \
     make clean proftpd
+mv proftpd proftpd-fuzzing
+    
+CC="gcc" \
+    CFLAGS="-fno-pie -g -O0 -fno-omit-frame-pointer" \
+    LDFLAGS="-no-pie" \
+    ./configure --disable-auth-pam --disable-cap && \
+    make clean proftpd
+mv proftpd proftpd-debug
 ```
 
 Build the fuzzer:

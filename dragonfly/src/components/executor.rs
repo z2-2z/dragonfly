@@ -26,7 +26,7 @@ use nix::{
             TimeValLike,
         },
     },
-    unistd::Pid,
+    unistd::{Pid, execve},
 };
 use std::{
     ffi::{
@@ -36,7 +36,7 @@ use std::{
     marker::PhantomData,
     time::Duration,
 };
-
+use std::ffi::CString;
 use crate::components::{
     DragonflyInput, Packet,
 };
@@ -319,5 +319,122 @@ where
         }
 
         Ok(DragonflyForkserverExecutor::new(observers, packet_channel, timeout, self.signal, forkserver))
+    }
+}
+
+#[derive(Debug)]
+pub struct DragonflyDebugExecutor<S, SP, P>
+where
+    S:  State + UsesInput<Input = DragonflyInput<P>>,
+    SP: ShMemProvider,
+    P: Packet,
+{
+    observers: (),
+    packet_channel: SP::ShMem,
+    args: Vec<CString>,
+    envs: Vec<CString>,
+    phantom: PhantomData<S>,
+}
+
+impl<S, SP, P> DragonflyDebugExecutor<S, SP, P>
+where
+    S:  State + UsesInput<Input = DragonflyInput<P>>,
+    SP: ShMemProvider,
+    P: Packet,
+{
+    pub fn new(shmem_provider: &mut SP) -> Result<Self, Error> {
+        let packet_channel = shmem_provider.new_shmem(PACKET_CHANNEL_SIZE)?;
+        
+        let mut ret = Self {
+            observers: (),
+            packet_channel,
+            args: Vec::new(),
+            envs: Vec::new(),
+            phantom: PhantomData,
+        };
+        ret.inherit_env();
+        Ok(ret)
+    }
+    
+    fn inherit_env(&mut self) {
+        for (key, value) in std::env::vars() {
+            self.env(key, value);
+        }
+    }
+    
+    pub fn arg<T: Into<Vec<u8>>>(&mut self, arg: T) {
+        let arg = CString::new(arg).unwrap();
+        self.args.push(arg);
+    }
+    
+    pub fn env<T1: Into<Vec<u8>>, T2: Into<Vec<u8>>>(&mut self, key: T1, value: T2) {
+        let key = key.into();
+        let value = value.into();
+        
+        let mut env_str = vec![0; key.len() + 1 + value.len()];
+        env_str[..key.len()].copy_from_slice(&key);
+        env_str[key.len()] = b'=';
+        env_str[key.len() + 1..].copy_from_slice(&value);
+        
+        let env_str = CString::new(env_str).unwrap();
+        self.envs.push(env_str);
+    }
+}
+
+impl<S, SP, P> UsesState for DragonflyDebugExecutor<S, SP, P>
+where
+    S:  State + UsesInput<Input = DragonflyInput<P>>,
+    SP: ShMemProvider,
+    P: Packet,
+{
+    type State = S;
+}
+
+impl<S, SP, P> UsesObservers for DragonflyDebugExecutor<S, SP, P>
+where
+    S:  State + UsesInput<Input = DragonflyInput<P>>,
+    SP: ShMemProvider,
+    P: Packet,
+{
+    type Observers = ();
+}
+
+impl<S, SP, P> HasObservers for DragonflyDebugExecutor<S, SP, P>
+where
+    S:  State + UsesInput<Input = DragonflyInput<P>>,
+    SP: ShMemProvider,
+    P: Packet,
+{
+    fn observers(&self) -> &() {
+        &self.observers
+    }
+
+    fn observers_mut(&mut self) -> &mut () {
+        &mut self.observers
+    }
+}
+
+impl<S, SP, P, EM, Z> Executor<EM, Z> for DragonflyDebugExecutor<S, SP, P>
+where
+    S:  State + UsesInput<Input = DragonflyInput<P>> + HasExecutions,
+    SP: ShMemProvider,
+    P: Packet,
+    EM: UsesState<State = S>,
+    Z: UsesState<State = S>,
+{
+    fn run_target(&mut self, _fuzzer: &mut Z, _state: &mut S, _mgr: &mut EM, input: &DragonflyInput<P>) -> Result<ExitKind, Error> {
+        self.env(PACKET_CHANNEL_ENV_VAR, self.packet_channel.id().as_str());
+        
+        let buffer = self.packet_channel.as_mut_slice();
+        input.serialize_dragonfly_format(buffer);
+        
+        let program = self.args[0].clone();
+        execve(
+            &program,
+            &self.args,
+            &self.envs,
+        ).unwrap();
+
+        Ok(ExitKind::Ok)
     }
 }

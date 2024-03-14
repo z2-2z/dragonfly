@@ -6,6 +6,7 @@ use dragonfly::{
         PacketDeleteMutator, PacketRepeatMutator, 
         PacketSwapMutator, TokenStreamMutator,
         PacketContentMutator, DragonflyForkserverExecutor,
+        DragonflyDebugExecutor,
     },
 };
 use clap::Parser;
@@ -17,7 +18,8 @@ use libafl::prelude::{
     CachedOnDiskCorpus, OnDiskCorpus, Tokens, HasMetadata,
     StdScheduledMutator, StdMutationalStage, QueueScheduler,
     StdFuzzer, Fuzzer, OnDiskJSONMonitor, NopMonitor, Launcher,
-    Error, EventConfig, Evaluator, Input,
+    Error, EventConfig, Evaluator, Input, SimpleEventManager,
+    InMemoryCorpus,
 };
 use libafl_bolts::prelude::{
     current_nanos, UnixShMemProvider, shmem::{ShMemProvider, ShMem},
@@ -52,7 +54,14 @@ enum Subcommand {
     
     Print {
         file: String,
-    }
+    },
+    
+    Replay {
+        #[arg(long)]
+        gdb: bool,
+        
+        file: String,
+    },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Hash)]
@@ -187,7 +196,7 @@ fn fuzz(output: String, corpus: Option<String>, debug_child: bool, cores: String
             .signal(signal)
             .debug_child(debug_child)
             .env("LD_PRELOAD", "./libdragonfly.so")
-            .program("./proftpd")
+            .program("./proftpd-fuzzing")
             .args(["-d", loglevel, "-q", "-X", "-c", "/proftpd/config", "-n"])
             .is_deferred_forkserver(true)
             .build()?;
@@ -272,11 +281,83 @@ fn print(file: String) {
     }
 }
 
+fn replay(file: String, gdb: bool) {
+    let timeout = Duration::from_secs(999999);
+    let signal = str::parse::<Signal>("SIGKILL").unwrap();
+    let input = DragonflyInput::<FTPPacket>::from_file(file).unwrap();
+    
+    let monitor = NopMonitor::new();
+    let mut mgr = SimpleEventManager::new(monitor);
+    
+    let mut objective = feedback_or!(
+        CrashFeedback::new(),
+        TimeoutFeedback::new()
+    );
+    
+    let mut state = StdState::new(
+        StdRand::with_seed(1234),
+        InMemoryCorpus::<DragonflyInput<FTPPacket>>::new(),
+        InMemoryCorpus::<DragonflyInput<FTPPacket>>::new(),
+        &mut (),
+        &mut objective,
+    ).unwrap();
+    
+    let scheduler = QueueScheduler::new();
+    
+    let mut fuzzer = StdFuzzer::new(scheduler, (), objective);
+    
+    let mut shmem_provider = UnixShMemProvider::new().unwrap();
+    
+    if gdb {
+        let mut executor = DragonflyDebugExecutor::new(&mut shmem_provider).unwrap();
+        executor.arg("/usr/bin/gdb");
+        executor.arg("-ex");
+        executor.arg("set environment LD_PRELOAD ./libdragonfly.so");
+        executor.arg("--args");
+        executor.arg("./proftpd-debug");
+        executor.arg("-d");
+        executor.arg("10");
+        executor.arg("-q");
+        executor.arg("-X");
+        executor.arg("-c");
+        executor.arg("/proftpd/config");
+        executor.arg("-n");
+        
+        fuzzer.evaluate_input(
+            &mut state,
+            &mut executor,
+            &mut mgr,
+            input,
+        ).unwrap();
+    } else {
+        let mut executor = DragonflyForkserverExecutor::builder()
+            .observers(tuple_list!())
+            .shmem_provider(&mut shmem_provider)
+            .timeout(timeout)
+            .signal(signal)
+            .debug_child(true)
+            .is_deferred_forkserver(true)
+            .env("LD_PRELOAD", "./libdragonfly.so")
+            .program("./proftpd-fuzzing")
+            .args(["-d", "10", "-q", "-X", "-c", "/proftpd/config", "-n"])
+            .build()
+            .unwrap();
+        
+        fuzzer.evaluate_input(
+            &mut state,
+            &mut executor,
+            &mut mgr,
+            input,
+        ).unwrap();
+    }
+}
+
 fn main() {
     let args = Args::parse();
 
     match args.command {
         Subcommand::Fuzz { output, corpus, debug, cores } => fuzz(output, corpus, debug, cores),
         Subcommand::Print { file } => print(file),
+        Subcommand::Replay { file, gdb } => replay(file, gdb),
     }
 }
