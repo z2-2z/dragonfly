@@ -2,6 +2,7 @@ FROM archlinux:latest
 
 RUN pacman -Sy --noconfirm libidn
 RUN userdel -f ftp && useradd -M -r ftp && passwd -d ftp
+RUN useradd -M -r user && (echo user; echo user) | passwd user
 
 WORKDIR /proftpd
 COPY evaluation/ProFTPD/config ./config

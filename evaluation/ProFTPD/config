@@ -22,9 +22,6 @@ TimeoutSession 60
 MaxTransfersPerHost RETR,APPE,STOR,STOU 2
 MaxTransfersPerUser RETR,APPE,STOR,STOU 2
 
-AuthOrder mod_auth_file.c
-AuthFileOptions InsecurePerms
-
 MaxInstances                    5
 MaxStoreFileSize                1 Kb
 MaxRetrieveFileSize             1 Kb
