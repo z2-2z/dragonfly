@@ -36,29 +36,29 @@ Umask 0000
 DefaultRoot /ftproot
 
 <Anonymous /ftproot>
-  RequireValidShell off
-  AnonRequirePassword		off
+    RequireValidShell off
+    AnonRequirePassword		off
+</Anonymous>
 
-  # Maximum clients with message
-  MaxClients			2 "Sorry, max %m users -- try again later"
+# Maximum clients with message
+MaxClients			2 "Sorry, max %m users -- try again later"
 
-  User				ftp
-  Group				ftp
+User				ftp
+Group				ftp
 
-  # Limit WRITE everywhere in the anonymous chroot
-  <Limit WRITE>
+# Limit WRITE everywhere in the anonymous chroot
+<Limit WRITE>
     DenyAll
-  </Limit>
+</Limit>
 
-  # An upload directory that allows storing files but not retrieving
-  # or creating directories.
-  <Directory uploads/*>
+# An upload directory that allows storing files but not retrieving
+# or creating directories.
+<Directory /uploads>
     <Limit READ>
-      DenyAll
+        DenyAll
     </Limit>
 
     <Limit WRITE>
-      AllowAll
+        AllowAll
     </Limit>
-  </Directory>
-</Anonymous>
+</Directory>
