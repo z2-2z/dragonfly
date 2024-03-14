@@ -16,7 +16,7 @@ use libafl::prelude::{
     feedback_or, CrashFeedback, TimeoutFeedback, StdState,
     InMemoryCorpus, 
     StdScheduledMutator, StdMutationalStage, QueueScheduler,
-    StdFuzzer, Fuzzer, SimplePrintingMonitor, Launcher,
+    StdFuzzer, Fuzzer, MultiMonitor, Launcher,
     Error, EventConfig, Evaluator,
 };
 use libafl_bolts::prelude::{
@@ -169,7 +169,7 @@ fn fuzz(cores: String, mut cmd: Vec<String>) {
         Ok(())
     };
     
-    let monitor = SimplePrintingMonitor::new();
+    let monitor = MultiMonitor::new(|msg| println!("{}", msg));
     let shmem_provider = StdShMemProvider::new().unwrap();
     let cores = Cores::from_cmdline(&cores).unwrap();
 
