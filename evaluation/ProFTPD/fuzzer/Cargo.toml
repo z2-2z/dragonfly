@@ -10,7 +10,7 @@ debug = true
 codegen-units = 1
 
 [dependencies]
-libafl = "0.11.2"
+libafl = { version = "0.11.2", features = ["afl_exec_sec"] }
 libafl_bolts = "0.11.2"
 dragonfly = { path = "../../../dragonfly" }
 nix = "0.26"
