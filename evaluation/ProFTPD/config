@@ -35,6 +35,8 @@ UseSendfile off
 Umask 0000
 DefaultRoot /ftproot
 
+AuthOrder mod_auth_unix.c
+
 <Anonymous /ftproot>
     RequireValidShell off
     AnonRequirePassword		off

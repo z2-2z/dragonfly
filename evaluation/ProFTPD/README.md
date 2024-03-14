@@ -22,8 +22,8 @@ git submodule update --init ./proftpd
 cd proftpd
 git apply ../patch
 CC="afl-clang-lto" \
-    CFLAGS="-g -O3 -flto -fsanitize=address,undefined" \
-    LDFLAGS="-lcrypt -flto -fsanitize=address,undefined" \
+    CFLAGS="-g -O3 -flto" \
+    LDFLAGS="-lcrypt -flto" \
     ./configure --disable-auth-pam --disable-cap && \
     make clean proftpd
 ```
