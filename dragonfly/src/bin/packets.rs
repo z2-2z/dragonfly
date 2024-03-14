@@ -2,6 +2,18 @@ use clap::Parser;
 use dragonfly::components::{DragonflyInput, PACKET_CHANNEL_SIZE};
 use std::io::Write;
 
+fn from_hex(c: u8) -> u8 {
+    if c.is_ascii_digit() {
+        c - b'0'
+    } else if (b'A'..=b'F').contains(&c) {
+        c - b'A' + 10
+    } else if (b'a'..=b'f').contains(&c) {
+        c - b'a' + 10
+    } else {
+        panic!("Invalid hex char: {}", c)
+    }
+}
+
 #[derive(Debug)]
 struct Packet {
     connection: usize,
@@ -43,7 +55,26 @@ impl Packet {
         assert!(i < desc.len());
         i +=  1;
         
-        let data = desc[i..].to_vec();
+        let mut data = vec![0; desc.len() - i];
+        let mut j = 0;
+        
+        while i < desc.len() {
+            if desc[i] == b'\\' {
+                assert_eq!(desc[i + 1], b'x');
+                let upper = desc[i + 2];
+                let lower = desc[i + 3];
+                data[j] = (from_hex(upper) << 4) + from_hex(lower);
+                j += 1;
+                i += 3;
+            } else {
+                data[j] = desc[i];
+                j += 1;
+            }
+            
+            i += 1;
+        }
+        
+        data.truncate(j);
         
         Packet {
             connection,
