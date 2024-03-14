@@ -13,6 +13,7 @@ use libafl::prelude::{
     UsesObservers,
     UsesState,
     State,
+    HasExecutions,
 };
 use nix::{
     sys::{
@@ -121,13 +122,15 @@ where
 impl<OT, S, SP, P, EM, Z> Executor<EM, Z> for DragonflyForkserverExecutor<OT, S, SP, P>
 where
     OT: ObserversTuple<S>,
-    S:  State + UsesInput<Input = DragonflyInput<P>>,
+    S:  State + UsesInput<Input = DragonflyInput<P>> + HasExecutions,
     SP: ShMemProvider,
     P: Packet,
     EM: UsesState<State = S>,
     Z: UsesState<State = S>,
 {
-    fn run_target(&mut self, _fuzzer: &mut Z, _state: &mut S, _mgr: &mut EM, input: &DragonflyInput<P>) -> Result<ExitKind, Error> {
+    fn run_target(&mut self, _fuzzer: &mut Z, state: &mut S, _mgr: &mut EM, input: &DragonflyInput<P>) -> Result<ExitKind, Error> {
+        *state.executions_mut() += 1;
+        
         /* Serialize input into packet channel */
         let buffer = self.packet_channel.as_mut_slice();
         input.serialize_dragonfly_format(buffer);

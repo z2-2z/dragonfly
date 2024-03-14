@@ -5,3 +5,4 @@ check_perf
 server_single
 server_multi
 test_dup
+read_shm

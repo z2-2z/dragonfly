@@ -1,4 +1,4 @@
-all: packet_channel_bytewise bench_packet_decode check_perf server_single server_multi test_dup
+all: packet_channel_bytewise bench_packet_decode check_perf server_single server_multi test_dup read_shm
 
 packet_channel_bytewise: packet_channel_bytewise.c ../packet_channel.c
 	clang -Werror -Wall -Wextra -Wpedantic -DDEBUG -DMAX_CONNS=8 -O0 -g -fsanitize=address,undefined -I../ -o $@ $^
@@ -17,3 +17,6 @@ server_multi: server_multi.c
 
 test_dup: test_dup.c
 	clang -Werror -Wall -Wextra -Wpedantic -DMAX_CONNS=2 -o $@ $^
+
+read_shm: read_shm.c
+	$(AFL_PATH)/afl-clang-lto -Werror -Wall -Wextra -Wpedantic -DMAX_CONNS=2 -o $@ $^
