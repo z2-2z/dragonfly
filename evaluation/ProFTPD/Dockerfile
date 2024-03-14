@@ -16,4 +16,4 @@ COPY evaluation/ProFTPD/entrypoint.sh ./entrypoint.sh
 VOLUME /ftproot
 VOLUME /output
 
-CMD ["timeout", "24h", "/bin/bash", "./entrypoint.sh"]
+CMD /bin/bash ./entrypoint.sh

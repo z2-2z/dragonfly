@@ -80,10 +80,21 @@ index e5c48b298..e03b9d349 100644
    long nfiles = 0;
    struct rlimit rlim;
 diff --git a/src/main.c b/src/main.c
-index 3a9079425..1b98d5b3c 100644
+index 3a9079425..f7be2dfec 100644
 --- a/src/main.c
 +++ b/src/main.c
-@@ -1326,7 +1326,7 @@ static void fork_server(int fd, conn_t *l, unsigned char no_fork) {
+@@ -46,6 +46,10 @@
+ # include <openssl/opensslv.h>
+ #endif /* PR_USE_OPENSSL */
+ 
++const char *__asan_default_options() {
++  return "detect_leaks=0";
++}
++
+ int (*cmd_auth_chk)(cmd_rec *);
+ void (*cmd_handler)(server_rec *, conn_t *);
+ 
+@@ -1326,7 +1330,7 @@ static void fork_server(int fd, conn_t *l, unsigned char no_fork) {
    pr_signals_block();
    PRIVS_ROOT
  
@@ -92,7 +103,7 @@ index 3a9079425..1b98d5b3c 100644
  
    PRIVS_RELINQUISH
    pr_signals_unblock();
-@@ -1591,6 +1591,10 @@ static void daemon_loop(void) {
+@@ -1591,6 +1595,10 @@ static void daemon_loop(void) {
  
    pr_proctitle_set("(accepting connections)");
  
@@ -103,7 +114,7 @@ index 3a9079425..1b98d5b3c 100644
    time(&last_error);
  
    while (TRUE) {
-@@ -2456,7 +2460,7 @@ int main(int argc, char *argv[], char **envp) {
+@@ -2456,7 +2464,7 @@ int main(int argc, char *argv[], char **envp) {
    }
  
    /* Open the syslog */

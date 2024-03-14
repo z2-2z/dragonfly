@@ -42,5 +42,5 @@ docker build -t proftpd -f Dockerfile ../..
 
 ## Running a 24h campaign
 ```
-docker run -v "$PWD/ftproot:/ftproot" -v "$PWD/output:/output" proftpd
+docker run -d -v "$PWD/ftproot:/ftproot" -v "$PWD/output:/output" proftpd
 ```
