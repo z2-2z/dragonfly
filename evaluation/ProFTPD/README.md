@@ -17,17 +17,18 @@ meson compile
 ```
 
 Build ProFTPD:
-```
+```sh
 git submodule update --init ./proftpd
 cd proftpd
 git apply ../patch
+# Optionally apply all bug-*.patch files
 CC="afl-clang-lto" \
     CFLAGS="-g -O3 -flto" \
     LDFLAGS="-lcrypt -flto" \
     ./configure --disable-auth-pam --disable-cap && \
     make clean proftpd
 mv proftpd proftpd-fuzzing
-    
+
 CC="gcc" \
     CFLAGS="-fno-pie -g -O0 -fno-omit-frame-pointer" \
     LDFLAGS="-no-pie" \
@@ -52,3 +53,6 @@ docker build -t proftpd -f Dockerfile ../..
 ```
 docker run -d -v "$PWD/ftproot:/ftproot" -v "$PWD/output:/output" proftpd
 ```
+
+## Findings
+1. mod_auth.c:2898: `dir_canonical_path()` may return NULL on invalid paths

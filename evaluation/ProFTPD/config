@@ -55,7 +55,7 @@ Group				ftp
 
 # An upload directory that allows storing files but not retrieving
 # or creating directories.
-<Directory /uploads>
+<Directory /ftproot/uploads>
     <Limit READ>
         DenyAll
     </Limit>

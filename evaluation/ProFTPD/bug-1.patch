@@ -1,0 +1,13 @@
+diff --git a/modules/mod_auth.c b/modules/mod_auth.c
+index 5077b33ad..3a0d412f9 100644
+--- a/modules/mod_auth.c
++++ b/modules/mod_auth.c
+@@ -2896,7 +2896,7 @@ MODRET auth_pre_retr(cmd_rec *cmd) {
+   auth_anon_allow_robots_enabled = FALSE;
+ 
+   path = dir_canonical_path(cmd->tmp_pool, cmd->arg);
+-  if (strcasecmp(path, "/robots.txt") != 0) {
++  if (!path || strcasecmp(path, "/robots.txt") != 0) {
+     return PR_DECLINED(cmd);
+   }
+ 
