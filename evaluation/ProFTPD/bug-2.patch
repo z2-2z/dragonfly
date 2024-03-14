@@ -1,0 +1,13 @@
+diff --git a/modules/mod_ls.c b/modules/mod_ls.c
+index 3f24d36da..7e26a2da8 100644
+--- a/modules/mod_ls.c
++++ b/modules/mod_ls.c
+@@ -490,6 +490,8 @@ static int listfile(cmd_rec *cmd, pool *p, const char *resp_code,
+ 
+   filename = pstrndup(p, name, namelen);
+ 
++  if (!filename) return -1;
++
+   ptr = strrchr(filename, '/');
+   if (ptr != NULL) {
+     /* Advance past that path separator to get just the filename. */

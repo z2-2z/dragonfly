@@ -56,3 +56,4 @@ docker run -d -v "$PWD/ftproot:/ftproot" -v "$PWD/output:/output" proftpd
 
 ## Findings
 1. mod_auth.c:2898: `dir_canonical_path()` may return NULL on invalid paths
+2. mod_ls.c:493: `pstrndup()` returns NULL because `p` is NULL
