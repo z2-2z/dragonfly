@@ -12,7 +12,7 @@ Build libdragonfly:
 cd libdragonfly
 meson setup ./build
 cd build
-meson configure -D max_conns=2 -D fd_table_size=16
+meson configure -D max_conns=2 -D fd_table_size=16 -D desock_client=true
 meson compile
 ```
 

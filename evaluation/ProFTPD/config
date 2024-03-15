@@ -40,6 +40,22 @@ AuthOrder mod_auth_unix.c
 <Anonymous /ftproot>
     RequireValidShell off
     AnonRequirePassword		off
+    
+    <Limit WRITE>
+        DenyAll
+    </Limit>
+
+    # An upload directory that allows storing files but not retrieving
+    # or creating directories.
+    <Directory /ftproot/uploads>
+        <Limit READ>
+            DenyAll
+        </Limit>
+
+        <Limit WRITE>
+            AllowAll
+        </Limit>
+    </Directory>
 </Anonymous>
 
 # Maximum clients with message

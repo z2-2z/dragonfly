@@ -62,6 +62,10 @@ enum Subcommand {
         
         file: String,
     },
+    
+    GenerateSeeds {
+        output: String,
+    },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Hash)]
@@ -124,7 +128,7 @@ impl HasTokenStream for FTPPacket {
 
 fn fuzz(output: String, corpus: Option<String>, debug_child: bool, cores: String) {
     let mut run_client = |state: Option<_>, mut mgr: LlmpRestartingEventManager<_, _>, _core_id| {
-        let timeout = Duration::from_millis(5000);
+        let timeout = Duration::from_millis(10000);
         let signal = str::parse::<Signal>("SIGKILL").unwrap();
         let seed = current_nanos();
         let loglevel = if debug_child {
@@ -352,6 +356,53 @@ fn replay(file: String, gdb: bool) {
     }
 }
 
+fn generate_seeds(output: String) {
+    DragonflyInput::new(
+        vec![
+            FTPPacket::Ctrl("USER ftp\r\n".parse().unwrap()),
+            FTPPacket::Sep,
+            FTPPacket::Ctrl("PASS fuck@you.org\r\n".parse().unwrap()),
+            FTPPacket::Sep,
+            FTPPacket::Ctrl("CWD uploads\r\n".parse().unwrap()),
+            FTPPacket::Sep,
+            FTPPacket::Ctrl("EPSV\r\n".parse().unwrap()),
+            FTPPacket::Sep,
+            FTPPacket::Ctrl("STOR packetio.txt\r\n".parse().unwrap()),
+            FTPPacket::Data,
+            FTPPacket::Sep,
+            FTPPacket::Ctrl("QUIT\r\n".parse().unwrap()),
+        ]
+    ).to_file(format!("{}/anon-store", output)).unwrap();
+    DragonflyInput::new(
+        vec![
+            FTPPacket::Ctrl("USER user\r\n".parse().unwrap()),
+            FTPPacket::Sep,
+            FTPPacket::Ctrl("PASS user\r\n".parse().unwrap()),
+            FTPPacket::Sep,
+            FTPPacket::Ctrl("CWD uploads\r\n".parse().unwrap()),
+            FTPPacket::Sep,
+            FTPPacket::Ctrl("EPSV\r\n".parse().unwrap()),
+            FTPPacket::Sep,
+            FTPPacket::Ctrl("STOR packetio.txt\r\n".parse().unwrap()),
+            FTPPacket::Data,
+            FTPPacket::Sep,
+            FTPPacket::Ctrl("QUIT\r\n".parse().unwrap()),
+        ]
+    ).to_file(format!("{}/user-store", output)).unwrap();
+    DragonflyInput::new(
+        vec![
+            FTPPacket::Ctrl("USER user\r\n".parse().unwrap()),
+            FTPPacket::Ctrl("PASS user\r\n".parse().unwrap()),
+            FTPPacket::Ctrl("PORT 127,0,0,1,80,80\r\n".parse().unwrap()),
+            FTPPacket::Ctrl("LIST\r\n".parse().unwrap()),
+            FTPPacket::Ctrl("NOOP\r\n".parse().unwrap()),
+            FTPPacket::Ctrl("QUIT\r\n".parse().unwrap()),
+        ]
+    ).to_file(format!("{}/list-root", output)).unwrap();
+    // REIN
+    // RETR
+}
+
 fn main() {
     let args = Args::parse();
 
@@ -359,5 +410,6 @@ fn main() {
         Subcommand::Fuzz { output, corpus, debug, cores } => fuzz(output, corpus, debug, cores),
         Subcommand::Print { file } => print(file),
         Subcommand::Replay { file, gdb } => replay(file, gdb),
+        Subcommand::GenerateSeeds { output } => generate_seeds(output),
     }
 }
