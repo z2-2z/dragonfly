@@ -6,7 +6,7 @@ use dragonfly::{
         PacketDeleteMutator, PacketRepeatMutator, 
         PacketSwapMutator, TokenStreamMutator,
         PacketContentMutator, DragonflyForkserverExecutor,
-        DragonflyDebugExecutor,
+        DragonflyDebugExecutor, PacketCreator, PacketInsertionMutator,
     },
 };
 use clap::Parser;
@@ -19,12 +19,12 @@ use libafl::prelude::{
     StdScheduledMutator, StdMutationalStage, QueueScheduler,
     StdFuzzer, Fuzzer, OnDiskJSONMonitor, NopMonitor, Launcher,
     Error, EventConfig, Evaluator, Input, SimpleEventManager,
-    InMemoryCorpus,
+    InMemoryCorpus, HasRand,
 };
 use libafl_bolts::prelude::{
     current_nanos, UnixShMemProvider, shmem::{ShMemProvider, ShMem},
     AsMutSlice, StdRand, tuple_list, current_time, StdShMemProvider,
-    Cores,
+    Cores, Rand,
 };
 use std::time::Duration;
 use std::path::PathBuf;
@@ -126,6 +126,255 @@ impl HasTokenStream for FTPPacket {
     }
 }
 
+impl<S> PacketCreator<S> for FTPPacket
+where
+    S: HasRand,
+{
+    fn create_packets(state: &mut S) -> Vec<Self> {
+        match state.rand_mut().below(59) {
+            0 => vec![
+                FTPPacket::Ctrl("USER x\r\n".parse().unwrap()),
+            ],
+            1 => vec![
+                FTPPacket::Ctrl("PASS x\r\n".parse().unwrap()),
+            ],
+            2 => vec![
+                FTPPacket::Ctrl("ACCT x\r\n".parse().unwrap()),
+            ],
+            3 => vec![
+                FTPPacket::Ctrl("CWD x\r\n".parse().unwrap()),
+            ],
+            4 => vec![
+                FTPPacket::Ctrl("CDUP\r\n".parse().unwrap()),
+            ],
+            5 => vec![
+                FTPPacket::Ctrl("SMNT x\r\n".parse().unwrap()),
+            ],
+            6 => vec![
+                FTPPacket::Ctrl("REIN\r\n".parse().unwrap()),
+            ],
+            7 => vec![
+                FTPPacket::Ctrl("QUIT\r\n".parse().unwrap()),
+            ],
+            8 => vec![
+                FTPPacket::Ctrl("PORT 0,0,0,0,0,0\r\n".parse().unwrap()),
+            ],
+            9 => vec![
+                FTPPacket::Ctrl("EPRT |0|0.0.0.0|0|\r\n".parse().unwrap()),
+            ],
+            10 => vec![
+                FTPPacket::Ctrl("PASV\r\n".parse().unwrap()),
+            ],
+            11 => vec![
+                FTPPacket::Ctrl("EPSV\r\n".parse().unwrap()),
+            ],
+            12 => {
+                let form_code = state.rand_mut().choose([" N", " T", " C", ""]);
+                
+                match state.rand_mut().below(4) {
+                    0 => vec![
+                        FTPPacket::Ctrl(format!("TYPE A{}\r\n", form_code).parse().unwrap()),
+                    ],
+                    1 => vec![
+                        FTPPacket::Ctrl(format!("TYPE E{}\r\n", form_code).parse().unwrap()),
+                    ],
+                    2 => vec![
+                        FTPPacket::Ctrl("TYPE I\r\n".parse().unwrap()),
+                    ],
+                    3 => vec![
+                        FTPPacket::Ctrl("TYPE L 0\r\n".parse().unwrap()),
+                    ],
+                    _ => unreachable!(),
+                }
+            },
+            13 => match state.rand_mut().below(3) {
+                0 => vec![
+                    FTPPacket::Ctrl("STRU F\r\n".parse().unwrap()),
+                ],
+                1 => vec![
+                    FTPPacket::Ctrl("STRU R\r\n".parse().unwrap()),
+                ],
+                2 => vec![
+                    FTPPacket::Ctrl("STRU P\r\n".parse().unwrap()),
+                ],
+                _ => unreachable!(),
+            },
+            14 => match state.rand_mut().below(3) {
+                0 => vec![
+                    FTPPacket::Ctrl("MODE S\r\n".parse().unwrap()),
+                ],
+                1 => vec![
+                    FTPPacket::Ctrl("MODE B\r\n".parse().unwrap()),
+                ],
+                2 => vec![
+                    FTPPacket::Ctrl("MODE C\r\n".parse().unwrap()),
+                ],
+                _ => unreachable!(),
+            },
+            15 => vec![
+                FTPPacket::Ctrl("RETR x\r\n".parse().unwrap()),
+            ],
+            16 => vec![
+                FTPPacket::Sep,
+                FTPPacket::Ctrl("STOR x\r\n".parse().unwrap()),
+                FTPPacket::Data,
+                FTPPacket::Sep,
+            ],
+            17 => vec![
+                FTPPacket::Ctrl("STOU\r\n".parse().unwrap()),
+            ],
+            18 => vec![
+                FTPPacket::Sep,
+                FTPPacket::Ctrl("APPE x\r\n".parse().unwrap()),
+                FTPPacket::Data,
+                FTPPacket::Sep,
+            ],
+            19 => match state.rand_mut().below(2) {
+                0 => vec![
+                    FTPPacket::Ctrl("ALLO 0\r\n".parse().unwrap()),
+                ],
+                1 => vec![
+                    FTPPacket::Ctrl("ALLO 0 R 0\r\n".parse().unwrap()),
+                ],
+                _ => unreachable!(),
+            },
+            20 => vec![
+                FTPPacket::Ctrl("REST x\r\n".parse().unwrap()),
+            ],
+            21 => vec![
+                FTPPacket::Ctrl("RNFR x\r\n".parse().unwrap()),
+            ],
+            22 => vec![
+                FTPPacket::Ctrl("RNTO x\r\n".parse().unwrap()),
+            ],
+            23 => vec![
+                FTPPacket::Ctrl("ABOR\r\n".parse().unwrap()),
+            ],
+            24 => vec![
+                FTPPacket::Ctrl("DELE x\r\n".parse().unwrap()),
+            ],
+            25 => vec![
+                FTPPacket::Ctrl("MDTM x\r\n".parse().unwrap()),
+            ],
+            26 => vec![
+                FTPPacket::Ctrl("RMD x\r\n".parse().unwrap()),
+            ],
+            27 => vec![
+                FTPPacket::Ctrl("XRMD x\r\n".parse().unwrap()),
+            ],
+            28 => vec![
+                FTPPacket::Ctrl("MKD x\r\n".parse().unwrap()),
+            ],
+            29 => vec![
+                FTPPacket::Ctrl("MLST x\r\n".parse().unwrap()),
+            ],
+            30 => vec![
+                FTPPacket::Ctrl("MLSD x\r\n".parse().unwrap()),
+            ],
+            31 => vec![
+                FTPPacket::Ctrl("XMKD x\r\n".parse().unwrap()),
+            ],
+            32 => vec![
+                FTPPacket::Ctrl("PWD\r\n".parse().unwrap()),
+            ],
+            33 => vec![
+                FTPPacket::Ctrl("XPWD\r\n".parse().unwrap()),
+            ],
+            34 => vec![
+                FTPPacket::Ctrl("SIZE x\r\n".parse().unwrap()),
+            ],
+            35 => vec![
+                FTPPacket::Ctrl("LIST\r\n".parse().unwrap()),
+            ],
+            36 => vec![
+                FTPPacket::Ctrl("NLST\r\n".parse().unwrap()),
+            ],
+            37 => vec![
+                FTPPacket::Ctrl("SITE x\r\n".parse().unwrap()),
+            ],
+            38 => vec![
+                FTPPacket::Ctrl("SYST\r\n".parse().unwrap()),
+            ],
+            39 => vec![
+                FTPPacket::Ctrl("STAT x\r\n".parse().unwrap()),
+            ],
+            40 => vec![
+                FTPPacket::Ctrl("FEAT\r\n".parse().unwrap()),
+            ],
+            41 => vec![
+                FTPPacket::Ctrl("OPTS x\r\n".parse().unwrap()),
+            ],
+            42 => vec![
+                FTPPacket::Ctrl("LANG x-x-x\r\n".parse().unwrap()),
+            ],
+            43 => vec![
+                FTPPacket::Ctrl("ADAT eA==\r\n".parse().unwrap()),
+            ],
+            44 => vec![
+                FTPPacket::Ctrl("AUTH x\r\n".parse().unwrap()),
+            ],
+            45 => vec![
+                FTPPacket::Ctrl("CCC\r\n".parse().unwrap()),
+            ],
+            46 => vec![
+                FTPPacket::Ctrl("CONF eA==\r\n".parse().unwrap()),
+            ],
+            47 => vec![
+                FTPPacket::Ctrl("ENC eA==\r\n".parse().unwrap()),
+            ],
+            48 => vec![
+                FTPPacket::Ctrl("MIC eA==\r\n".parse().unwrap()),
+            ],
+            49 => vec![
+                FTPPacket::Ctrl("PBSZ 0\r\n".parse().unwrap()),
+            ],
+            50 => match state.rand_mut().below(4) {
+                0 => vec![
+                    FTPPacket::Ctrl("PROT C\r\n".parse().unwrap()),
+                ],
+                1 => vec![
+                    FTPPacket::Ctrl("PROT S\r\n".parse().unwrap()),
+                ],
+                2 => vec![
+                    FTPPacket::Ctrl("PROT E\r\n".parse().unwrap()),
+                ],
+                3 => vec![
+                    FTPPacket::Ctrl("PROT P\r\n".parse().unwrap()),
+                ],
+                _ => unreachable!(),
+            },
+            51 => vec![
+                FTPPacket::Ctrl("MFF x\r\n".parse().unwrap()),
+            ],
+            52 => vec![
+                FTPPacket::Ctrl("MFMT 0 x\r\n".parse().unwrap()),
+            ],
+            53 => vec![
+                FTPPacket::Ctrl("HOST x\r\n".parse().unwrap()),
+            ],
+            54 => {
+                let name = state.rand_mut().choose(["Version", "Name", "Vendor"]);
+                vec![
+                    FTPPacket::Ctrl(format!("CSID {}=x;\r\n", name).parse().unwrap()),
+                ]
+            },
+            55 => vec![
+                FTPPacket::Ctrl("CLNT\r\n".parse().unwrap()),
+            ],
+            56 => vec![
+                FTPPacket::Ctrl("RANG\r\n".parse().unwrap()),
+            ],
+            57 => vec![
+                FTPPacket::Sep
+            ],
+            58 => vec![
+                FTPPacket::Data
+            ],
+            _ => unreachable!(),
+        }
+    }
+}
+
 fn fuzz(output: String, corpus: Option<String>, debug_child: bool, cores: String) {
     let mut run_client = |state: Option<_>, mut mgr: LlmpRestartingEventManager<_, _>, _core_id| {
         let timeout = Duration::from_millis(10000);
@@ -183,7 +432,8 @@ fn fuzz(output: String, corpus: Option<String>, debug_child: bool, cores: String
             PacketDeleteMutator::new(0),
             PacketRepeatMutator::new(max_packets),
             PacketSwapMutator::new(),
-            PacketContentMutator::new(TokenStreamMutator::new(128))
+            PacketContentMutator::new(TokenStreamMutator::new(128)),
+            PacketInsertionMutator::new()
         );
         let mutator = StdScheduledMutator::with_max_stack_pow(mutators, 2);
         
@@ -412,6 +662,7 @@ fn generate_corpus(dir: String) {
             FTPPacket::Ctrl("QUIT\r\n".parse().unwrap()),
         ]
     ).to_file(format!("{}/retr-file", dir)).unwrap();
+    //TODO: rename file
 }
 
 fn main() {
