@@ -63,8 +63,8 @@ enum Subcommand {
         file: String,
     },
     
-    GenerateSeeds {
-        output: String,
+    GenerateCorpus {
+        dir: String,
     },
 }
 
@@ -213,18 +213,7 @@ fn fuzz(output: String, corpus: Option<String>, debug_child: bool, cores: String
             } else {
                 let input = DragonflyInput::new(
                     vec![
-                        FTPPacket::Ctrl("USER ftp\r\n".parse().unwrap()),
-                        FTPPacket::Sep,
-                        FTPPacket::Ctrl("PASS fuck@you.org\r\n".parse().unwrap()),
-                        FTPPacket::Sep,
-                        FTPPacket::Ctrl("CWD uploads\r\n".parse().unwrap()),
-                        FTPPacket::Sep,
-                        FTPPacket::Ctrl("EPSV\r\n".parse().unwrap()),
-                        FTPPacket::Sep,
-                        FTPPacket::Ctrl("STOR packetio.txt\r\n".parse().unwrap()),
-                        FTPPacket::Data,
-                        FTPPacket::Sep,
-                        FTPPacket::Ctrl("QUIT\r\n".parse().unwrap()),
+                        FTPPacket::Ctrl("".parse().unwrap()),
                     ]
                 );
                 
@@ -356,7 +345,7 @@ fn replay(file: String, gdb: bool) {
     }
 }
 
-fn generate_seeds(output: String) {
+fn generate_corpus(dir: String) {
     DragonflyInput::new(
         vec![
             FTPPacket::Ctrl("USER ftp\r\n".parse().unwrap()),
@@ -372,7 +361,7 @@ fn generate_seeds(output: String) {
             FTPPacket::Sep,
             FTPPacket::Ctrl("QUIT\r\n".parse().unwrap()),
         ]
-    ).to_file(format!("{}/anon-store", output)).unwrap();
+    ).to_file(format!("{}/anon-store", dir)).unwrap();
     DragonflyInput::new(
         vec![
             FTPPacket::Ctrl("USER user\r\n".parse().unwrap()),
@@ -388,7 +377,7 @@ fn generate_seeds(output: String) {
             FTPPacket::Sep,
             FTPPacket::Ctrl("QUIT\r\n".parse().unwrap()),
         ]
-    ).to_file(format!("{}/user-store", output)).unwrap();
+    ).to_file(format!("{}/user-store", dir)).unwrap();
     DragonflyInput::new(
         vec![
             FTPPacket::Ctrl("USER user\r\n".parse().unwrap()),
@@ -398,9 +387,31 @@ fn generate_seeds(output: String) {
             FTPPacket::Ctrl("NOOP\r\n".parse().unwrap()),
             FTPPacket::Ctrl("QUIT\r\n".parse().unwrap()),
         ]
-    ).to_file(format!("{}/list-root", output)).unwrap();
-    // REIN
-    // RETR
+    ).to_file(format!("{}/list-root", dir)).unwrap();
+    DragonflyInput::new(
+        vec![
+            FTPPacket::Ctrl("USER ftp\r\n".parse().unwrap()),
+            FTPPacket::Ctrl("PASS fuck@you.org\r\n".parse().unwrap()),
+            FTPPacket::Ctrl("PASV\r\n".parse().unwrap()),
+            FTPPacket::Ctrl("LIST dir -1AaBCcdFhLlnRrStUu\r\n".parse().unwrap()),
+            FTPPacket::Ctrl("REIN\r\n".parse().unwrap()),
+            FTPPacket::Ctrl("USER ftp\r\n".parse().unwrap()),
+            FTPPacket::Ctrl("PASS fuck@you.org\r\n".parse().unwrap()),
+            FTPPacket::Ctrl("EPRT |1|132.235.1.2|6275|\r\n".parse().unwrap()),
+            FTPPacket::Ctrl("LIST dir/empty -1AaBCcdFhLlnRrStUu\r\n".parse().unwrap()),
+            FTPPacket::Ctrl("ABOR\r\n".parse().unwrap()),
+        ]
+    ).to_file(format!("{}/rein-abor", dir)).unwrap();
+    DragonflyInput::new(
+        vec![
+            FTPPacket::Ctrl("USER user\r\n".parse().unwrap()),
+            FTPPacket::Ctrl("PASS user\r\n".parse().unwrap()),
+            FTPPacket::Ctrl("PASV\r\n".parse().unwrap()),
+            FTPPacket::Ctrl("RETR file\r\n".parse().unwrap()),
+            FTPPacket::Ctrl("NOOP\r\n".parse().unwrap()),
+            FTPPacket::Ctrl("QUIT\r\n".parse().unwrap()),
+        ]
+    ).to_file(format!("{}/retr-file", dir)).unwrap();
 }
 
 fn main() {
@@ -410,6 +421,6 @@ fn main() {
         Subcommand::Fuzz { output, corpus, debug, cores } => fuzz(output, corpus, debug, cores),
         Subcommand::Print { file } => print(file),
         Subcommand::Replay { file, gdb } => replay(file, gdb),
-        Subcommand::GenerateSeeds { output } => generate_seeds(output),
+        Subcommand::GenerateCorpus { dir } => generate_corpus(dir),
     }
 }
