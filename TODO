@@ -1,6 +1,3 @@
-PacketCreationMutator
-Perf is ass: try to speed it up / investigate
-    - passwd-based auth is huge slowdown
 think about how we can sanitize heap stuff
 mimalloc
-crash replay
+extra feedback: just coverage of individual commands is not enough when using generator of valid commands
