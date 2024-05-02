@@ -17,4 +17,5 @@ COPY evaluation/ProFTPD/entrypoint.sh ./entrypoint.sh
 VOLUME /ftproot
 VOLUME /output
 
+ENV RUST_BACKTRACE=full
 ENTRYPOINT ["/bin/bash", "./entrypoint.sh"]

@@ -137,8 +137,8 @@ where
 
         /* Launch the client */
         let mut exit_kind = ExitKind::Ok;
-        let last_run_timed_out = self.forkserver.last_run_timed_out();
-        let send_len = self.forkserver.write_ctl(last_run_timed_out as i32)?;
+        let last_run_timed_out = self.forkserver.last_run_timed_out_raw();
+        let send_len = self.forkserver.write_ctl(last_run_timed_out)?;
         self.forkserver.set_last_run_timed_out(false);
 
         if send_len != 4 {
@@ -171,11 +171,65 @@ where
             }
             exit_kind = ExitKind::Timeout;
         }
-
-        self.forkserver.set_child_pid(Pid::from_raw(0));
+        
+        if !libc::WIFSTOPPED(self.forkserver.status()) {
+            self.forkserver.reset_child_pid();
+        }
 
         Ok(exit_kind)
     }
+}
+
+fn do_forkserver_handshake(forkserver: &mut Forkserver) -> Result<(), Error> {
+    const FS_NEW_OPT_MAPSIZE: i32 = 0x00000001;
+    const FS_NEW_OPT_AUTODICT: i32 = 0x00000800;
+    
+    /* Echo back version */
+    let (rlen, version) = forkserver.read_st()?;
+
+    if rlen != 4 {
+        return Err(Error::unknown("Failed to receive forkserver version"));
+    }
+    
+    forkserver.write_ctl(!version)?;
+    
+    /* Receive options */
+    let (rlen, options) = forkserver.read_st()?;
+
+    if rlen != 4 {
+        return Err(Error::unknown("Failed to receive forkserver options"));
+    }
+    
+    if (options & FS_NEW_OPT_MAPSIZE) != 0 {
+        let (rlen, _) = forkserver.read_st()?;
+
+        if rlen != 4 {
+            return Err(Error::unknown("Failed to receive forkserver map_size"));
+        }
+    }
+    
+    if (options & FS_NEW_OPT_AUTODICT) != 0 {
+        let (rlen, dict_len) = forkserver.read_st()?;
+
+        if rlen != 4 {
+            return Err(Error::unknown("Failed to receive autodict length"));
+        }
+        
+        let (rlen, _) = forkserver.read_st_size(dict_len as usize)?;
+        
+        if rlen != dict_len as usize {
+            return Err(Error::unknown("Failed to receive autodict"));
+        }
+    }
+    
+    /* Receive welcome message */
+    let (rlen, _) = forkserver.read_st()?;
+
+    if rlen != 4 {
+        return Err(Error::unknown("Failed to recieve forkserver welcome message"));
+    }
+    
+    Ok(())
 }
 
 pub struct DragonflyForkserverExecutorBuilder<'a, OT, S, SP, P>
@@ -310,13 +364,7 @@ where
         let timeout = TimeSpec::milliseconds(timeout.as_millis() as i64);
 
         let mut forkserver = Forkserver::new(program, self.arguments, self.envs, -1, false, 0, false, self.is_deferred, self.debug_child)?;
-
-        // Initial forkserver handshake
-        let (rlen, _) = forkserver.read_st()?;
-
-        if rlen != 4 {
-            return Err(Error::unknown("Failed to start a forkserver"));
-        }
+        do_forkserver_handshake(&mut forkserver)?;
 
         Ok(DragonflyForkserverExecutor::new(observers, packet_channel, timeout, self.signal, forkserver))
     }
