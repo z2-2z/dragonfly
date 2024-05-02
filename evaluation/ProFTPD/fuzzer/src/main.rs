@@ -19,7 +19,7 @@ use libafl::prelude::{
     StdScheduledMutator, StdMutationalStage, QueueScheduler,
     StdFuzzer, Fuzzer, OnDiskJSONMonitor, NopMonitor, Launcher,
     Error, EventConfig, Evaluator, Input, SimpleEventManager,
-    InMemoryCorpus, HasRand,
+    InMemoryCorpus, HasRand, CanTrack,
 };
 use libafl_bolts::prelude::{
     current_nanos, UnixShMemProvider, shmem::{ShMemProvider, ShMem},
@@ -376,7 +376,7 @@ where
 }
 
 fn fuzz(output: String, corpus: Option<String>, debug_child: bool, cores: String) {
-    let mut run_client = |state: Option<_>, mut mgr: LlmpRestartingEventManager<_, _>, _core_id| {
+    let mut run_client = |state: Option<_>, mut mgr: LlmpRestartingEventManager<_, _, _>, _core_id| {
         let timeout = Duration::from_millis(10000);
         let signal = str::parse::<Signal>("SIGKILL").unwrap();
         let seed = current_nanos();
@@ -393,10 +393,10 @@ fn fuzz(output: String, corpus: Option<String>, debug_child: bool, cores: String
         let shmem_buf = shmem.as_mut_slice();
         std::env::set_var("AFL_MAP_SIZE", format!("{}", MAP_SIZE));
         
-        let edges_observer = HitcountsMapObserver::new(unsafe { StdMapObserver::new("shared_mem", shmem_buf) });
+        let edges_observer = HitcountsMapObserver::new(unsafe { StdMapObserver::new("shared_mem", shmem_buf) }).track_indices();
         let time_observer = TimeObserver::new("time");
         
-        let map_feedback = MaxMapFeedback::tracking(&edges_observer, true, false);
+        let map_feedback = MaxMapFeedback::new(&edges_observer);
         let time_feedback = TimeFeedback::with_observer(&time_observer);
         
         let calibration = CalibrationStage::new(&map_feedback);
