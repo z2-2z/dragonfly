@@ -1,0 +1,18 @@
+diff --git a/modules/mod_ls.c b/modules/mod_ls.c
+index 7e26a2da8..096c9defc 100644
+--- a/modules/mod_ls.c
++++ b/modules/mod_ls.c
+@@ -1102,8 +1102,11 @@ static int outputfiles(cmd_rec *cmd) {
+     return res;
+   }
+ 
+-  tail->down = NULL;
+-  tail = NULL;
++  if (tail) {
++    tail->down = NULL;
++    tail = NULL;
++  }
++
+   colwidth = (colwidth | 7) + 1;
+   if (opt_l || !opt_C) {
+     colwidth = 75;
