@@ -4,14 +4,6 @@ import sys
 import json
 import matplotlib.pyplot as plt
 
-def max_corpus_size(data):
-    max_size = 0
-    
-    for client in data["clients"]:
-        max_size = max(max_size, client["corpus_size"])
-        
-    return max_size
-
 def main(logfiles):
     fig, ax = plt.subplots()
     
@@ -24,8 +16,8 @@ def main(logfiles):
             for line in f:
                 data = json.loads(line.strip())
                 x.append(data["run_time"]["secs"])
-                y.append(max_corpus_size(data))
-                num_clients = max(len(data["clients"]), num_clients)
+                y.append(data["corpus"])
+                num_clients = data["clients"]
         
         ax.plot(x, y, label=f"{logfile} ({num_clients} cores)")
     

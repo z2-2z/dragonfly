@@ -17,7 +17,7 @@ def main(logfiles):
                 data = json.loads(line.strip())
                 x.append(data["run_time"]["secs"])
                 y.append(data["exec_sec"])
-                num_clients = max(len(data["clients"]), num_clients)
+                num_clients = data["clients"]
         
         ax.plot(x, y, label=f"{logfile} ({num_clients} cores)")
     
