@@ -7,7 +7,7 @@ pub trait PacketMutator<P, S>
 where
     P: Packet,
 {
-    fn mutate_packet(&mut self, state: &mut S, packet: &mut P, stage_idx: i32) -> Result<MutationResult, Error>;
+    fn mutate_packet(&mut self, state: &mut S, packet: &mut P) -> Result<MutationResult, Error>;
 }
 
 pub struct PacketContentMutator<P, S, M>
@@ -49,7 +49,7 @@ where
     P: Packet,
     S: HasRand,
 {
-    fn mutate(&mut self, state: &mut S, input: &mut DragonflyInput<P>, stage_idx: i32) -> Result<MutationResult, Error> {
+    fn mutate(&mut self, state: &mut S, input: &mut DragonflyInput<P>) -> Result<MutationResult, Error> {
         let len = input.packets().len();
         
         if len == 0 {
@@ -58,6 +58,6 @@ where
         
         let idx = state.rand_mut().below(len as u64) as usize;
         let packet = &mut input.packets_mut()[idx];
-        self.mutator.mutate_packet(state, packet, stage_idx)
+        self.mutator.mutate_packet(state, packet)
     }
 }

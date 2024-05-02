@@ -22,7 +22,7 @@ where
     P: Packet,
     S: HasRand,
 {
-    fn mutate(&mut self, state: &mut S, input: &mut DragonflyInput<P>, _stage_idx: i32) -> Result<MutationResult, Error> {
+    fn mutate(&mut self, state: &mut S, input: &mut DragonflyInput<P>) -> Result<MutationResult, Error> {
         let len = input.packets().len();
         
         if len <= 1 {

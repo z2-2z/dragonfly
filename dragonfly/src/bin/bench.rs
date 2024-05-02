@@ -14,7 +14,7 @@ use libafl::prelude::{
     LlmpRestartingEventManager, HitcountsMapObserver, StdMapObserver,
     TimeObserver, MaxMapFeedback, TimeFeedback, CalibrationStage,
     feedback_or, CrashFeedback, TimeoutFeedback, StdState,
-    InMemoryCorpus, 
+    InMemoryCorpus, CanTrack,
     StdScheduledMutator, StdMutationalStage, QueueScheduler,
     StdFuzzer, Fuzzer, MultiMonitor, Launcher,
     Error, EventConfig, Evaluator,
@@ -71,7 +71,7 @@ impl HasTokenStream for GenericPacket {
 }
 
 fn fuzz(cores: String, mut cmd: Vec<String>) {
-    let mut run_client = |state: Option<_>, mut mgr: LlmpRestartingEventManager<_, _>, _core_id| {
+    let mut run_client = |state: Option<_>, mut mgr: LlmpRestartingEventManager<_, _, _>, _core_id| {
         let timeout = Duration::from_millis(5000);
         let signal = str::parse::<Signal>("SIGKILL").unwrap();
         let seed = current_nanos();
@@ -83,10 +83,10 @@ fn fuzz(cores: String, mut cmd: Vec<String>) {
         let shmem_buf = shmem.as_mut_slice();
         std::env::set_var("AFL_MAP_SIZE", format!("{}", MAP_SIZE));
         
-        let edges_observer = HitcountsMapObserver::new(unsafe { StdMapObserver::new("shared_mem", shmem_buf) });
+        let edges_observer = HitcountsMapObserver::new(unsafe { StdMapObserver::new("shared_mem", shmem_buf) }).track_indices();
         let time_observer = TimeObserver::new("time");
         
-        let map_feedback = MaxMapFeedback::tracking(&edges_observer, true, false);
+        let map_feedback = MaxMapFeedback::new(&edges_observer);
         let time_feedback = TimeFeedback::with_observer(&time_observer);
         
         let calibration = CalibrationStage::new(&map_feedback);

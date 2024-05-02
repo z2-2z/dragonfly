@@ -43,7 +43,7 @@ where
     P: Packet + PacketCreator<S>,
     S: HasRand,
 {
-    fn mutate(&mut self, state: &mut S, input: &mut DragonflyInput<P>, _stage_idx: i32) -> Result<MutationResult, Error> {
+    fn mutate(&mut self, state: &mut S, input: &mut DragonflyInput<P>) -> Result<MutationResult, Error> {
         let len = input.packets().len();
         let idx = state.rand_mut().below(len as u64) as usize;
         let new_packets = P::create_packets(state);

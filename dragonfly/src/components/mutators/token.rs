@@ -34,7 +34,7 @@ where
     S: HasRand + HasMetadata + HasCorpus,
     S: UsesInput<Input = DragonflyInput<P>>,
 {
-    fn mutate_packet(&mut self, state: &mut S, packet: &mut P, _stage_idx: i32) -> Result<MutationResult, Error> {
+    fn mutate_packet(&mut self, state: &mut S, packet: &mut P) -> Result<MutationResult, Error> {
         if !packet.has_token_stream() {
             return Ok(MutationResult::Skipped);
         }
