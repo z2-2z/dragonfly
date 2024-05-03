@@ -20,9 +20,9 @@ Build ProFTPD:
 ```sh
 git submodule update --init ./proftpd
 cd proftpd
-git apply ../patch
-git apply ../pool.patch
-# Optionally apply all bug-*.patch files
+git apply ../patches/patch
+git apply ../patches/pool.patch
+# Optionally apply all ../patches/bug-*.patch files in the right order
 CC="afl-clang-lto" \
     CFLAGS="-g -Ofast -march=native -flto -fsanitize=address" \
     LDFLAGS="-lcrypt -flto -fsanitize=address" \
