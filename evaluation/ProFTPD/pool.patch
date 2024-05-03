@@ -1,0 +1,199 @@
+diff --git a/src/pool.c b/src/pool.c
+index 58f3f7087..23309fee5 100644
+--- a/src/pool.c
++++ b/src/pool.c
+@@ -26,6 +26,7 @@
+ 
+ /* Resource allocation code */
+ 
++#include <sanitizer/asan_interface.h>
+ #include "conf.h"
+ 
+ /* Manage free storage blocks */
+@@ -38,7 +39,7 @@ union align {
+   double d;
+ };
+ 
+-#define CLICK_SZ (sizeof(union align))
++#define CLICK_SZ (1)
+ 
+ union block_hdr {
+   union align a;
+@@ -58,6 +59,14 @@ union block_hdr {
+ 
+ static union block_hdr *block_freelist = NULL;
+ 
++static inline void __poison_block (union block_hdr* blok) {
++    __asan_poison_memory_region((void*) blok, sizeof(union block_hdr));
++}
++
++static inline void __unpoison_block (union block_hdr* blok) {
++    __asan_unpoison_memory_region((void*) blok, sizeof(union block_hdr));
++}
++
+ /* Statistics */
+ static unsigned int stat_malloc = 0;	/* incr when malloc required */
+ static unsigned int stat_freehit = 0;	/* incr when freelist used */
+@@ -137,6 +146,7 @@ static void chk_on_blk_list(union block_hdr *blok, union block_hdr *free_blk,
+     const char *pool_tag) {
+ 
+ #ifdef PR_USE_DEVEL
++#error "nope"
+   /* Debug code */
+ 
+   while (free_blk) {
+@@ -155,6 +165,15 @@ static void chk_on_blk_list(union block_hdr *blok, union block_hdr *free_blk,
+ /* Free a chain of blocks -- _must_ call with alarms blocked. */
+ 
+ static void free_blocks(union block_hdr *blok, const char *pool_tag) {
++  while (blok) {
++    __unpoison_block(blok);
++    union block_hdr* tmp = blok->h.next;
++    free(blok);
++    blok = tmp;
++  }
++  
++  return;
++  
+   /* Puts new blocks at head of block list, point next pointer of
+    * last block in chain to free blocks we already had.
+    */
+@@ -191,17 +210,17 @@ static void free_blocks(union block_hdr *blok, const char *pool_tag) {
+  */
+ 
+ static union block_hdr *new_block(int minsz, int exact) {
+-  union block_hdr **lastptr = &block_freelist;
+-  union block_hdr *blok = block_freelist;
++  /*union block_hdr **lastptr = &block_freelist;
++  union block_hdr *blok = block_freelist;*/
+ 
+-  if (!exact) {
++  /*if (!exact) {
+     minsz = 1 + ((minsz - 1) / BLOCK_MINFREE);
+     minsz *= BLOCK_MINFREE;
+-  }
++  }*/
+ 
+   /* Check if we have anything of the requested size on our free list first...
+    */
+-  while (blok) {
++  /*while (blok) {
+     if (minsz <= ((char *) blok->h.endp - (char *) blok->h.first_avail)) {
+       *lastptr = blok->h.next;
+       blok->h.next = NULL;
+@@ -212,7 +231,7 @@ static union block_hdr *new_block(int minsz, int exact) {
+ 
+     lastptr = &blok->h.next;
+     blok = blok->h.next;
+-  }
++  }*/
+ 
+   /* Nope...damn.  Have to malloc() a new one. */
+   stat_malloc++;
+@@ -485,7 +504,7 @@ struct pool_rec *make_sub_pool(struct pool_rec *p) {
+ 
+   pr_alarms_block();
+ 
+-  blok = new_block(0, FALSE);
++  blok = new_block(POOL_HDR_BYTES, FALSE);
+ 
+   new_pool = (pool *) blok->h.first_avail;
+   blok->h.first_avail = POOL_HDR_BYTES + (char *) blok->h.first_avail;
+@@ -504,6 +523,8 @@ struct pool_rec *make_sub_pool(struct pool_rec *p) {
+ 
+     p->sub_pools = new_pool;
+   }
++  
++  __poison_block(blok);
+ 
+   pr_alarms_unblock();
+ 
+@@ -516,7 +537,7 @@ struct pool_rec *pr_pool_create_sz(struct pool_rec *p, size_t sz) {
+ 
+   pr_alarms_block();
+ 
+-  blok = new_block(sz + POOL_HDR_BYTES, TRUE);
++  blok = new_block(POOL_HDR_BYTES, TRUE);
+ 
+   new_pool = (pool *) blok->h.first_avail;
+   blok->h.first_avail = POOL_HDR_BYTES + (char *) blok->h.first_avail;
+@@ -535,6 +556,8 @@ struct pool_rec *pr_pool_create_sz(struct pool_rec *p, size_t sz) {
+ 
+     p->sub_pools = new_pool;
+   }
++  
++  __poison_block(blok);
+ 
+   pr_alarms_unblock();
+ 
+@@ -577,11 +600,13 @@ static void clear_pool(struct pool_rec *p) {
+ 
+   p->sub_pools = NULL;
+ 
++  __unpoison_block(p->first);
+   free_blocks(p->first->h.next, p->tag);
+   p->first->h.next = NULL;
+ 
+   p->last = p->first;
+   p->first->h.first_avail = p->free_first_avail;
++  __poison_block(p->first);
+ 
+   p->tag = NULL;
+   pr_alarms_unblock();
+@@ -614,6 +639,7 @@ void destroy_pool(pool *p) {
+   pr_alarms_unblock();
+ 
+ #if defined(PR_DEVEL_NO_POOL_FREELIST)
++#error "nope"
+   /* If configured explicitly to do so, call free(3) on the freelist after
+    * a pool is destroyed.  This can be useful for tracking down use-after-free
+    * and other memory issues using libraries such as dmalloc.
+@@ -641,7 +667,7 @@ static void *alloc_pool(struct pool_rec *p, size_t reqsz, int exact) {
+    * allocated block.
+    */
+ 
+-  blok = p->last;
++  /*blok = p->last;
+   if (blok == NULL) {
+     errno = EINVAL;
+     return NULL;
+@@ -649,13 +675,13 @@ static void *alloc_pool(struct pool_rec *p, size_t reqsz, int exact) {
+ 
+   first_avail = blok->h.first_avail;
+ 
+-  if (reqsz == 0) {
++  if (reqsz == 0) {*/
+     /* Don't try to allocate memory of zero length.
+      *
+      * This should NOT happen normally; if it does, by returning NULL we
+      * almost guarantee a null pointer dereference.
+      */
+-    errno = EINVAL;
++    /*errno = EINVAL;
+     return NULL;
+   }
+ 
+@@ -664,18 +690,22 @@ static void *alloc_pool(struct pool_rec *p, size_t reqsz, int exact) {
+   if (new_first_avail <= (char *) blok->h.endp) {
+     blok->h.first_avail = new_first_avail;
+     return (void *) first_avail;
+-  }
++  }*/
+ 
+   /* Need a new one that's big enough */
+   pr_alarms_block();
+ 
+   blok = new_block(sz, exact);
++  __unpoison_block(p->last);
+   p->last->h.next = blok;
++  __poison_block(p->last);
+   p->last = blok;
+ 
+   first_avail = blok->h.first_avail;
+   blok->h.first_avail = sz + (char *) blok->h.first_avail;
+ 
++  __poison_block(blok);
++
+   pr_alarms_unblock();
+   return (void *) first_avail;
+ }

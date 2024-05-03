@@ -21,17 +21,18 @@ Build ProFTPD:
 git submodule update --init ./proftpd
 cd proftpd
 git apply ../patch
+git apply ../pool.patch
 # Optionally apply all bug-*.patch files
 CC="afl-clang-lto" \
-    CFLAGS="-g -O3 -flto" \
-    LDFLAGS="-lcrypt -flto" \
+    CFLAGS="-g -Ofast -march=native -flto -fsanitize=address" \
+    LDFLAGS="-lcrypt -flto -fsanitize=address" \
     ./configure --disable-auth-pam --disable-cap && \
     make clean proftpd
 mv proftpd proftpd-fuzzing
 
-CC="gcc" \
-    CFLAGS="-fno-pie -g -O0 -fno-omit-frame-pointer" \
-    LDFLAGS="-no-pie" \
+CC="clang" \
+    CFLAGS="-fno-pie -g -O0 -fno-omit-frame-pointer -fsanitize=address" \
+    LDFLAGS="-no-pie -fsanitize=address" \
     ./configure --disable-auth-pam --disable-cap && \
     make clean proftpd
 mv proftpd proftpd-debug
@@ -51,7 +52,7 @@ docker build -t proftpd -f Dockerfile ../..
 
 ## Running a 24h campaign
 ```
-docker run -d -v "$PWD/ftproot:/ftproot" -v "$PWD/output:/output" proftpd
+docker run --rm -d -v "$PWD/ftproot:/ftproot" -v "$PWD/output:/output" proftpd
 ```
 
 ## Findings
