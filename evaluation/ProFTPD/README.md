@@ -60,3 +60,4 @@ docker run --rm -d -v "$PWD/ftproot:/ftproot" -v "$PWD/output:/output" proftpd
 2. mod_ls.c:493: `pstrndup()` returns NULL because `p` is NULL
 3. mod_ls.c:1105: `tail` may be NULL
 4. data.c:393: `session.d` belongs to the `init_conn pool` and gets used in `pr_inet_set_nonblock` after the pool was destroyed by `pr_inet_close`
+5. netio.c:1737: When `pbuf->current` points to the beginning of the buffer, `pbuf->current - 1` points out of bounds
