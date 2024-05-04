@@ -59,3 +59,4 @@ docker run --rm -d -v "$PWD/ftproot:/ftproot" -v "$PWD/output:/output" proftpd
 1. mod_auth.c:2898: `dir_canonical_path()` may return NULL on invalid paths
 2. mod_ls.c:493: `pstrndup()` returns NULL because `p` is NULL
 3. mod_ls.c:1105: `tail` may be NULL
+4. data.c:393: `session.d` belongs to the `init_conn pool` and gets used after the pool is destroyed with `pr_inet_close`

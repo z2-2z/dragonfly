@@ -483,6 +483,6 @@ where
             &self.envs,
         ).unwrap();
 
-        Ok(ExitKind::Ok)
+        unreachable!()
     }
 }
