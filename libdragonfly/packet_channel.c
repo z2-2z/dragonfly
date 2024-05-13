@@ -187,6 +187,7 @@ void packet_channel_check_available_data (void) {
     
     if (have_data) {
         conn_has_data[min_index] = 1;
+        signal_eof = 0;
     } else {
         if (signal_eof) {
             /* EOF done, signal that we can continue with next group */

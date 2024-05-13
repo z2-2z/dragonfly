@@ -8,9 +8,13 @@ else
 endif
 
 libdesock_args = [
-    '-O3',
+    '-Ofast',
+    '-march=native',
+    '-fno-stack-protector',
+    '-fomit-frame-pointer',
     '-fvisibility=hidden',
     '-Wno-stringop-truncation',
+    '-Wno-unknown-warning-option',
     '-D DESOCKARCH="@0@"'.format(get_option('arch')),
     '-D MAX_CONNS=@0@'.format(get_option('max_conns')),
     '-D FD_TABLE_SIZE=@0@'.format(get_option('fd_table_size')),

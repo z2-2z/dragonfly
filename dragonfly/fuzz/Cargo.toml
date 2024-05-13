@@ -41,3 +41,10 @@ path = "fuzz_targets/all_mutators.rs"
 test = false
 doc = false
 bench = false
+
+[[bin]]
+name = "tokenstream_roundtrip"
+path = "fuzz_targets/tokenstream_roundtrip.rs"
+test = false
+doc = false
+bench = false
