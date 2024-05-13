@@ -16,3 +16,4 @@ dragonfly = { path = "../../../dragonfly" }
 nix = "0.27"
 serde = "1.0"
 clap = { version = "4.3", features = ["default", "derive"] }
+mimalloc = { version = "*", default-features = false }

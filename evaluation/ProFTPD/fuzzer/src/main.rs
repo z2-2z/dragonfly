@@ -29,6 +29,11 @@ use libafl_bolts::prelude::{
 use std::time::Duration;
 use std::path::PathBuf;
 
+use mimalloc::MiMalloc;
+
+#[global_allocator]
+static GLOBAL: MiMalloc = MiMalloc;
+
 #[derive(clap::Parser)]
 #[command(author, version, about, long_about = None)]
 struct Args {

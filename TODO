@@ -1,7 +1,5 @@
-think about how we can sanitize heap stuff
-mimalloc
 extra feedback: just coverage of individual commands is not enough when using generator of valid commands
 improve multi-instance fuzzing:
-- different power schedules
-- no shared disk state: one ftproot per core
-    - stage that clears disk state every N executions ?
+    no shared disk state: one ftproot per core
+        - stage that clears disk state every N executions ?
+packet crossover mutator
