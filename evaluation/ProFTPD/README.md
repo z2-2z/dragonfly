@@ -61,3 +61,5 @@ docker run --rm -d -v "$PWD/ftproot:/ftproot" -v "$PWD/output:/output" proftpd
 3. mod_ls.c:1105: `tail` may be NULL
 4. data.c:393: `session.d` belongs to the `init_conn pool` and gets used in `pr_inet_set_nonblock` after the pool was destroyed by `pr_inet_close`
 5. netio.c:1737: When `pbuf->current` points to the beginning of the buffer, `pbuf->current - 1` points out of bounds
+6. data.c:1197: Not a bug but a patch is still necessary: When aborting a LIST command, `resp_err_list` temporarily keeps pointers and accesses chunks in the freelist.
+   The pointers are cleared later on in all paths through the program but it still generated a crash.

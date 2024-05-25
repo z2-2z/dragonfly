@@ -1,0 +1,12 @@
+diff --git a/src/data.c b/src/data.c
+index 55981c21e..69f953a1d 100644
+--- a/src/data.c
++++ b/src/data.c
+@@ -1192,6 +1192,7 @@ static void poll_ctrl(void) {
+         }
+ 
+         pr_response_flush(&resp_list);
++        pr_response_clear(&resp_err_list);
+         pr_response_set_pool(resp_pool);
+         destroy_pool(cmd->pool);
+ 
