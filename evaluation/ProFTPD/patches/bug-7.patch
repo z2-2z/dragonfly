@@ -1,0 +1,15 @@
+diff --git a/modules/mod_ls.c b/modules/mod_ls.c
+index 096c9defc..7fa13012a 100644
+--- a/modules/mod_ls.c
++++ b/modules/mod_ls.c
+@@ -1191,6 +1191,10 @@ static int outputfiles(cmd_rec *cmd) {
+         return -1;
+       }
+ 
++      if (!fpool) {
++        return -1;
++      }
++
+       q = q->right;
+     }
+   }

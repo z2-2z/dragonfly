@@ -63,3 +63,6 @@ docker run --rm -d -v "$PWD/ftproot:/ftproot" -v "$PWD/output:/output" proftpd
 5. netio.c:1737: When `pbuf->current` points to the beginning of the buffer, `pbuf->current - 1` points out of bounds
 6. data.c:1197: Not a bug but a patch is still necessary: When aborting a LIST command, `resp_err_list` temporarily keeps pointers and accesses chunks in the freelist.
    The pointers are cleared later on in all paths through the program but it still generated a crash.
+7. mod_ls.c:1194: UAF in `outputfiles()`. Every `sendline()` invocation can cause another command from the control connection to be evaluated before continuing
+   with sending the LIST output due to `poll_ctrl()`. STAT and LIST both use the same global state, so if a STAT comes in while LIST output is being sent then the
+   STAT commands run and clears the global state at the end and then LIST continues using the cleared state. This includes resetting values and freeing chunks.
